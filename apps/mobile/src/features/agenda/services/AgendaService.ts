@@ -1,5 +1,5 @@
 import { AgendaItem } from "../domain/entities/AgendaItem";
-import { Task } from "../domain/entities/Task";
+import { Task } from "@features/boards/domain/entities/Task";
 import { AgendaRepository } from "../domain/repositories/AgendaRepository";
 import { NotificationService } from "@services/NotificationService";
 import { logger } from "@utils/logger";
@@ -121,7 +121,7 @@ export class AgendaService {
 
   async getAgendaForWeek(
     weekStartDate?: string,
-  ): Promise<Map<string, DayAgenda>> {
+  ): Promise<DayAgenda[]> {
     const start = weekStartDate
       ? new Date(weekStartDate)
       : this.getMonday(new Date());
@@ -137,27 +137,8 @@ export class AgendaService {
   async getAgendaForDateRange(
     startDate: string,
     endDate: string,
-  ): Promise<Map<string, DayAgenda>> {
-    const dates: string[] = [];
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-
-    const current = new Date(start);
-    while (current <= end) {
-      dates.push(current.toISOString().split("T")[0]);
-      current.setDate(current.getDate() + 1);
-    }
-
-    const dayAgendas = await Promise.all(
-      dates.map((date) => this.getAgendaForDate(date)),
-    );
-
-    const result = new Map<string, DayAgenda>();
-    dayAgendas.forEach((dayAgenda, index) => {
-      result.set(dates[index], dayAgenda);
-    });
-
-    return result;
+  ): Promise<DayAgenda[]> {
+    return this.agendaRepository.loadAgendasForDateRange(startDate, endDate);
   }
 
   async getAllScheduledItems(): Promise<ScheduledAgendaItem[]> {
@@ -399,6 +380,10 @@ export class AgendaService {
   async getUnfinishedItems(date?: string): Promise<ScheduledAgendaItem[]> {
     const unfinished = await this.agendaRepository.loadUnfinishedItems(date);
     return await this.resolveAgendaItems(unfinished);
+  }
+
+  async searchAgendaItems(query: string, mode: 'all' | 'unfinished'): Promise<ScheduledAgendaItem[]> {
+    return await this.agendaRepository.searchAgendaItems(query, mode);
   }
 
   async markAsUnfinished(agendaItemId: string): Promise<void> {

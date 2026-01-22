@@ -1,9 +1,14 @@
 import { AgendaItem } from "../entities/AgendaItem";
+import { DayAgenda, ScheduledAgendaItem } from "../interfaces/AgendaService.interface";
 
 export interface AgendaRepository {
   loadAgendaItemsForDate(date: string): Promise<AgendaItem[]>;
 
   loadAgendaItemsForDateRange(startDate: string, endDate: string): Promise<AgendaItem[]>;
+
+  loadAgendasForDateRange(startDate: string, endDate: string): Promise<DayAgenda[]>;
+
+  searchAgendaItems(query: string, mode: 'all' | 'unfinished'): Promise<ScheduledAgendaItem[]>;
 
   loadAgendaItemById(agendaItemId: string): Promise<AgendaItem | null>;
 

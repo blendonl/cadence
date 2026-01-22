@@ -116,37 +116,7 @@ export class BoardService {
     );
     this.validator.validateBoardName(name);
 
-    const project = await this.projectService.getProjectById(projectId);
-
-    const existingBoards = await this.getBoardsByProject(projectId);
-    const boardExists = existingBoards.some(
-      (b) => b.name.toLowerCase() === name.toLowerCase(),
-    );
-
-    if (boardExists) {
-      logger.warn(`[BoardService] Board already exists: ${name}`);
-      throw new ValidationError(
-        `Board with name '${name}' already exists in project`,
-      );
-    }
-
-    const board = new Board({ name, project_id: projectId, description });
-    await this.repository.saveBoard(board, project.slug);
-
-    board.columns = await Promise.all([
-      this.columnRepository.createColumn(board.id, {
-        name: "To Do",
-        position: 0,
-      }),
-      this.columnRepository.createColumn(board.id, {
-        name: "In Progress",
-        position: 1,
-      }),
-      this.columnRepository.createColumn(board.id, {
-        name: "Done",
-        position: 2,
-      }),
-    ]);
+    const board = await this.repository.saveBoard({name, description, projectId);
 
     logger.info(`[BoardService] Successfully created board: ${name}`);
 
