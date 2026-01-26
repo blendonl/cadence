@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  TextInput,
-  TouchableOpacity,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
@@ -14,22 +12,20 @@ import { Screen } from '@shared/components/Screen';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
-import { uiConstants } from '@shared/theme/uiConstants';
-import { useDebounce } from '@shared/hooks/useDebounce';
-import { getNoteService, getProjectService, getBoardService, getTaskService } from '@core/di/hooks';
+import { getNoteService } from '@core/di/hooks';
 import { Note, NoteType } from '@features/notes/domain/entities/Note';
-import AutoSaveIndicator, { SaveStatus } from '@shared/components/AutoSaveIndicator';
-import EntityChip from '@shared/components/EntityChip';
+import AutoSaveIndicator from '@shared/components/AutoSaveIndicator';
 import EntityPicker from '@shared/components/EntityPicker';
 import { ProjectId, BoardId, TaskId } from '@core/types';
-import AppIcon, { AppIconName } from '@shared/components/icons/AppIcon';
-
-const NOTE_TYPES: { value: NoteType; label: string; icon: AppIconName }[] = [
-  { value: 'general', label: 'Note', icon: 'note' },
-  { value: 'meeting', label: 'Meeting', icon: 'users' },
-  { value: 'daily', label: 'Daily', icon: 'calendar' },
-];
-
+import { useEntityNames, useNoteAutoSave } from '@features/notes/hooks';
+import {
+  NoteTypeSelector,
+  NoteTitleInput,
+  NoteEntitiesSection,
+  NoteTagsSection,
+  NoteFormattingToolbar,
+  NoteContentEditor,
+} from '@features/notes/components';
 export default function NoteEditorScreen() {
   const router = useRouter();
   const { noteId: noteIdParam, projectIds, boardIds, taskIds } = useLocalSearchParams<{
@@ -60,24 +56,27 @@ export default function NoteEditorScreen() {
   const [selectedTasks, setSelectedTasks] = useState<TaskId[]>(initialTaskIds || []);
   const [tagInput, setTagInput] = useState('');
   const [loading, setLoading] = useState(!!noteId);
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [showEntityPicker, setShowEntityPicker] = useState(false);
 
-  const [entityNames, setEntityNames] = useState<{
-    projects: Map<string, string>;
-    boards: Map<string, string>;
-    tasks: Map<string, string>;
-  }>({
-    projects: new Map(),
-    boards: new Map(),
-    tasks: new Map(),
+  const { entityNames } = useEntityNames({
+    projectIds: selectedProjects,
+    boardIds: selectedBoards,
+    taskIds: selectedTasks,
   });
 
-  const isInitialMount = useRef(true);
-
-  const debouncedTitle = useDebounce(title, uiConstants.AUTO_SAVE_DEBOUNCE_TIME);
-  const debouncedContent = useDebounce(content, uiConstants.AUTO_SAVE_DEBOUNCE_TIME);
-  const debouncedTags = useDebounce(tags, uiConstants.AUTO_SAVE_DEBOUNCE_TIME);
+  const { saveStatus } = useNoteAutoSave({
+    note,
+    noteData: {
+      title,
+      content,
+      tags,
+      projectIds: selectedProjects,
+      boardIds: selectedBoards,
+      taskIds: selectedTasks,
+      noteType,
+    },
+    onNoteSaved: setNote,
+  });
 
   const loadNote = useCallback(async () => {
     if (!noteId) {
@@ -99,73 +98,16 @@ export default function NoteEditorScreen() {
         setSelectedTasks(loadedNote.task_ids);
       }
     } catch (error) {
-      console.error('Failed to load note:', error);
     } finally {
       setLoading(false);
     }
   }, [noteId]);
 
-  const loadEntityNames = useCallback(async () => {
-    try {
-      const projectService = getProjectService();
-      const boardService = getBoardService();
-      const taskService = getTaskService();
-
-      const newEntityNames = {
-        projects: new Map<string, string>(),
-        boards: new Map<string, string>(),
-        tasks: new Map<string, string>(),
-      };
-
-      for (const projectId of selectedProjects) {
-        try {
-          const project = await projectService.getProjectById(projectId);
-          if (project) newEntityNames.projects.set(projectId, project.name);
-        } catch (e) { }
-      }
-
-      for (const boardId of selectedBoards) {
-        try {
-          const board = await boardService.getBoardById(boardId);
-          if (board) newEntityNames.boards.set(boardId, board.name);
-        } catch (e) { }
-      }
-
-      for (const taskId of selectedTasks) {
-        try {
-          // const task = await taskService.getTask(taskId);
-          // if (task) newEntityNames.tasks.set(taskId, task.title);
-        } catch (e) { }
-      }
-
-      setEntityNames(newEntityNames);
-    } catch (error) {
-      console.error('Failed to load entity names:', error);
-    }
-  }, [selectedProjects, selectedBoards, selectedTasks]);
-
   useEffect(() => {
     loadNote();
   }, [loadNote]);
 
-  useEffect(() => {
-    loadEntityNames();
-  }, [loadEntityNames]);
-
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-
-    if (!debouncedTitle.trim()) {
-      return;
-    }
-
-    saveNote();
-  }, [debouncedTitle, debouncedContent, debouncedTags, selectedProjects, selectedBoards, selectedTasks]);
-
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     Alert.alert(
       'Delete Note',
       'Are you sure you want to delete this note? This action cannot be undone.',
@@ -182,87 +124,49 @@ export default function NoteEditorScreen() {
               }
               router.back();
             } catch (error) {
-              console.error('Failed to delete note:', error);
               Alert.alert('Error', 'Failed to delete note');
             }
           },
         },
       ]
     );
-  };
+  }, [noteId, router]);
 
-  const saveNote = async () => {
-    if (!title.trim()) return;
-
-    setSaveStatus('saving');
-    try {
-      const noteService = getNoteService();
-
-      if (note) {
-        await noteService.updateNote(note.id, {
-          title: title.trim(),
-          content,
-          tags,
-          projectIds: selectedProjects,
-          boardIds: selectedBoards,
-          taskIds: selectedTasks,
-        });
-      } else {
-        const newNote = await noteService.createNote(title.trim(), content, {
-          noteType,
-          projectIds: selectedProjects,
-          boardIds: selectedBoards,
-          taskIds: selectedTasks,
-          tags,
-        });
-        setNote(newNote);
-      }
-
-      setSaveStatus('saved');
-      setTimeout(() => setSaveStatus('idle'), 2000);
-    } catch (error) {
-      console.error('Failed to save note:', error);
-      setSaveStatus('error');
-      setTimeout(() => setSaveStatus('idle'), 3000);
-    }
-  };
-
-  const insertTemplate = (template: string) => {
-    setContent(prev => prev + template);
-  };
-
-  const handleAddTag = () => {
+  const handleAddTag = useCallback(() => {
     if (tagInput.trim() && !tags.includes(tagInput.trim().toLowerCase())) {
       setTags([...tags, tagInput.trim().toLowerCase()]);
       setTagInput('');
     }
-  };
+  }, [tagInput, tags]);
 
-  const handleRemoveTag = (tag: string) => {
+  const handleRemoveTag = useCallback((tag: string) => {
     setTags(tags.filter(t => t !== tag));
-  };
+  }, [tags]);
 
-  const handleRemoveProject = (projectId: string) => {
+  const handleRemoveProject = useCallback((projectId: string) => {
     setSelectedProjects(selectedProjects.filter(id => id !== projectId));
-  };
+  }, [selectedProjects]);
 
-  const handleRemoveBoard = (boardId: string) => {
+  const handleRemoveBoard = useCallback((boardId: string) => {
     setSelectedBoards(selectedBoards.filter(id => id !== boardId));
-  };
+  }, [selectedBoards]);
 
-  const handleRemoveTask = (taskId: string) => {
+  const handleRemoveTask = useCallback((taskId: string) => {
     setSelectedTasks(selectedTasks.filter(id => id !== taskId));
-  };
+  }, [selectedTasks]);
 
-  const handleEntitySelectionChange = (
-    projects: ProjectId[],
-    boards: BoardId[],
-    tasks: TaskId[]
-  ) => {
-    setSelectedProjects(projects);
-    setSelectedBoards(boards);
-    setSelectedTasks(tasks);
-  };
+  const handleEntitySelectionChange = useCallback(
+    (projects: ProjectId[], boards: BoardId[], tasks: TaskId[]) => {
+      setSelectedProjects(projects);
+      setSelectedBoards(boards);
+      setSelectedTasks(tasks);
+    },
+    []
+  );
+
+  const insertTemplate = useCallback((template: string) => {
+    setContent(prev => prev + template);
+  }, []);
 
   if (loading) {
     return (
@@ -285,139 +189,41 @@ export default function NoteEditorScreen() {
 
         <ScrollView style={styles.scrollView} keyboardShouldPersistTaps="handled">
           {!noteId && (
-            <View style={styles.typeSelector}>
-              <Text style={styles.sectionLabel}>Note Type</Text>
-              <View style={styles.typeButtons}>
-                {NOTE_TYPES.map(type => (
-                  <TouchableOpacity
-                    key={type.value}
-                    style={[
-                      styles.typeButton,
-                      noteType === type.value && styles.typeButtonActive,
-                    ]}
-                    onPress={() => setNoteType(type.value)}
-                    activeOpacity={0.8}
-                  >
-                    <AppIcon
-                      name={type.icon}
-                      size={16}
-                      color={noteType === type.value ? theme.background.primary : theme.text.secondary}
-                    />
-                    <Text style={[
-                      styles.typeLabel,
-                      noteType === type.value && styles.typeLabelActive,
-                    ]}>
-                      {type.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
+            <NoteTypeSelector
+              selectedType={noteType}
+              onTypeChange={setNoteType}
+              disabled={!!note}
+            />
           )}
 
-          <View style={styles.titleContainer}>
-            <TextInput
-              style={styles.titleInput}
-              placeholder="Untitled note"
-              placeholderTextColor={theme.text.muted}
-              value={title}
-              onChangeText={setTitle}
-              autoFocus={!noteId}
-            />
-          </View>
+          <NoteTitleInput
+            value={title}
+            onChange={setTitle}
+            autoFocus={!noteId}
+          />
 
-          <View style={styles.entitiesSection}>
-            <Text style={styles.sectionLabel}>Connected To</Text>
-            <View style={styles.entityChipsContainer}>
-              {selectedProjects.map(id => (
-                <EntityChip
-                  key={id}
-                  entityType="project"
-                  entityId={id}
-                  entityName={entityNames.projects.get(id) || id}
-                  onRemove={handleRemoveProject}
-                />
-              ))}
-              {selectedBoards.map(id => (
-                <EntityChip
-                  key={id}
-                  entityType="board"
-                  entityId={id}
-                  entityName={entityNames.boards.get(id) || id}
-                  onRemove={handleRemoveBoard}
-                />
-              ))}
-              {selectedTasks.map(id => (
-                <EntityChip
-                  key={id}
-                  entityType="task"
-                  entityId={id}
-                  entityName={entityNames.tasks.get(id) || id}
-                  onRemove={handleRemoveTask}
-                />
-              ))}
-              <TouchableOpacity
-                style={styles.addEntityButton}
-                onPress={() => setShowEntityPicker(true)}
-              >
-                <Text style={styles.addEntityButtonText}>+ Add</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          <NoteEntitiesSection
+            selectedProjects={selectedProjects}
+            selectedBoards={selectedBoards}
+            selectedTasks={selectedTasks}
+            entityNames={entityNames}
+            onAddEntity={() => setShowEntityPicker(true)}
+            onRemoveProject={handleRemoveProject}
+            onRemoveBoard={handleRemoveBoard}
+            onRemoveTask={handleRemoveTask}
+          />
 
-          <View style={styles.tagsSection}>
-            <Text style={styles.sectionLabel}>Tags</Text>
-            <View style={styles.tagsContainer}>
-              {tags.map(tag => (
-                <View key={tag} style={styles.tagChip}>
-                  <Text style={styles.tagText}>#{tag}</Text>
-                  <TouchableOpacity
-                    onPress={() => handleRemoveTag(tag)}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Text style={styles.tagRemove}>×</Text>
-                  </TouchableOpacity>
-                </View>
-              ))}
-              <TextInput
-                style={styles.tagInput}
-                placeholder="Add tags..."
-                placeholderTextColor={theme.text.muted}
-                value={tagInput}
-                onChangeText={setTagInput}
-                onSubmitEditing={handleAddTag}
-                returnKeyType="done"
-              />
-            </View>
-          </View>
+          <NoteTagsSection
+            tags={tags}
+            tagInput={tagInput}
+            onTagInputChange={setTagInput}
+            onAddTag={handleAddTag}
+            onRemoveTag={handleRemoveTag}
+          />
 
-          <View style={styles.toolbar}>
-            <TouchableOpacity style={styles.toolButton} onPress={() => insertTemplate('\n## ')}>
-              <Text style={styles.toolButtonText}>H</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.toolButton} onPress={() => insertTemplate('\n- ')}>
-              <Text style={styles.toolButtonText}>•</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.toolButton} onPress={() => insertTemplate('\n- [ ] ')}>
-              <Text style={styles.toolButtonText}>☐</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.toolButton} onPress={() => insertTemplate('\n> ')}>
-              <Text style={styles.toolButtonText}>"</Text>
-            </TouchableOpacity>
-          </View>
+          <NoteFormattingToolbar onInsertTemplate={insertTemplate} />
 
-          <View style={styles.editorContainer}>
-            <TextInput
-              style={styles.contentInput}
-              placeholder="Start writing your note..."
-              placeholderTextColor={theme.text.muted}
-              value={content}
-              onChangeText={setContent}
-              multiline
-              textAlignVertical="top"
-              scrollEnabled={false}
-            />
-          </View>
+          <NoteContentEditor value={content} onChange={setContent} />
 
           <View style={styles.bottomPadding} />
         </ScrollView>
@@ -447,158 +253,6 @@ const styles = StyleSheet.create({
     color: theme.text.secondary,
     textAlign: 'center',
     marginTop: spacing.xl,
-  },
-  headerButton: {
-    marginHorizontal: spacing.md,
-  },
-  headerButtonText: {
-    color: theme.accent.primary,
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  typeSelector: {
-    padding: spacing.lg,
-  },
-  sectionLabel: {
-    color: theme.text.secondary,
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: spacing.md,
-  },
-  typeButtons: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  typeButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.glass.tint.neutral,
-    borderRadius: 12,
-    padding: spacing.md,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  typeButtonActive: {
-    borderColor: theme.accent.primary,
-    backgroundColor: theme.accent.primary + '20',
-  },
-  typeLabel: {
-    color: theme.text.primary,
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  typeLabelActive: {
-    color: theme.accent.primary,
-    fontWeight: '600',
-  },
-  titleContainer: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  titleInput: {
-    color: theme.text.primary,
-    fontSize: 28,
-    fontWeight: '700',
-  },
-  entitiesSection: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  entityChipsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-  },
-  addEntityButton: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    backgroundColor: theme.glass.tint.blue,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: theme.accent.primary,
-    marginRight: spacing.xs,
-    marginBottom: spacing.xs,
-  },
-  addEntityButtonText: {
-    color: theme.accent.primary,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  tagsSection: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    backgroundColor: theme.input.background,
-    borderRadius: 12,
-    padding: spacing.sm,
-    minHeight: 44,
-  },
-  tagChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.accent.primary + '20',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginRight: spacing.xs,
-    marginBottom: spacing.xs,
-  },
-  tagText: {
-    color: theme.accent.primary,
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  tagRemove: {
-    color: theme.accent.primary,
-    fontSize: 18,
-    fontWeight: '300',
-    marginLeft: spacing.xs,
-  },
-  tagInput: {
-    flex: 1,
-    color: theme.text.primary,
-    fontSize: 14,
-    minWidth: 100,
-    paddingVertical: 4,
-  },
-  toolbar: {
-    flexDirection: 'row',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    gap: spacing.sm,
-  },
-  toolButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 8,
-    backgroundColor: theme.glass.tint.neutral,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: theme.glass.border,
-  },
-  toolButtonText: {
-    color: theme.text.primary,
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  editorContainer: {
-    paddingHorizontal: spacing.lg,
-    minHeight: 400,
-  },
-  contentInput: {
-    color: theme.text.primary,
-    fontSize: 17,
-    lineHeight: 28,
-    minHeight: 400,
   },
   bottomPadding: {
     height: spacing.xxxl * 2,
