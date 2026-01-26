@@ -1,6 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Note, NoteType } from '@features/notes/domain/entities/Note';
 
+const NOTE_TYPE_LABELS: Record<NoteType, string> = {
+  general: 'Note',
+  meeting: 'Meeting',
+  daily: 'Daily',
+  task: 'Task',
+};
+
 export const useNoteFilters = (notes: Note[]) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<NoteType | 'all'>('all');
@@ -34,6 +41,15 @@ export const useNoteFilters = (notes: Note[]) => {
     [searchQuery, selectedType]
   );
 
+  const noteCountLabel = useMemo(() => {
+    const count = filteredNotes.length;
+    const suffix = count === 1 ? 'note' : 'notes';
+    if (selectedType === 'all') {
+      return `${count} ${suffix}`;
+    }
+    return `${count} ${suffix} \u2022 ${NOTE_TYPE_LABELS[selectedType]}`;
+  }, [filteredNotes.length, selectedType]);
+
   return {
     searchQuery,
     setSearchQuery,
@@ -42,5 +58,6 @@ export const useNoteFilters = (notes: Note[]) => {
     filteredNotes,
     clearFilters,
     hasActiveFilters,
+    noteCountLabel,
   };
 };

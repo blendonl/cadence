@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 import theme from '@shared/theme';
 import { spacing } from '@shared/theme/spacing';
 import { Note, NoteType } from '@features/notes/domain/entities/Note';
@@ -27,7 +28,7 @@ interface NoteCardProps {
     boards: Map<string, string>;
     tasks: Map<string, string>;
   };
-  onPress: (note: Note) => void;
+  onPress?: (note: Note) => void;
 }
 
 const formatDate = (date: Date): string => {
@@ -46,12 +47,20 @@ const formatDate = (date: Date): string => {
 };
 
 export const NoteCard = React.memo<NoteCardProps>(({ note, entityNames, onPress }) => {
+  const router = useRouter();
   const icon = NOTE_TYPE_ICONS[note.note_type];
+  const handlePress = useCallback(() => {
+    if (onPress) {
+      onPress(note);
+      return;
+    }
+    router.push(`/notes/${note.id}`);
+  }, [note, onPress, router]);
 
   return (
     <TouchableOpacity
       style={styles.noteCard}
-      onPress={() => onPress(note)}
+      onPress={handlePress}
       activeOpacity={0.8}
     >
       <View style={styles.noteCardTop}>

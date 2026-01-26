@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import theme from '@shared/theme';
 import { spacing } from '@shared/theme/spacing';
 import { getNoteService } from '@core/di/hooks';
-import { Note, NoteType } from '@features/notes/domain/entities/Note';
+import { Note } from '@features/notes/domain/entities/Note';
 import { RootStackParamList } from '@shared/types/navigation';
 import { useAutoRefresh } from '@shared/hooks/useAutoRefresh';
 import { useEntityNames, useNoteFilters } from '@features/notes/hooks';
@@ -25,13 +25,6 @@ import {
 } from '@features/notes/components';
 
 type NotesListNavProp = StackNavigationProp<RootStackParamList, 'NotesList'>;
-
-const NOTE_TYPE_LABELS: Record<NoteType, string> = {
-  general: 'Note',
-  meeting: 'Meeting',
-  daily: 'Daily',
-  task: 'Task',
-};
 
 export default function NotesListScreen() {
   const navigation = useNavigation<NotesListNavProp>();
@@ -61,6 +54,7 @@ export default function NotesListScreen() {
     setSelectedType,
     filteredNotes,
     hasActiveFilters,
+    noteCountLabel,
   } = useNoteFilters(notes);
 
   useEffect(() => {
@@ -72,15 +66,6 @@ export default function NotesListScreen() {
     await loadNotes();
     setRefreshing(false);
   }, [loadNotes]);
-
-  const noteCountLabel = useMemo(() => {
-    const count = filteredNotes.length;
-    const suffix = count === 1 ? 'note' : 'notes';
-    if (selectedType === 'all') {
-      return `${count} ${suffix}`;
-    }
-    return `${count} ${suffix} • ${NOTE_TYPE_LABELS[selectedType as NoteType]}`;
-  }, [filteredNotes.length, selectedType]);
 
   const handleCreateNote = useCallback(() => {
     navigation.navigate('NoteEditor', {});
