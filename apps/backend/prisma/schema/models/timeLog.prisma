@@ -1,0 +1,20 @@
+model TimeLog {
+  id        String  @id @default(uuid())
+  projectId String? @map("project_id")
+  taskId    String? @map("task_id")
+
+  date            DateTime
+  durationMinutes Int      @map("duration_minutes")
+  source          String
+  metadata        Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  task    Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, date])
+  @@index([taskId])
+  @@map("time_log")
+}

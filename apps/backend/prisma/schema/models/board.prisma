@@ -1,5 +1,5 @@
 model Board {
-  id        String @id @default(cuid())
+  id        String @id @default(uuid())
   projectId String @map("project_id")
 
   name        String
@@ -10,4 +10,6 @@ model Board {
 
   project Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   columns Column[]
+
+  @@map("boad")
 }

@@ -1,0 +1,67 @@
+enum RoutineStatus {
+  ACTIVE
+  DISABLED
+
+  @@map("routine_status")
+}
+
+enum RoutineType {
+  SLEEP
+  STEP
+  OTHER
+
+  @@map("routine_type")
+}
+
+model Routine {
+  id   String @id @default(uuid())
+  name String
+
+  status RoutineStatus @default(ACTIVE)
+  type   RoutineType
+  target String
+
+  separateInto Int @default(1) @map("separate_into")
+  repeatIntervalMinutes Int @map("repeat_interval_minutes")
+
+  activeDays Json? @map("active_days")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tasks RoutineTask[]
+
+  @@map("routine")
+}
+
+model RoutineTask {
+  id        String @id @default(uuid())
+  routineId String @map("routine_id")
+
+  name   String
+  target String
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  routine Routine @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  logs    RoutineTaskLog[]
+  agendaItems AgendaItem[]
+  alarmPlans AlarmPlan[]
+
+  @@map("routine_task")
+}
+
+model RoutineTaskLog {
+  id            String @id @default(uuid())
+  routineTaskId String @map("routine_task_id")
+  userId        String @map("user_id")
+
+  value String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  routineTask RoutineTask @relation(fields: [routineTaskId], references: [id], onDelete: Cascade)
+
+  @@map("routine_task_log")
+}

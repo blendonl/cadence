@@ -1,0 +1,37 @@
+enum AlarmPlanStatus {
+  PENDING
+  ACTIVE
+  CANCELLED
+  COMPLETED
+
+  @@map("alarm_plan_status")
+}
+
+enum AlarmPlanType {
+  WAKE
+  SLEEP
+  STEP
+
+  @@map("alarm_plan_type")
+}
+
+model AlarmPlan {
+  id            String @id @default(uuid())
+  routineTaskId String @map("routine_task_id")
+
+  status AlarmPlanStatus @default(PENDING)
+  type   AlarmPlanType
+
+  targetAt DateTime @map("target_at")
+  repeatIntervalMinutes Int @map("repeat_interval_minutes")
+
+  metadata Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  routineTask RoutineTask @relation(fields: [routineTaskId], references: [id], onDelete: Cascade)
+
+  @@index([routineTaskId, targetAt])
+  @@map("alarm_plan")
+}

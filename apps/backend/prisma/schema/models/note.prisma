@@ -5,17 +5,20 @@ enum NoteType {
   MEETING
   PROJECT
   TASK
+
+  @@map("note_type")
 }
 
 model Note {
-  id        String   @id @default(uuid())
+  id String @id @default(uuid())
 
-  type      NoteType @default(PERSONAL)
+  type NoteType @default(PERSONAL)
 
-  title     String
-  content   String
+  title   String
+  content String
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-}
 
+  @@map("note")
+}

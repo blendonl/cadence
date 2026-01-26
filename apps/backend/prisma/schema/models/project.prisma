@@ -2,10 +2,12 @@ enum ProjectStatus {
   active
   archived
   completed
+
+  @@map("project_status")
 }
 
 model Project {
-  id String @id @default(cuid())
+  id String @id @default(uuid())
 
   name        String
   slug        String
@@ -17,5 +19,8 @@ model Project {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  boards Board[]
+  boards   Board[]
+  timeLogs TimeLog[]
+
+  @@map("project")
 }

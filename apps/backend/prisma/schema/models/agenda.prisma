@@ -7,6 +7,8 @@ model Agenda {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   items AgendaItem[]
+
+  @@map("agenda")
 }
 
 enum AgendaItemStatus {
@@ -14,18 +16,23 @@ enum AgendaItemStatus {
   COMPLETED
   CANCELLED
   UNFINISHED
+
+  @@map("agenda_item_status")
 }
 
 enum AgendaItemType {
   TASK
   MEETING
   MILESTONE
+
+  @@map("agenda_item_type")
 }
 
 model AgendaItem {
   id       String @id @default(uuid())
   agendaId String @map("agenda_id")
-  taskId   String @map("task_id")
+  taskId   String? @map("task_id")
+  routineTaskId String? @map("routine_task_id")
 
   type AgendaItemType @default(TASK)
 
@@ -37,10 +44,15 @@ model AgendaItem {
   notes          String?
   completedAt    DateTime? @map("completed_at")
   notificationId String?   @map("notification_id")
+  unfinishedAt   DateTime? @map("unfinished_at")
+  isUnfinished   Boolean   @default(false) @map("is_unfinished")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  agenda Agenda @relation(fields: [agendaId], references: [id], onDelete: Cascade)
-  task   Task   @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  agenda      Agenda      @relation(fields: [agendaId], references: [id], onDelete: Cascade)
+  task        Task?       @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  routineTask RoutineTask? @relation(fields: [routineTaskId], references: [id], onDelete: SetNull)
+
+  @@map("agenda_item")
 }

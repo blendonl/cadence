@@ -2,6 +2,8 @@ enum TaskType {
   TASK
   SUBTASK
   MEETING
+
+  @@map("task_type")
 }
 
 enum TaskPriority {
@@ -9,6 +11,8 @@ enum TaskPriority {
   MEDIUM
   HIGH
   URGENT
+
+  @@map("task_priority")
 }
 
 model Task {
@@ -30,23 +34,38 @@ model Task {
   parent   Task?        @relation("Subtasks", fields: [parentId], references: [id], onDelete: Cascade)
   subtasks Task[]       @relation("Subtasks")
   logs     TaskLog[]
+  timeLogs TimeLog[]
   agenda   AgendaItem[]
+
+  @@map("task")
 }
 
 enum TaskAction {
+  CREATED
   MOVE_TO_IN_PROGRESS
   MOVE_TO_DONE
+  MOVED_TO_COLUMN
+  PRIORITY_CHANGED
+  ASSIGNED
+  UNASSIGNED
+  COMPLETED
+  REOPENED
+
+  @@map("task_action")
 }
 
 model TaskLog {
   id     String @id @default(uuid())
   taskId String @map("task_id")
 
-  action TaskAction
-  value  String?
+  action   TaskAction
+  value    String?
+  metadata Json?
 
   task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("task_log")
 }
