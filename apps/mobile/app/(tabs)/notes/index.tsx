@@ -10,18 +10,14 @@ import {
   ScrollView,
 } from 'react-native';
 import { Screen } from '@shared/components/Screen';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { useRouter } from 'expo-router';
 import theme from '@shared/theme';
 import { spacing } from '@shared/theme/spacing';
 import { getNoteService, getProjectService, getBoardService, getTaskService } from '@core/di/hooks';
 import { Note, NoteType } from '@features/notes/domain/entities/Note';
-import { NotesStackParamList } from '@/ui/navigation/TabNavigator';
 import { useAutoRefresh } from '@shared/hooks/useAutoRefresh';
 import AutoRefreshIndicator from '@shared/components/AutoRefreshIndicator';
 import AppIcon, { AppIconName } from '@shared/components/icons/AppIcon';
-
-type NotesListNavProp = StackNavigationProp<NotesStackParamList, 'NotesList'>;
 
 const NOTE_TYPE_FILTERS: { value: NoteType | 'all'; label: string; icon: AppIconName }[] = [
   { value: 'all', label: 'All', icon: 'stack' },
@@ -45,7 +41,7 @@ const NOTE_TYPE_LABELS: Record<NoteType, string> = {
 };
 
 export default function NotesListScreen() {
-  const navigation = useNavigation<NotesListNavProp>();
+  const router = useRouter();
   const [notes, setNotes] = useState<Note[]>([]);
   const [filteredNotes, setFilteredNotes] = useState<Note[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -143,21 +139,21 @@ export default function NotesListScreen() {
   }, [filteredNotes.length, selectedType]);
 
   const handleCreateNote = () => {
-    navigation.navigate('NoteEditor', {});
+    router.push('/notes/new');
   };
 
   const handleCreateDailyNote = async () => {
     try {
       const noteService = getNoteService();
       const dailyNote = await noteService.getTodaysDailyNote();
-      navigation.navigate('NoteEditor', { noteId: dailyNote.id });
+      router.push(`/notes/${dailyNote.id}`);
     } catch (error) {
       console.error('Failed to create daily note:', error);
     }
   };
 
   const handleNotePress = (note: Note) => {
-    navigation.navigate('NoteEditor', { noteId: note.id });
+    router.push(`/notes/${note.id}`);
   };
 
   const formatDate = (date: Date): string => {

@@ -22,12 +22,6 @@ export interface ProjectRepository {
 
   listProjectSlugs(): Promise<string[]>;
 
-  getProjectBoardsDirectory(project: Project): string;
-
-  getProjectNotesDirectory(project: Project): string;
-
-  getProjectTimeDirectory(project: Project): string;
-
   createProjectWithDefaults(
     name: string,
     description?: string,

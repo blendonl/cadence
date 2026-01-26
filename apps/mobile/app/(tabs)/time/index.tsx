@@ -8,17 +8,13 @@ import {
   RefreshControl,
 } from 'react-native';
 import { Screen } from '@shared/components/Screen';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { useRouter } from 'expo-router';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
 import { getTimeTrackingService } from '@core/di/hooks';
 import { DailySummary } from '@domain/entities/TimeLog';
 import { OverallTimeSummary, TimeSource } from '@services/TimeTrackingService';
-import { TimeStackParamList } from '@/ui/navigation/TabNavigator';
 import AppIcon, { AppIconName } from '@shared/components/icons/AppIcon';
-
-type TimeOverviewNavProp = StackNavigationProp<TimeStackParamList, 'TimeOverview'>;
 
 const SOURCE_ICONS: Record<TimeSource, AppIconName> = {
   manual: 'edit',
@@ -42,7 +38,7 @@ const SOURCE_COLORS: Record<TimeSource, string> = {
 };
 
 export default function TimeOverviewScreen() {
-  const navigation = useNavigation<TimeOverviewNavProp>();
+  const router = useRouter();
   const [summary, setSummary] = useState<OverallTimeSummary | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -129,7 +125,7 @@ export default function TimeOverviewScreen() {
               <TouchableOpacity
                 key={day.date}
                 style={styles.barColumn}
-                onPress={() => navigation.navigate('TimeLogDetail', { date: day.date })}
+                onPress={() => router.push(`/time/${day.date}`)}
               >
                 <View style={styles.barWrapper}>
                   <View

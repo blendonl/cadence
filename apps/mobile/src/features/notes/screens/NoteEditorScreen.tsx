@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useLayoutEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,23 +11,18 @@ import {
   Alert,
 } from 'react-native';
 import { Screen } from '@shared/components/Screen';
-import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
 import { uiConstants } from '@shared/theme/uiConstants';
 import { useDebounce } from '@shared/hooks/useDebounce';
 import { getNoteService, getProjectService, getBoardService, getTaskService } from '@core/di/hooks';
 import { Note, NoteType } from '@features/notes/domain/entities/Note';
-import { NotesStackParamList } from '@/ui/navigation/TabNavigator';
 import AutoSaveIndicator, { SaveStatus } from '@shared/components/AutoSaveIndicator';
 import EntityChip from '@shared/components/EntityChip';
 import EntityPicker from '@shared/components/EntityPicker';
 import { ProjectId, BoardId, TaskId } from '@core/types';
 import AppIcon, { AppIconName } from '@shared/components/icons/AppIcon';
-
-type NoteEditorRouteProp = RouteProp<NotesStackParamList, 'NoteEditor'>;
-type NoteEditorNavProp = StackNavigationProp<NotesStackParamList, 'NoteEditor'>;
 
 const NOTE_TYPES: { value: NoteType; label: string; icon: AppIconName }[] = [
   { value: 'general', label: 'Note', icon: 'note' },
@@ -36,9 +31,24 @@ const NOTE_TYPES: { value: NoteType; label: string; icon: AppIconName }[] = [
 ];
 
 export default function NoteEditorScreen() {
-  const route = useRoute<NoteEditorRouteProp>();
-  const navigation = useNavigation<NoteEditorNavProp>();
-  const { noteId, projectIds: initialProjectIds, boardIds: initialBoardIds, taskIds: initialTaskIds } = route.params || {};
+  const router = useRouter();
+  const { noteId: noteIdParam, projectIds, boardIds, taskIds } = useLocalSearchParams<{
+    noteId?: string | string[];
+    projectIds?: string | string[];
+    boardIds?: string | string[];
+    taskIds?: string | string[];
+  }>();
+  const noteId = Array.isArray(noteIdParam) ? noteIdParam[0] : noteIdParam;
+
+  const normalizeIds = (value?: string | string[]): string[] => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    return value.split(',').map((item) => item.trim()).filter(Boolean);
+  };
+
+  const initialProjectIds = normalizeIds(projectIds);
+  const initialBoardIds = normalizeIds(boardIds);
+  const initialTaskIds = normalizeIds(taskIds);
 
   const [note, setNote] = useState<Note | null>(null);
   const [title, setTitle] = useState('');
@@ -155,28 +165,6 @@ export default function NoteEditorScreen() {
     saveNote();
   }, [debouncedTitle, debouncedContent, debouncedTags, selectedProjects, selectedBoards, selectedTasks]);
 
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      title: noteId ? 'Edit Note' : 'New Note',
-      headerLeft: () => (
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.headerButtonText}>Close</Text>
-        </TouchableOpacity>
-      ),
-      headerRight: noteId ? () => (
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={handleDelete}
-        >
-          <Text style={[styles.headerButtonText, { color: theme.accent.error }]}>Delete</Text>
-        </TouchableOpacity>
-      ) : undefined,
-    });
-  }, [navigation, noteId]);
-
   const handleDelete = () => {
     Alert.alert(
       'Delete Note',
@@ -192,7 +180,7 @@ export default function NoteEditorScreen() {
               if (noteId) {
                 await noteService.deleteNote(noteId);
               }
-              navigation.goBack();
+              router.back();
             } catch (error) {
               console.error('Failed to delete note:', error);
               Alert.alert('Error', 'Failed to delete note');

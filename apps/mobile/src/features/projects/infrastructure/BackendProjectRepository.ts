@@ -5,33 +5,34 @@ import {
   ProjectRepository,
   ProjectListResult,
 } from "@features/projects/domain/repositories/ProjectRepository";
-import { FileSystemManager } from "@infrastructure/storage/FileSystemManager";
 import { BackendApiClient } from "@infrastructure/api/BackendApiClient";
-import { FILE_SYSTEM_MANAGER, BACKEND_API_CLIENT } from "@core/di/tokens";
+import { BACKEND_API_CLIENT } from "@core/di/tokens";
+import {
+  ProjectDto,
+  ProjectDetailDto,
+  ProjectListResponseDto,
+} from "shared-types";
 
-interface ProjectApiResponse {
-  id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  color: string;
-  status: "active" | "archived" | "completed";
-  filePath: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface ProjectListResponse {
-  items: ProjectApiResponse[];
-  total: number;
-  page: number;
-  limit: number;
+export interface ProjectWithDetails {
+  project: Project;
+  boards: Array<{ id: string; name: string; columnCount: number }>;
+  notes: Array<{
+    id: string;
+    title: string;
+    content: string;
+    preview: string | null;
+    updatedAt: Date;
+  }>;
+  stats: {
+    boardCount: number;
+    noteCount: number;
+    timeThisWeek: number;
+  };
 }
 
 @injectable()
 export class BackendProjectRepository implements ProjectRepository {
   constructor(
-    @inject(FILE_SYSTEM_MANAGER) private readonly fileSystem: FileSystemManager,
     @inject(BACKEND_API_CLIENT) private readonly apiClient: BackendApiClient,
   ) {}
 
@@ -40,12 +41,12 @@ export class BackendProjectRepository implements ProjectRepository {
     limit: number,
   ): Promise<ProjectListResult> {
     const safeLimit = Math.min(limit, 100);
-    const response = await this.apiClient.request<ProjectListResponse>(
+    const response = await this.apiClient.request<ProjectListResponseDto>(
       `/projects?page=${page}&limit=${safeLimit}`,
     );
 
     return {
-      items: response.items.map((item) => this.mapProject(item)),
+      items: response.items.map((item) => this.mapDtoToEntity(item)),
       total: response.total,
       page: response.page,
       limit: response.limit,
@@ -56,13 +57,45 @@ export class BackendProjectRepository implements ProjectRepository {
   }
 
   async loadProjectById(projectId: ProjectId): Promise<Project | null> {
-    const data = await this.apiClient.requestOrNull<ProjectApiResponse>(
+    const dto = await this.apiClient.requestOrNull<ProjectDto>(
       `/projects/${projectId}`,
     );
-    if (!data) {
+    if (!dto) {
       return null;
     }
-    return this.mapProject(data);
+    return this.mapDtoToEntity(dto);
+  }
+
+  async loadProjectByIdWithDetails(
+    projectId: ProjectId,
+  ): Promise<ProjectWithDetails | null> {
+    const dto = await this.apiClient.requestOrNull<ProjectDetailDto>(
+      `/projects/${projectId}?includeDetails=true`,
+    );
+    if (!dto) {
+      return null;
+    }
+
+    return {
+      project: this.mapDtoToEntity(dto),
+      boards: dto.boards.map((b) => ({
+        id: b.id,
+        name: b.name,
+        columnCount: b.columnCount,
+      })),
+      notes: dto.notes.map((n) => ({
+        id: n.id,
+        title: n.title,
+        content: n.content,
+        preview: n.preview,
+        updatedAt: new Date(n.updatedAt),
+      })),
+      stats: {
+        boardCount: dto.stats.boardCount,
+        noteCount: dto.stats.noteCount,
+        timeThisWeek: dto.stats.timeThisWeek,
+      },
+    };
   }
 
   async loadProjectBySlug(slug: string): Promise<Project | null> {
@@ -112,18 +145,6 @@ export class BackendProjectRepository implements ProjectRepository {
     return slugs;
   }
 
-  getProjectBoardsDirectory(project: Project): string {
-    return this.fileSystem.getProjectBoardsDirectory(project.slug);
-  }
-
-  getProjectNotesDirectory(project: Project): string {
-    return this.fileSystem.getProjectNotesDirectory(project.slug);
-  }
-
-  getProjectTimeDirectory(project: Project): string {
-    return this.fileSystem.getProjectTimeDirectory(project.slug);
-  }
-
   async createProjectWithDefaults(
     name: string,
     description?: string,
@@ -136,28 +157,26 @@ export class BackendProjectRepository implements ProjectRepository {
       status: "active",
     };
 
-    const data = await this.apiClient.request<ProjectApiResponse>("/projects", {
+    const dto = await this.apiClient.request<ProjectDto>("/projects", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
 
-    const project = this.mapProject(data);
-    await this.fileSystem.createProjectStructure(project.slug);
-    return project;
+    return this.mapDtoToEntity(dto);
   }
 
-  private mapProject(project: ProjectApiResponse): Project {
+  private mapDtoToEntity(dto: ProjectDto): Project {
     return new Project({
-      id: project.id,
-      name: project.name,
-      slug: project.slug,
-      description: project.description || "",
-      color: project.color,
-      status: project.status,
-      created_at: project.createdAt ? new Date(project.createdAt) : undefined,
-      updated_at: project.updatedAt ? new Date(project.updatedAt) : undefined,
-      file_path: project.filePath,
+      id: dto.id,
+      name: dto.name,
+      slug: dto.slug,
+      description: dto.description || "",
+      color: dto.color,
+      status: dto.status,
+      created_at: dto.createdAt ? new Date(dto.createdAt) : undefined,
+      updated_at: dto.updatedAt ? new Date(dto.updatedAt) : undefined,
+      file_path: dto.filePath,
     });
   }
 }

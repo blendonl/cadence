@@ -1,12 +1,23 @@
-import React, { useCallback, useMemo } from 'react';
-import { View, Text, SectionList, TouchableOpacity, RefreshControl, ActivityIndicator, StyleSheet } from 'react-native';
-import AppIcon from '@shared/components/icons/AppIcon';
-import theme from '@shared/theme/colors';
-import { spacing } from '@shared/theme/spacing';
-import { DayAgenda, ScheduledAgendaItem } from '../domain/interfaces/AgendaService.interface';
-import { AgendaSection } from '../types/agenda-screen.types';
-import { AgendaItemCard } from './AgendaItemCard';
-import { formatDateKey, formatSearchDateLabel } from '@shared/utils/date.utils';
+import React, { useCallback, useMemo } from "react";
+import {
+  View,
+  Text,
+  SectionList,
+  TouchableOpacity,
+  RefreshControl,
+  ActivityIndicator,
+  StyleSheet,
+} from "react-native";
+import AppIcon, { AppIconName } from "@shared/components/icons/AppIcon";
+import theme from "@shared/theme/colors";
+import { spacing } from "@shared/theme/spacing";
+import {
+  DayAgenda,
+  ScheduledAgendaItem,
+} from "../domain/interfaces/AgendaService.interface";
+import { AgendaSection } from "../types/agenda-screen.types";
+import { AgendaItemCard } from "./AgendaItemCard";
+import { formatDateKey, formatSearchDateLabel } from "@shared/utils/date.utils";
 
 interface AgendaDayContentProps {
   selectedDate: Date;
@@ -37,33 +48,43 @@ export function AgendaDayContent({
   onToggleComplete,
   onScheduleTask,
 }: AgendaDayContentProps) {
-  const renderAgendaItem = useCallback(({ item }: { item: ScheduledAgendaItem }) => (
-    <AgendaItemCard
-      scheduledItem={item}
-      onPress={() => onItemPress(item)}
-      onLongPress={() => onItemLongPress(item)}
-      onToggleComplete={() => onToggleComplete(item)}
-    />
-  ), [onItemPress, onItemLongPress, onToggleComplete]);
+  const renderAgendaItem = useCallback(
+    ({ item }: { item: ScheduledAgendaItem }) => (
+      <AgendaItemCard
+        scheduledItem={item}
+        onPress={() => onItemPress(item)}
+        onLongPress={() => onItemLongPress(item)}
+        onToggleComplete={() => onToggleComplete(item)}
+      />
+    ),
+    [onItemPress, onItemLongPress, onToggleComplete],
+  );
 
-  const renderSectionHeader = useCallback(({ section }: { section: AgendaSection }) => (
-    <View style={styles.sectionHeader}>
-      <View style={styles.sectionTitleRow}>
-        <View style={styles.sectionIcon}>
-          <AppIcon name={section.icon} size={14} color={theme.text.secondary} />
-        </View>
-        <Text style={styles.sectionTitle}>{section.title}</Text>
-        <View style={styles.sectionCountPill}>
-          <Text style={styles.sectionCountText}>{section.data.length}</Text>
+  const renderSectionHeader = useCallback(
+    ({ section }: { section: AgendaSection }) => (
+      <View style={styles.sectionHeader}>
+        <View style={styles.sectionTitleRow}>
+          <View style={styles.sectionIcon}>
+            <AppIcon
+              name={section.icon}
+              size={14}
+              color={theme.text.secondary}
+            />
+          </View>
+          <Text style={styles.sectionTitle}>{section.title}</Text>
+          <View style={styles.sectionCountPill}>
+            <Text style={styles.sectionCountText}>{section.data.length}</Text>
+          </View>
         </View>
       </View>
-    </View>
-  ), []);
+    ),
+    [],
+  );
 
   const searchSections = useMemo(() => {
     const grouped = new Map<string, ScheduledAgendaItem[]>();
-    searchResults.forEach(item => {
-      const dateKey = item.agendaItem.scheduled_date;
+    searchResults.forEach((item) => {
+      const dateKey = item.agendaItem.scheduledDate;
       const existing = grouped.get(dateKey) || [];
       existing.push(item);
       grouped.set(dateKey, existing);
@@ -74,8 +95,8 @@ export function AgendaDayContent({
       .map(([dateKey, items]) => ({
         title: formatSearchDateLabel(dateKey),
         data: items.sort((left, right) => {
-          const leftTime = left.agendaItem.scheduled_time || '';
-          const rightTime = right.agendaItem.scheduled_time || '';
+          const leftTime = left.agendaItem.scheduledTime || "";
+          const rightTime = right.agendaItem.scheduledTime || "";
           return leftTime.localeCompare(rightTime);
         }),
       }));
@@ -96,7 +117,9 @@ export function AgendaDayContent({
         <View style={styles.searchEmpty}>
           <AppIcon name="search" size={26} color={theme.text.muted} />
           <Text style={styles.searchEmptyTitle}>No matching tasks</Text>
-          <Text style={styles.searchEmptySubtitle}>Try a project, goal, or task name.</Text>
+          <Text style={styles.searchEmptySubtitle}>
+            Try a project, goal, or task name.
+          </Text>
         </View>
       );
     }
@@ -110,7 +133,9 @@ export function AgendaDayContent({
           <View style={styles.searchSectionHeader}>
             <Text style={styles.searchSectionText}>{section.title}</Text>
             <View style={styles.searchSectionPill}>
-              <Text style={styles.searchSectionCount}>{section.data.length}</Text>
+              <Text style={styles.searchSectionCount}>
+                {section.data.length}
+              </Text>
             </View>
           </View>
         )}
@@ -128,21 +153,35 @@ export function AgendaDayContent({
     );
   }
 
-  const dayAgenda = agendaData.find(d => d.date === formatDateKey(selectedDate));
-  const selectedDateStr = selectedDate.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
+  const dayAgenda = agendaData.find(
+    (d) => d.date === formatDateKey(selectedDate),
+  );
+  const selectedDateStr = selectedDate.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
   });
 
-  const timeBlocks = (dayAgenda?.items || []).filter(
-    item => item.agendaItem.scheduled_time && !item.agendaItem.is_unfinished
+  const agendaItems = dayAgenda
+    ? [...dayAgenda.tasks, ...dayAgenda.routines]
+    : [];
+  const wakeupItem = dayAgenda?.sleep.wakeup ?? null;
+  const sleepItem = dayAgenda?.sleep.sleep ?? null;
+  const stepItem = dayAgenda?.steps[0] ?? null;
+  const totalItemCount =
+    agendaItems.length
+    + (dayAgenda?.steps.length || 0)
+    + (wakeupItem ? 1 : 0)
+    + (sleepItem ? 1 : 0);
+
+  const timeBlocks = agendaItems.filter(
+    (item) => item.agendaItem.scheduledTime && !item.agendaItem.isUnfinished,
   );
-  const allDayTasks = (dayAgenda?.items || []).filter(
-    item => !item.agendaItem.scheduled_time || item.agendaItem.is_all_day
+  const allDayTasks = agendaItems.filter(
+    (item) => !item.agendaItem.scheduledTime,
   );
 
-  if (!dayAgenda || (dayAgenda.items.length === 0 && unfinishedItems.length === 0)) {
+  if (!dayAgenda || (totalItemCount === 0 && unfinishedItems.length === 0)) {
     return (
       <View style={styles.emptyDay}>
         <AppIcon name="calendar" size={28} color={theme.text.muted} />
@@ -159,10 +198,14 @@ export function AgendaDayContent({
   }
 
   const sections: AgendaSection[] = [
-    { title: 'Unfinished', icon: 'alert-circle', data: unfinishedItems },
-    { title: 'Time Blocks', icon: 'clock', data: timeBlocks },
-    { title: 'All Day', icon: 'sun', data: allDayTasks },
-  ].filter(section => section.data.length > 0);
+    {
+      title: "Unfinished",
+      icon: "alert-circle" as AppIconName,
+      data: unfinishedItems,
+    },
+    { title: "Time Blocks", icon: "clock" as AppIconName, data: timeBlocks },
+    { title: "All Day", icon: "sun" as AppIconName, data: allDayTasks },
+  ].filter((section) => section.data.length > 0);
 
   return (
     <SectionList
@@ -174,11 +217,50 @@ export function AgendaDayContent({
       maxToRenderPerBatch={10}
       windowSize={5}
       removeClippedSubviews={true}
-      ListHeaderComponent={(
+      ListHeaderComponent={
         <View style={styles.dayHeader}>
           <View style={styles.dayHeaderRow} />
+          {wakeupItem && (
+            <View style={styles.specialSection}>
+              <Text style={styles.specialTitle}>Wake up</Text>
+              <AgendaItemCard
+                scheduledItem={wakeupItem}
+                sleepMode="wakeup"
+                onPress={() => onItemPress(wakeupItem)}
+                onLongPress={() => onItemLongPress(wakeupItem)}
+                onToggleComplete={() => onToggleComplete(wakeupItem)}
+              />
+            </View>
+          )}
+          {stepItem && (
+            <View style={styles.specialSection}>
+              <Text style={styles.specialTitle}>Steps</Text>
+              <AgendaItemCard
+                scheduledItem={stepItem}
+                onPress={() => onItemPress(stepItem)}
+                onLongPress={() => onItemLongPress(stepItem)}
+                onToggleComplete={() => onToggleComplete(stepItem)}
+              />
+            </View>
+          )}
+          {(wakeupItem || stepItem) && <View style={styles.specialDivider} />}
         </View>
-      )}
+      }
+      ListFooterComponent={
+        sleepItem ? (
+          <View style={styles.specialFooter}>
+            <View style={styles.specialDivider} />
+            <Text style={styles.specialTitle}>Sleep</Text>
+            <AgendaItemCard
+              scheduledItem={sleepItem}
+              sleepMode="sleep"
+              onPress={() => onItemPress(sleepItem)}
+              onLongPress={() => onItemLongPress(sleepItem)}
+              onToggleComplete={() => onToggleComplete(sleepItem)}
+            />
+          </View>
+        ) : null
+      }
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -203,18 +285,38 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
   dayHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: spacing.sm,
   },
   sectionHeader: {
     paddingTop: spacing.sm,
     paddingBottom: spacing.xs,
   },
+  specialSection: {
+    marginBottom: spacing.md,
+  },
+  specialFooter: {
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+  },
+  specialTitle: {
+    color: theme.text.secondary,
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginBottom: spacing.sm,
+  },
+  specialDivider: {
+    height: 1,
+    backgroundColor: theme.border.secondary,
+    marginVertical: spacing.md,
+  },
   sectionTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.sm,
   },
   sectionIcon: {
@@ -224,13 +326,13 @@ const styles = StyleSheet.create({
     backgroundColor: theme.background.elevated,
     borderWidth: 1,
     borderColor: theme.border.secondary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   sectionTitle: {
     color: theme.text.secondary,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     flex: 1,
   },
   sectionCountPill: {
@@ -244,18 +346,18 @@ const styles = StyleSheet.create({
   sectionCountText: {
     color: theme.text.muted,
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   emptyDay: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: spacing.xl,
   },
   emptyTitle: {
     color: theme.text.primary,
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: spacing.xs,
   },
   emptySubtitle: {
@@ -272,11 +374,11 @@ const styles = StyleSheet.create({
   scheduleButtonText: {
     color: theme.background.primary,
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   searchLoading: {
     paddingTop: spacing.lg,
-    alignItems: 'center',
+    alignItems: "center",
     gap: spacing.sm,
   },
   searchLoadingText: {
@@ -285,14 +387,14 @@ const styles = StyleSheet.create({
   },
   searchEmpty: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: spacing.xl,
   },
   searchEmptyTitle: {
     color: theme.text.primary,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginTop: spacing.sm,
   },
   searchEmptySubtitle: {
@@ -301,16 +403,16 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   searchSectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingTop: spacing.sm,
     paddingBottom: spacing.xs,
   },
   searchSectionText: {
     color: theme.text.secondary,
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   searchSectionPill: {
     paddingHorizontal: spacing.sm,
@@ -323,6 +425,6 @@ const styles = StyleSheet.create({
   searchSectionCount: {
     color: theme.text.muted,
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

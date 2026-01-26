@@ -313,6 +313,18 @@ export default function AgendaScreen() {
     return viewMode === 'month' ? monthData.get(dateKey) : weekData.get(dateKey);
   };
 
+  const getDayAgendaCount = (dayAgenda?: DayAgenda): number => {
+    if (!dayAgenda) return 0;
+    const sleepCount =
+      (dayAgenda.sleep.sleep ? 1 : 0) + (dayAgenda.sleep.wakeup ? 1 : 0);
+    return (
+      sleepCount
+      + dayAgenda.steps.length
+      + dayAgenda.routines.length
+      + dayAgenda.tasks.length
+    );
+  };
+
   const handleAgendaItemPress = useCallback((scheduledItem: ScheduledAgendaItem) => {
     navigation.navigate('AgendaItemDetail', {
       agendaItemId: scheduledItem.agendaItem.id,
@@ -351,7 +363,7 @@ export default function AgendaScreen() {
                   onPress: async () => {
                     try {
                       const agendaService = getAgendaService();
-                      const itemDate = scheduledItem.agendaItem.scheduled_date;
+                      const itemDate = scheduledItem.agendaItem.scheduledDate;
                       await agendaService.deleteAgendaItem(scheduledItem.agendaItem);
                       await loadSingleDay(itemDate);
                     } catch (error) {
@@ -376,13 +388,13 @@ export default function AgendaScreen() {
     try {
       const agendaService = getAgendaService();
       const agendaItem = scheduledItem.agendaItem;
-      if (agendaItem.completed_at) {
+      if (agendaItem.completedAt) {
         agendaItem.markIncomplete();
       } else {
         agendaItem.markComplete();
       }
       await agendaService.updateAgendaItem(agendaItem);
-      await loadSingleDay(agendaItem.scheduled_date);
+      await loadSingleDay(agendaItem.scheduledDate);
     } catch (error) {
       console.error('Failed to update agenda item status:', error);
       Alert.alert('Error', 'Failed to update agenda item status');
@@ -481,7 +493,7 @@ export default function AgendaScreen() {
             {weekDays.map((date, index) => {
               const dateStr = formatDateKey(date);
               const dayAgenda = weekData.get(dateStr);
-              const itemCount = dayAgenda?.items.length || 0;
+              const itemCount = getDayAgendaCount(dayAgenda);
               const hasItems = itemCount > 0;
 
               return (
@@ -535,7 +547,7 @@ export default function AgendaScreen() {
                 {monthGridDays.map((date, index) => {
                   const dateKey = formatDateKey(date);
                   const dayAgenda = monthData.get(dateKey);
-                  const itemCount = dayAgenda?.items.length || 0;
+                  const itemCount = getDayAgendaCount(dayAgenda);
                   const isOutside = date.getMonth() !== monthAnchor.getMonth();
 
                   return (
@@ -617,7 +629,7 @@ export default function AgendaScreen() {
     const filtered = sourceItems.filter(matchesQuery);
     const grouped = new Map<string, ScheduledAgendaItem[]>();
     filtered.forEach(item => {
-      const dateKey = item.agendaItem.scheduled_date;
+      const dateKey = item.agendaItem.scheduledDate;
       const existing = grouped.get(dateKey) || [];
       existing.push(item);
       grouped.set(dateKey, existing);
@@ -628,8 +640,8 @@ export default function AgendaScreen() {
       .map(([dateKey, items]) => ({
         title: formatSearchDateLabel(dateKey),
         data: items.sort((left, right) => {
-          const leftTime = left.agendaItem.scheduled_time || '';
-          const rightTime = right.agendaItem.scheduled_time || '';
+          const leftTime = left.agendaItem.scheduledTime || '';
+          const rightTime = right.agendaItem.scheduledTime || '';
           return leftTime.localeCompare(rightTime);
         }),
       }));
@@ -713,14 +725,22 @@ export default function AgendaScreen() {
       day: 'numeric',
     });
 
-    const timeBlocks = (dayAgenda?.items || []).filter(
-      item => item.agendaItem.scheduled_time && !item.agendaItem.is_unfinished
+    const agendaItems = dayAgenda
+      ? [...dayAgenda.tasks, ...dayAgenda.routines]
+      : [];
+    const wakeupItem = dayAgenda?.sleep.wakeup ?? null;
+    const sleepItem = dayAgenda?.sleep.sleep ?? null;
+    const stepItem = dayAgenda?.steps[0] ?? null;
+    const totalItemCount = getDayAgendaCount(dayAgenda);
+
+    const timeBlocks = agendaItems.filter(
+      item => item.agendaItem.scheduledTime && !item.agendaItem.isUnfinished
     );
-    const allDayTasks = (dayAgenda?.items || []).filter(
-      item => !item.agendaItem.scheduled_time || item.agendaItem.is_all_day
+    const allDayTasks = agendaItems.filter(
+      item => !item.agendaItem.scheduledTime
     );
 
-    if (!dayAgenda || (dayAgenda.items.length === 0 && unfinishedItems.length === 0)) {
+    if (!dayAgenda || (totalItemCount === 0 && unfinishedItems.length === 0)) {
       return (
         <View style={styles.emptyDay}>
           <AppIcon name="calendar" size={28} color={theme.text.muted} />
@@ -737,9 +757,9 @@ export default function AgendaScreen() {
     }
 
     const sections: AgendaSection[] = [
-      { title: 'Unfinished', icon: 'alert-circle', data: unfinishedItems },
-      { title: 'Time Blocks', icon: 'clock', data: timeBlocks },
-      { title: 'All Day', icon: 'sun', data: allDayTasks },
+      { title: 'Unfinished', icon: 'alert-circle' as AppIconName, data: unfinishedItems },
+      { title: 'Time Blocks', icon: 'clock' as AppIconName, data: timeBlocks },
+      { title: 'All Day', icon: 'sun' as AppIconName, data: allDayTasks },
     ].filter(section => section.data.length > 0);
 
     return (
@@ -756,8 +776,45 @@ export default function AgendaScreen() {
           <View style={styles.dayHeader}>
             <View style={styles.dayHeaderRow}>
             </View>
+            {wakeupItem && (
+              <View style={styles.specialSection}>
+                <Text style={styles.specialTitle}>Wake up</Text>
+                <AgendaItemCard
+                  scheduledItem={wakeupItem}
+                  sleepMode="wakeup"
+                  onPress={() => handleAgendaItemPress(wakeupItem)}
+                  onLongPress={() => handleAgendaItemLongPress(wakeupItem)}
+                  onToggleComplete={() => handleToggleComplete(wakeupItem)}
+                />
+              </View>
+            )}
+            {stepItem && (
+              <View style={styles.specialSection}>
+                <Text style={styles.specialTitle}>Steps</Text>
+                <AgendaItemCard
+                  scheduledItem={stepItem}
+                  onPress={() => handleAgendaItemPress(stepItem)}
+                  onLongPress={() => handleAgendaItemLongPress(stepItem)}
+                  onToggleComplete={() => handleToggleComplete(stepItem)}
+                />
+              </View>
+            )}
+            {(wakeupItem || stepItem) && <View style={styles.specialDivider} />}
           </View>
         )}
+        ListFooterComponent={sleepItem ? (
+          <View style={styles.specialFooter}>
+            <View style={styles.specialDivider} />
+            <Text style={styles.specialTitle}>Sleep</Text>
+            <AgendaItemCard
+              scheduledItem={sleepItem}
+              sleepMode="sleep"
+              onPress={() => handleAgendaItemPress(sleepItem)}
+              onLongPress={() => handleAgendaItemLongPress(sleepItem)}
+              onToggleComplete={() => handleToggleComplete(sleepItem)}
+            />
+          </View>
+        ) : null}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -1240,6 +1297,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: spacing.sm,
+  },
+  specialSection: {
+    marginBottom: spacing.md,
+  },
+  specialFooter: {
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+  },
+  specialTitle: {
+    color: theme.text.secondary,
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: spacing.sm,
+  },
+  specialDivider: {
+    height: 1,
+    backgroundColor: theme.border.secondary,
+    marginVertical: spacing.md,
   },
   sectionHeader: {
     paddingTop: spacing.sm,

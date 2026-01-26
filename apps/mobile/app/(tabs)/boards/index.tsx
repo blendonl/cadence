@@ -9,7 +9,7 @@ import {
   TextInput,
 } from "react-native";
 import { Screen } from "@shared/components/Screen";
-import { StackNavigationProp } from "@react-navigation/stack";
+import { useRouter } from "expo-router";
 import { Board } from "@features/boards/domain/entities/Board";
 import { getBoardService } from "@core/di/hooks";
 import { useCurrentProject } from "@core/ProjectContext";
@@ -17,19 +17,10 @@ import EmptyState from "@shared/components/EmptyState";
 import theme from "@shared/theme";
 import alertService from "@services/AlertService";
 import logger from "@utils/logger";
-import { BoardStackParamList } from "@/ui/navigation/TabNavigator";
 import AppIcon from "@shared/components/icons/AppIcon";
 
-type BoardListScreenNavigationProp = StackNavigationProp<
-  BoardStackParamList,
-  "BoardList"
->;
-
-interface Props {
-  navigation: BoardListScreenNavigationProp;
-}
-
-export default function BoardListScreen({ navigation }: Props) {
+export default function BoardListScreen() {
+  const router = useRouter();
   const [boards, setBoards] = useState<Board[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -94,7 +85,7 @@ export default function BoardListScreen({ navigation }: Props) {
       setNewBoardName("");
       setNewBoardDescription("");
       await loadBoards();
-      navigation.navigate("Board", { boardId: newBoard.id });
+      router.push(`/boards/${newBoard.id}`);
     } catch (error) {
       logger.error("Failed to create board", error, { name: newBoardName });
       alertService.showError("Failed to create board");
@@ -102,12 +93,13 @@ export default function BoardListScreen({ navigation }: Props) {
   };
 
   const handleBoardPress = (board: Board) => {
-    navigation.navigate("Board", { boardId: board.id });
+    router.push(`/boards/${board.id}`);
   };
 
   const getTotalItemCount = (board: Board): number => {
+    if (!board.columns) return 0;
     return board.columns.reduce(
-      (total, column) => total + column.tasks.length,
+      (total, column) => total + (column.tasks?.length || 0),
       0,
     );
   };
@@ -126,7 +118,7 @@ export default function BoardListScreen({ navigation }: Props) {
       )}
       <View style={styles.boardFooter}>
         <Text style={styles.boardStats}>
-          {board.columns.length} columns • {getTotalItemCount(board)} items
+          {board.columns?.length || 0} columns • {getTotalItemCount(board)} items
         </Text>
       </View>
     </TouchableOpacity>
@@ -140,7 +132,7 @@ export default function BoardListScreen({ navigation }: Props) {
             title="No Project Selected"
             message="Please select or create a project first to view boards"
             actionLabel="Go to Projects"
-            onAction={() => navigation.navigate("Projects" as any)}
+            onAction={() => router.push("/projects")}
           />
         </View>
       </Screen>
@@ -212,7 +204,7 @@ export default function BoardListScreen({ navigation }: Props) {
         <View style={styles.headerLeft} />
         <TouchableOpacity
           style={styles.settingsButton}
-          onPress={() => navigation.navigate("Settings")}
+          onPress={() => router.push("/settings")}
         >
           <AppIcon name="settings" size={18} color={theme.text.secondary} />
         </TouchableOpacity>

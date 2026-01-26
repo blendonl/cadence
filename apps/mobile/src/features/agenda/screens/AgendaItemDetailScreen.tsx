@@ -66,7 +66,7 @@ export const AgendaItemDetailScreen: React.FC<Props> = ({ route, navigation }) =
         boardName: item.board_name || 'Unknown Board',
         projectName: item.project_name || 'Unknown Project',
         columnName: item.column_name || null,
-        isOrphaned: !item.task_id,
+        isOrphaned: !item.task_id && !item.routine_task_id,
       };
 
       setScheduledItem(scheduled);
@@ -127,7 +127,7 @@ export const AgendaItemDetailScreen: React.FC<Props> = ({ route, navigation }) =
         },
       ],
       'plain-text',
-      scheduledItem?.agendaItem.scheduled_date
+      scheduledItem?.agendaItem.scheduledDate
     );
   };
 
@@ -149,7 +149,7 @@ export const AgendaItemDetailScreen: React.FC<Props> = ({ route, navigation }) =
   const handleToggleComplete = async () => {
     try {
       const agendaItem = scheduledItem!.agendaItem;
-      if (agendaItem.completed_at) {
+      if (agendaItem.completedAt) {
         agendaItem.markIncomplete();
       } else {
         agendaItem.markComplete();
@@ -209,7 +209,12 @@ export const AgendaItemDetailScreen: React.FC<Props> = ({ route, navigation }) =
   }
 
   const { agendaItem, task, projectName, boardName, columnName, isOrphaned } = scheduledItem;
-  const isCompleted = !!agendaItem.completed_at;
+  const title = task?.title
+    || agendaItem.routineTaskName
+    || agendaItem.routineName
+    || agendaItem.taskId
+    || 'Agenda item';
+  const isCompleted = !!agendaItem.completedAt;
 
   return (
     <Screen
@@ -219,7 +224,7 @@ export const AgendaItemDetailScreen: React.FC<Props> = ({ route, navigation }) =
       contentContainerStyle={styles.contentContainer}
     >
       <View style={styles.header}>
-        <Text style={styles.title}>{task?.title || agendaItem.task_id}</Text>
+        <Text style={styles.title}>{title}</Text>
         {isOrphaned && (
           <View style={styles.orphanedBadge}>
             <OrphanedItemBadge />
@@ -231,28 +236,28 @@ export const AgendaItemDetailScreen: React.FC<Props> = ({ route, navigation }) =
         <Text style={styles.sectionTitle}>Schedule</Text>
         <View style={styles.infoRow}>
           <Text style={styles.label}>Date</Text>
-          <Text style={styles.valueStrong}>{agendaItem.scheduled_date}</Text>
+          <Text style={styles.valueStrong}>{agendaItem.scheduledDate}</Text>
         </View>
         <View style={styles.infoRow}>
           <Text style={styles.label}>Time</Text>
-          <Text style={styles.valueStrong}>{formatTime(agendaItem.scheduled_time)}</Text>
+          <Text style={styles.valueStrong}>{formatTime(agendaItem.scheduledTime)}</Text>
         </View>
         <View style={styles.infoRow}>
           <Text style={styles.label}>Duration</Text>
-          <Text style={styles.valueStrong}>{formatDuration(agendaItem.duration_minutes)}</Text>
+          <Text style={styles.valueStrong}>{formatDuration(agendaItem.durationMinutes)}</Text>
         </View>
         <View style={styles.infoRow}>
           <Text style={styles.label}>Type</Text>
           <View style={styles.typeBadge}>
             <AppIcon
-              name={agendaItem.task_type === 'meeting' ? 'users' : agendaItem.task_type === 'milestone' ? 'milestone' : 'task'}
+              name={agendaItem.taskType === 'meeting' ? 'users' : agendaItem.taskType === 'milestone' ? 'milestone' : 'task'}
               size={14}
               color={theme.text.secondary}
             />
             <Text style={styles.typeBadgeText}>
-              {agendaItem.task_type === 'meeting' && 'Meeting'}
-              {agendaItem.task_type === 'milestone' && 'Milestone'}
-              {agendaItem.task_type === 'regular' && 'Regular'}
+              {agendaItem.taskType === 'meeting' && 'Meeting'}
+              {agendaItem.taskType === 'milestone' && 'Milestone'}
+              {agendaItem.taskType === 'regular' && 'Regular'}
             </Text>
           </View>
         </View>
@@ -266,19 +271,19 @@ export const AgendaItemDetailScreen: React.FC<Props> = ({ route, navigation }) =
         </View>
       </View>
 
-      {agendaItem.meeting_data && (
+      {agendaItem.meetingData && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Meeting Details</Text>
-          {agendaItem.meeting_data.location && (
+          {agendaItem.meetingData.location && (
             <View style={styles.infoRow}>
               <Text style={styles.label}>Location:</Text>
-              <Text style={styles.value}>{agendaItem.meeting_data.location}</Text>
+              <Text style={styles.value}>{agendaItem.meetingData.location}</Text>
             </View>
           )}
-          {agendaItem.meeting_data.attendees && agendaItem.meeting_data.attendees.length > 0 && (
+          {agendaItem.meetingData.attendees && agendaItem.meetingData.attendees.length > 0 && (
             <View style={styles.infoColumn}>
               <Text style={styles.label}>Attendees:</Text>
-              {agendaItem.meeting_data.attendees.map((attendee, index) => (
+              {agendaItem.meetingData.attendees.map((attendee, index) => (
                 <Text key={index} style={styles.attendee}>• {attendee}</Text>
               ))}
             </View>

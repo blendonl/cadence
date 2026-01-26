@@ -16,15 +16,11 @@ import { getGoalService, getProjectService } from "@core/di/hooks";
 import GoalFormModal from "@features/goals/components/GoalFormModal";
 import GlassCard from "@shared/components/GlassCard";
 import { PlusIcon } from "@shared/components/icons/TabIcons";
-import { StackNavigationProp } from "@react-navigation/stack";
-import { useNavigation } from "@react-navigation/native";
-import { GoalsStackParamList } from "@/ui/navigation/TabNavigator";
+import { useRouter } from "expo-router";
 import { GoalProgress } from "@services/GoalService";
 
-type GoalsListNavProp = StackNavigationProp<GoalsStackParamList, "GoalsList">;
-
 export default function GoalsListScreen() {
-  const navigation = useNavigation<GoalsListNavProp>();
+  const router = useRouter();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectsPage, setProjectsPage] = useState(1);
@@ -121,7 +117,7 @@ export default function GoalsListScreen() {
     return (
       <TouchableOpacity
         activeOpacity={0.7}
-        onPress={() => navigation.navigate("GoalDetail", { goalId: item.id })}
+        onPress={() => router.push(`/goals/${item.id}`)}
       >
         <GlassCard style={styles.goalCard}>
           <Text style={styles.goalTitle} numberOfLines={1}>

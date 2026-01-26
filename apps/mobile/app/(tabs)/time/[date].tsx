@@ -1,33 +1,30 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   RefreshControl,
-} from 'react-native';
-import { RouteProp, useRoute } from '@react-navigation/native';
-import theme from '../../theme/colors';
-import { spacing } from '../../theme/spacing';
-import { getTimeTrackingService } from '../../../core/di/hooks';
-import { TimeLog, TimeEntry, TimeSource } from '../../../domain/entities/TimeLog';
-import { TimeStackParamList } from '../../navigation/TabNavigator';
-import AppIcon, { AppIconName } from '../../components/icons/AppIcon';
-
-type TimeLogDetailRouteProp = RouteProp<TimeStackParamList, 'TimeLogDetail'>;
+} from "react-native";
+import { useLocalSearchParams } from "expo-router";
+import theme from "@shared/theme/colors";
+import { spacing } from "@shared/theme/spacing";
+import { getTimeTrackingService } from "@/core/di/hooks";
+import { TimeEntry, TimeSource } from "@features/time/domain/entities/TimeLog";
+import AppIcon, { AppIconName } from "@shared/components/icons/AppIcon";
 
 const SOURCE_ICONS: Record<TimeSource, AppIconName> = {
-  manual: 'edit',
-  git: 'box',
-  tmux: 'terminal',
-  calendar: 'calendar',
+  manual: "edit",
+  git: "box",
+  tmux: "terminal",
+  calendar: "calendar",
 };
 
 const SOURCE_LABELS: Record<TimeSource, string> = {
-  manual: 'Manual',
-  git: 'Git Commits',
-  tmux: 'Terminal Sessions',
-  calendar: 'Calendar Events',
+  manual: "Manual",
+  git: "Git Commits",
+  tmux: "Terminal Sessions",
+  calendar: "Calendar Events",
 };
 
 const SOURCE_COLORS: Record<TimeSource, string> = {
@@ -46,23 +43,37 @@ interface DayData {
 }
 
 export default function TimeLogDetailScreen() {
-  const route = useRoute<TimeLogDetailRouteProp>();
-  const { date } = route.params;
+  const { date: dateParam } = useLocalSearchParams<{
+    date?: string | string[];
+  }>();
+  const date = Array.isArray(dateParam) ? dateParam[0] : dateParam;
 
   const [dayData, setDayData] = useState<DayData | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
+    if (!date) {
+      setLoading(false);
+      return;
+    }
     try {
       const timeService = getTimeTrackingService();
       const allLogs = await timeService.getAllTimeLogs();
-      const dayLogs = allLogs.filter(log => log.date === date);
+      const dayLogs = allLogs.filter((log) => log.date === date);
 
       let totalMinutes = 0;
       const allEntries: TimeEntry[] = [];
-      const bySource: Record<TimeSource, number> = { manual: 0, git: 0, tmux: 0, calendar: 0 };
-      const byProject: Record<string, { minutes: number; entries: TimeEntry[] }> = {};
+      const bySource: Record<TimeSource, number> = {
+        manual: 0,
+        git: 0,
+        tmux: 0,
+        calendar: 0,
+      };
+      const byProject: Record<
+        string,
+        { minutes: number; entries: TimeEntry[] }
+      > = {};
 
       for (const log of dayLogs) {
         totalMinutes += log.total_minutes;
@@ -95,7 +106,7 @@ export default function TimeLogDetailScreen() {
         byProject,
       });
     } catch (error) {
-      console.error('Failed to load time data:', error);
+      console.error("Failed to load time data:", error);
     } finally {
       setLoading(false);
     }
@@ -112,7 +123,7 @@ export default function TimeLogDetailScreen() {
   }, [loadData]);
 
   const formatDuration = (minutes: number): string => {
-    if (minutes === 0) return '0m';
+    if (minutes === 0) return "0m";
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     if (hours === 0) return `${mins}m`;
@@ -121,21 +132,21 @@ export default function TimeLogDetailScreen() {
   };
 
   const formatTime = (time: string): string => {
-    if (!time) return '';
-    const [hours, minutes] = time.split(':');
+    if (!time) return "";
+    const [hours, minutes] = time.split(":");
     const h = parseInt(hours, 10);
-    const ampm = h >= 12 ? 'PM' : 'AM';
+    const ampm = h >= 12 ? "PM" : "AM";
     const h12 = h % 12 || 12;
     return `${h12}:${minutes} ${ampm}`;
   };
 
   const formatDate = (dateStr: string): string => {
-    const d = new Date(dateStr + 'T00:00:00');
-    return d.toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
+    const d = new Date(dateStr + "T00:00:00");
+    return d.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
@@ -163,9 +174,15 @@ export default function TimeLogDetailScreen() {
               <View key={source} style={styles.sourceRow}>
                 <View style={styles.sourceInfo}>
                   <View style={styles.sourceIcon}>
-                    <AppIcon name={SOURCE_ICONS[typedSource]} size={16} color={theme.text.secondary} />
+                    <AppIcon
+                      name={SOURCE_ICONS[typedSource]}
+                      size={16}
+                      color={theme.text.secondary}
+                    />
                   </View>
-                  <Text style={styles.sourceLabel}>{SOURCE_LABELS[typedSource]}</Text>
+                  <Text style={styles.sourceLabel}>
+                    {SOURCE_LABELS[typedSource]}
+                  </Text>
                 </View>
                 <View style={styles.sourceBarContainer}>
                   <View
@@ -178,7 +195,9 @@ export default function TimeLogDetailScreen() {
                     ]}
                   />
                 </View>
-                <Text style={styles.sourceValue}>{formatDuration(minutes)}</Text>
+                <Text style={styles.sourceValue}>
+                  {formatDuration(minutes)}
+                </Text>
               </View>
             );
           })}
@@ -203,7 +222,9 @@ export default function TimeLogDetailScreen() {
           {projects.map(([projectId, data]) => (
             <View key={projectId} style={styles.projectRow}>
               <Text style={styles.projectName}>{projectId}</Text>
-              <Text style={styles.projectValue}>{formatDuration(data.minutes)}</Text>
+              <Text style={styles.projectValue}>
+                {formatDuration(data.minutes)}
+              </Text>
             </View>
           ))}
         </View>
@@ -234,7 +255,11 @@ export default function TimeLogDetailScreen() {
                 <View style={styles.entryHeader}>
                   <View style={styles.entrySourceInfo}>
                     <View style={styles.entrySourceIcon}>
-                      <AppIcon name={SOURCE_ICONS[typedSource]} size={14} color={theme.text.secondary} />
+                      <AppIcon
+                        name={SOURCE_ICONS[typedSource]}
+                        size={14}
+                        color={theme.text.secondary}
+                      />
                     </View>
                     <Text style={styles.entrySource}>
                       {SOURCE_LABELS[typedSource]}
@@ -280,6 +305,14 @@ export default function TimeLogDetailScreen() {
       </Text>
     </View>
   );
+
+  if (!date) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.loadingText}>No date selected.</Text>
+      </View>
+    );
+  }
 
   if (loading) {
     return (
@@ -332,7 +365,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     color: theme.text.secondary,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: spacing.xl,
   },
   header: {
@@ -340,7 +373,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.card.background,
     borderBottomWidth: 1,
     borderBottomColor: theme.border.primary,
-    alignItems: 'center',
+    alignItems: "center",
   },
   dateText: {
     color: theme.text.secondary,
@@ -350,7 +383,7 @@ const styles = StyleSheet.create({
   totalTime: {
     color: theme.text.primary,
     fontSize: 36,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   section: {
     padding: spacing.md,
@@ -358,8 +391,8 @@ const styles = StyleSheet.create({
   sectionTitle: {
     color: theme.text.secondary,
     fontSize: 13,
-    fontWeight: '600',
-    textTransform: 'uppercase',
+    fontWeight: "600",
+    textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: spacing.md,
   },
@@ -369,13 +402,13 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   sourceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: spacing.sm,
   },
   sourceInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     width: 130,
   },
   sourceIcon: {
@@ -393,19 +426,19 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.sm,
   },
   sourceBar: {
-    height: '100%',
+    height: "100%",
     borderRadius: 4,
   },
   sourceValue: {
     color: theme.text.secondary,
     fontSize: 13,
     width: 50,
-    textAlign: 'right',
+    textAlign: "right",
   },
   projectRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: theme.border.primary,
@@ -413,7 +446,7 @@ const styles = StyleSheet.create({
   projectName: {
     color: theme.text.primary,
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
     flex: 1,
   },
   projectValue: {
@@ -428,14 +461,14 @@ const styles = StyleSheet.create({
     borderBottomColor: theme.border.primary,
   },
   entryHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: spacing.xs,
   },
   entrySourceInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   entrySourceIcon: {
     marginRight: spacing.xs,
@@ -443,12 +476,12 @@ const styles = StyleSheet.create({
   entrySource: {
     color: theme.text.primary,
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   entryDuration: {
     color: theme.accent.primary,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   entryTime: {
     color: theme.text.muted,
@@ -465,7 +498,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: 4,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     marginTop: spacing.xs,
   },
   entryTaskText: {
@@ -474,21 +507,21 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: spacing.xl,
     paddingTop: spacing.xxxl,
   },
   emptyTitle: {
     color: theme.text.primary,
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: spacing.sm,
   },
   emptyText: {
     color: theme.text.secondary,
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
   },
   bottomPadding: {
     height: spacing.xxl,

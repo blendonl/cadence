@@ -95,7 +95,7 @@ export default function AgendaDayScreen() {
     try {
       const agendaService = getAgendaService();
       const agendaItem = item.agendaItem;
-      if (agendaItem.completed_at) {
+      if (agendaItem.completedAt) {
         agendaItem.markIncomplete();
       } else {
         agendaItem.markComplete();
@@ -167,15 +167,17 @@ export default function AgendaDayScreen() {
     if (!isCurrentDay()) return;
 
     const now = new Date();
-    const items = dayAgenda?.items || [];
+    const items = dayAgenda
+      ? [...dayAgenda.tasks, ...dayAgenda.routines]
+      : [];
     let needsReload = false;
 
     for (const item of items) {
-      if (item.agendaItem.completed_at || item.agendaItem.is_unfinished) continue;
-      if (!item.agendaItem.scheduled_time || !item.agendaItem.duration_minutes) continue;
+      if (item.agendaItem.completedAt || item.agendaItem.isUnfinished) continue;
+      if (!item.agendaItem.scheduledTime || !item.agendaItem.durationMinutes) continue;
 
-      const scheduledTime = new Date(`${date}T${item.agendaItem.scheduled_time}`);
-      const endTime = new Date(scheduledTime.getTime() + item.agendaItem.duration_minutes * 60000);
+      const scheduledTime = new Date(`${date}T${item.agendaItem.scheduledTime}`);
+      const endTime = new Date(scheduledTime.getTime() + item.agendaItem.durationMinutes * 60000);
 
       if (now > endTime) {
         needsReload = true;
@@ -191,15 +193,11 @@ export default function AgendaDayScreen() {
   const getTasksForHour = (hour: number): ScheduledAgendaItem[] => {
     if (!dayAgenda) return [];
 
-    const allTasks = [
-      ...dayAgenda.meetings,
-      ...dayAgenda.regularTasks,
-      ...dayAgenda.milestones,
-    ];
+    const allTasks = [...dayAgenda.tasks, ...dayAgenda.routines];
 
     return allTasks.filter(si => {
-      if (!si.agendaItem.scheduled_time) return false;
-      const taskHour = parseInt(si.agendaItem.scheduled_time.split(':')[0], 10);
+      if (!si.agendaItem.scheduledTime) return false;
+      const taskHour = parseInt(si.agendaItem.scheduledTime.split(':')[0], 10);
       return taskHour === hour;
     });
   };
@@ -207,13 +205,9 @@ export default function AgendaDayScreen() {
   const getUnscheduledTimeTasks = (): ScheduledAgendaItem[] => {
     if (!dayAgenda) return [];
 
-    const allTasks = [
-      ...dayAgenda.meetings,
-      ...dayAgenda.regularTasks,
-      ...dayAgenda.milestones,
-    ];
+    const allTasks = [...dayAgenda.tasks, ...dayAgenda.routines];
 
-    return allTasks.filter(si => !si.agendaItem.scheduled_time);
+    return allTasks.filter(si => !si.agendaItem.scheduledTime);
   };
 
   const formatHour = (hour: number): string => {
@@ -230,10 +224,10 @@ export default function AgendaDayScreen() {
 
   const renderTaskCard = (item: ScheduledAgendaItem, compact: boolean = false, showUnfinishedActions: boolean = false) => {
     const { agendaItem, task, boardName, isOrphaned } = item;
-    const icon = TASK_TYPE_ICONS[agendaItem.task_type];
-    const duration = agendaItem.duration_minutes;
-    const taskTitle = task?.title || agendaItem.task_id;
-    const isCompleted = !!agendaItem.completed_at;
+    const icon = TASK_TYPE_ICONS[agendaItem.taskType];
+    const duration = agendaItem.durationMinutes;
+    const taskTitle = task?.title || agendaItem.taskId;
+    const isCompleted = !!agendaItem.completedAt;
     const isMeasurable = task?.target_value && task?.value_unit;
 
     return (
@@ -281,14 +275,14 @@ export default function AgendaDayScreen() {
               />
             )}
           </View>
-          {agendaItem.task_type === 'meeting' && agendaItem.meeting_data?.location && (
-            <View style={styles.taskLocation}>
-              <AppIcon name="pin" size={14} color={theme.text.tertiary} />
-              <Text style={styles.taskLocationText} numberOfLines={1}>
-                {agendaItem.meeting_data.location}
-              </Text>
-            </View>
-          )}
+           {agendaItem.taskType === 'meeting' && agendaItem.meetingData?.location && (
+             <View style={styles.taskLocation}>
+               <AppIcon name="pin" size={14} color={theme.text.tertiary} />
+               <Text style={styles.taskLocationText} numberOfLines={1}>
+                 {agendaItem.meetingData.location}
+               </Text>
+             </View>
+           )}
           {isMeasurable && !showUnfinishedActions && (
             <TouchableOpacity
               style={styles.progressButton}
@@ -378,9 +372,8 @@ export default function AgendaDayScreen() {
 
   const unscheduledTasks = getUnscheduledTimeTasks();
   const hasScheduledTasks = dayAgenda && (
-    dayAgenda.regularTasks.some(si => si.agendaItem.scheduled_time) ||
-    dayAgenda.meetings.some(si => si.agendaItem.scheduled_time) ||
-    dayAgenda.milestones.some(si => si.agendaItem.scheduled_time)
+    dayAgenda.tasks.some(si => si.agendaItem.scheduledTime)
+    || dayAgenda.routines.some(si => si.agendaItem.scheduledTime)
   );
 
   return (

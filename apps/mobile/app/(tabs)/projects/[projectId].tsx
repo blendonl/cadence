@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -8,17 +8,13 @@ import {
   RefreshControl,
   StatusBar,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { theme, spacing } from "@shared/theme";
-import { Project } from "../../../src/domain/entities/Project";
-import { Board } from "../../../src/domain/entities/Board";
-import { Note } from "../../../src/domain/entities/Note";
-import {
-  getProjectService,
-  getBoardService,
-  getNoteService,
-} from "../../../src/core/di/hooks";
+import { useProjectDetail } from "../../../src/features/projects/hooks/useProjectDetail";
 import GlassCard from "@shared/components/GlassCard";
 import {
   ProjectsIcon,
@@ -46,15 +42,6 @@ const normalizeHexColor = (color: string) => {
   return null;
 };
 
-const withOpacity = (color: string, opacityHex: string) => {
-  const normalized = normalizeHexColor(color);
-  if (!normalized) {
-    return color;
-  }
-
-  return `${normalized}${opacityHex}`;
-};
-
 const isLightColor = (color: string) => {
   const normalized = normalizeHexColor(color);
   if (!normalized) {
@@ -74,50 +61,17 @@ export default function ProjectDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const [project, setProject] = useState<Project | null>(null);
-  const [boards, setBoards] = useState<Board[]>([]);
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [boardCount, setBoardCount] = useState(0);
-  const [noteCount, setNoteCount] = useState(0);
-  const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  const loadData = useCallback(async () => {
-    if (!projectId) return;
-
-    try {
-      const projectService = getProjectService();
-      const loadedProject = await projectService.getProjectById(projectId);
-      setProject(loadedProject);
-
-      const boardService = getBoardService();
-      const projectBoards = await boardService.getBoardsByProject(projectId);
-      setBoardCount(projectBoards.length);
-      setBoards(projectBoards.slice(0, 3));
-
-      const noteService = getNoteService();
-      const projectNotes = await noteService.getNotesByProject(projectId);
-      const sortedNotes = projectNotes.sort(
-        (a, b) => b.updated_at.getTime() - a.updated_at.getTime(),
-      );
-      setNoteCount(sortedNotes.length);
-      setNotes(sortedNotes.slice(0, 3));
-    } catch (error) {
-      console.error("Failed to load project:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [projectId]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await loadData();
-    setRefreshing(false);
-  }, [loadData]);
+  const {
+    project,
+    boards,
+    notes,
+    boardCount,
+    noteCount,
+    timeThisWeek,
+    loading,
+    refreshing,
+    refresh,
+  } = useProjectDetail(projectId);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -140,11 +94,11 @@ export default function ProjectDetailScreen() {
   const handleNewNote = () => navigateToTab("/notes");
   const handleSchedule = () => navigateToTab("/agenda");
 
-  const handleBoardPress = (board: Board) => {
+  const handleBoardPress = (board: { id: string }) => {
     router.push(`/boards/${board.id}`);
   };
 
-  const handleNotePress = (note: Note) => {
+  const handleNotePress = (note: { id: string }) => {
     router.push(`/notes/editor/${note.id}`);
   };
 
@@ -190,7 +144,7 @@ export default function ProjectDetailScreen() {
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
-              onRefresh={onRefresh}
+              onRefresh={refresh}
               tintColor={theme.accent.primary}
             />
           }
@@ -247,198 +201,205 @@ export default function ProjectDetailScreen() {
               <Text style={styles.statLabel}>Notes</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.statValue}>0h</Text>
+              <Text style={styles.statValue}>
+                {Math.floor(timeThisWeek / 60)}h {timeThisWeek % 60}m
+              </Text>
               <Text style={styles.statLabel}>This week</Text>
             </View>
           </View>
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleRow}>
-              <BoardsIcon size={18} focused />
-              <Text style={styles.sectionTitle}>Boards</Text>
-            </View>
-            {boards.length > 0 && (
-              <TouchableOpacity onPress={handleNewBoard} activeOpacity={0.7}>
-                <Text style={styles.seeAllText}>See all</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-          {boards.length > 0 ? (
-            boards.map((board) => (
-              <TouchableOpacity
-                key={board.id}
-                activeOpacity={0.7}
-                onPress={() => handleBoardPress(board)}
-              >
-                <GlassCard style={styles.itemCard}>
-              <View style={styles.itemContent}>
-                <View style={styles.itemIcon}>
-                  <BoardsIcon size={20} focused={false} />
-                </View>
-                <View style={styles.itemInfo}>
-                  <Text style={styles.itemTitle}>{board.name}</Text>
-                  <Text style={styles.itemSubtitle}>
-                    {board.columns.length} columns
-                  </Text>
-                </View>
-                    <ChevronRightIcon size={18} focused={false} />
-                  </View>
-                </GlassCard>
-              </TouchableOpacity>
-            ))
-          ) : (
-            <GlassCard style={styles.emptySection}>
-              <View style={styles.emptySectionContent}>
-                <View style={styles.emptyIcon}>
-                  <BoardsIcon size={28} focused={false} />
-                </View>
-                <Text style={styles.emptySectionTitle}>No boards yet</Text>
-                <Text style={styles.emptySectionSubtitle}>
-                  Start with a lightweight board to map work.
-                </Text>
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionTitleRow}>
+                <BoardsIcon size={18} focused />
+                <Text style={styles.sectionTitle}>Boards</Text>
+              </View>
+              {boards.length > 0 && (
                 <TouchableOpacity onPress={handleNewBoard} activeOpacity={0.7}>
-                  <Text style={styles.emptySectionAction}>Create Board</Text>
+                  <Text style={styles.seeAllText}>See all</Text>
                 </TouchableOpacity>
-              </View>
-            </GlassCard>
-          )}
-        </View>
-
-        <View style={[styles.section, styles.notesSection]}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleRow}>
-              <NotesIcon size={18} focused />
-              <Text style={styles.sectionTitle}>Recent Notes</Text>
+              )}
             </View>
-            {notes.length > 0 && (
-              <TouchableOpacity onPress={handleNewNote} activeOpacity={0.7}>
-                <Text style={styles.seeAllText}>See all</Text>
-              </TouchableOpacity>
+            {boards.length > 0 ? (
+              boards.map((board) => (
+                <TouchableOpacity
+                  key={board.id}
+                  activeOpacity={0.7}
+                  onPress={() => handleBoardPress(board)}
+                >
+                  <GlassCard style={styles.itemCard}>
+                    <View style={styles.itemContent}>
+                      <View style={styles.itemIcon}>
+                        <BoardsIcon size={20} focused={false} />
+                      </View>
+                      <View style={styles.itemInfo}>
+                        <Text style={styles.itemTitle}>{board.name}</Text>
+                        <Text style={styles.itemSubtitle}>
+                          {board.columnCount} columns
+                        </Text>
+                      </View>
+                      <ChevronRightIcon size={18} focused={false} />
+                    </View>
+                  </GlassCard>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <GlassCard style={styles.emptySection}>
+                <View style={styles.emptySectionContent}>
+                  <View style={styles.emptyIcon}>
+                    <BoardsIcon size={28} focused={false} />
+                  </View>
+                  <Text style={styles.emptySectionTitle}>No boards yet</Text>
+                  <Text style={styles.emptySectionSubtitle}>
+                    Start with a lightweight board to map work.
+                  </Text>
+                  <TouchableOpacity
+                    onPress={handleNewBoard}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.emptySectionAction}>Create Board</Text>
+                  </TouchableOpacity>
+                </View>
+              </GlassCard>
             )}
           </View>
-          {notes.length > 0 ? (
-            notes.map((note) => (
-              <TouchableOpacity
-                key={note.id}
-                activeOpacity={0.7}
-                onPress={() => handleNotePress(note)}
-              >
-                <GlassCard style={styles.itemCard}>
-              <View style={styles.itemContent}>
-                <View style={styles.itemIcon}>
-                  <NotesIcon size={20} focused={false} />
-                </View>
-                <View style={styles.itemInfo}>
-                  <Text style={styles.itemTitle}>{note.title}</Text>
-                  <Text style={styles.itemSubtitle} numberOfLines={1}>
-                    {note.preview || note.content.substring(0, 100)}
-                  </Text>
-                </View>
-                    <ChevronRightIcon size={18} focused={false} />
-                  </View>
-                </GlassCard>
-              </TouchableOpacity>
-            ))
-          ) : (
-            <GlassCard style={styles.emptySection}>
-              <View style={styles.emptySectionContent}>
-                <View style={styles.emptyIcon}>
-                  <NotesIcon size={28} focused={false} />
-                </View>
-                <Text style={styles.emptySectionTitle}>No notes yet</Text>
-                <Text style={styles.emptySectionSubtitle}>
-                  Capture decisions, links, and quick updates here.
-                </Text>
+
+          <View style={[styles.section, styles.notesSection]}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionTitleRow}>
+                <NotesIcon size={18} focused />
+                <Text style={styles.sectionTitle}>Recent Notes</Text>
+              </View>
+              {notes.length > 0 && (
                 <TouchableOpacity onPress={handleNewNote} activeOpacity={0.7}>
-                  <Text style={styles.emptySectionAction}>Create Note</Text>
+                  <Text style={styles.seeAllText}>See all</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            {notes.length > 0 ? (
+              notes.map((note) => (
+                <TouchableOpacity
+                  key={note.id}
+                  activeOpacity={0.7}
+                  onPress={() => handleNotePress(note)}
+                >
+                  <GlassCard style={styles.itemCard}>
+                    <View style={styles.itemContent}>
+                      <View style={styles.itemIcon}>
+                        <NotesIcon size={20} focused={false} />
+                      </View>
+                      <View style={styles.itemInfo}>
+                        <Text style={styles.itemTitle}>{note.title}</Text>
+                        <Text style={styles.itemSubtitle} numberOfLines={1}>
+                          {note.preview || note.content}
+                        </Text>
+                      </View>
+                      <ChevronRightIcon size={18} focused={false} />
+                    </View>
+                  </GlassCard>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <GlassCard style={styles.emptySection}>
+                <View style={styles.emptySectionContent}>
+                  <View style={styles.emptyIcon}>
+                    <NotesIcon size={28} focused={false} />
+                  </View>
+                  <Text style={styles.emptySectionTitle}>No notes yet</Text>
+                  <Text style={styles.emptySectionSubtitle}>
+                    Capture decisions, links, and quick updates here.
+                  </Text>
+                  <TouchableOpacity onPress={handleNewNote} activeOpacity={0.7}>
+                    <Text style={styles.emptySectionAction}>Create Note</Text>
+                  </TouchableOpacity>
+                </View>
+              </GlassCard>
+            )}
+          </View>
+
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionTitleRow}>
+                <TimeIcon size={18} focused />
+                <Text style={styles.sectionTitle}>Time This Week</Text>
+              </View>
+            </View>
+            <GlassCard style={styles.timeCard} tint="purple">
+              <View style={styles.timeContent}>
+                <View style={styles.itemIcon}>
+                  <TimeIcon size={26} focused />
+                </View>
+                <View style={styles.timeInfo}>
+                  <Text style={styles.timeValue}>
+                    {Math.floor(timeThisWeek / 60)}h {timeThisWeek % 60}m
+                  </Text>
+                  <Text style={styles.timeLabel}>tracked this week</Text>
+                </View>
+                <View style={styles.timeSpacer} />
+                <TouchableOpacity activeOpacity={0.7}>
+                  <Text style={styles.timeAction}>Log time</Text>
                 </TouchableOpacity>
               </View>
             </GlassCard>
-          )}
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleRow}>
-              <TimeIcon size={18} focused />
-              <Text style={styles.sectionTitle}>Time This Week</Text>
-            </View>
           </View>
-          <GlassCard style={styles.timeCard} tint="purple">
-            <View style={styles.timeContent}>
-              <View style={styles.itemIcon}>
-                <TimeIcon size={26} focused />
+
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionTitleRow}>
+                <Text style={styles.sectionTitle}>Quick Actions</Text>
               </View>
-              <View style={styles.timeInfo}>
-                <Text style={styles.timeValue}>0h 0m</Text>
-                <Text style={styles.timeLabel}>tracked this week</Text>
-              </View>
-              <View style={styles.timeSpacer} />
-              <TouchableOpacity activeOpacity={0.7}>
-                <Text style={styles.timeAction}>Log time</Text>
+            </View>
+            <View style={styles.actionsRow}>
+              <TouchableOpacity
+                style={styles.actionCard}
+                onPress={handleNewBoard}
+                activeOpacity={0.7}
+              >
+                <View
+                  style={[
+                    styles.actionIconContainer,
+                    { backgroundColor: theme.accent.primary + "20" },
+                  ]}
+                >
+                  <BoardsIcon size={22} focused />
+                </View>
+                <Text style={styles.actionTitle}>New Board</Text>
+                <Text style={styles.actionSubtitle}>Plan workflow</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.actionCard}
+                onPress={handleNewNote}
+                activeOpacity={0.7}
+              >
+                <View
+                  style={[
+                    styles.actionIconContainer,
+                    { backgroundColor: theme.accent.secondary + "20" },
+                  ]}
+                >
+                  <NotesIcon size={22} focused />
+                </View>
+                <Text style={styles.actionTitle}>New Note</Text>
+                <Text style={styles.actionSubtitle}>Capture ideas</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.actionCard}
+                onPress={handleSchedule}
+                activeOpacity={0.7}
+              >
+                <View
+                  style={[
+                    styles.actionIconContainer,
+                    { backgroundColor: theme.accent.warning + "20" },
+                  ]}
+                >
+                  <AgendaIcon size={22} focused />
+                </View>
+                <Text style={styles.actionTitle}>Schedule</Text>
+                <Text style={styles.actionSubtitle}>Block time</Text>
               </TouchableOpacity>
             </View>
-          </GlassCard>
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleRow}>
-              <Text style={styles.sectionTitle}>Quick Actions</Text>
-            </View>
           </View>
-          <View style={styles.actionsRow}>
-            <TouchableOpacity
-              style={styles.actionCard}
-              onPress={handleNewBoard}
-              activeOpacity={0.7}
-            >
-              <View
-                style={[
-                  styles.actionIconContainer,
-                  { backgroundColor: theme.accent.primary + "20" },
-                ]}
-              >
-                <BoardsIcon size={22} focused />
-              </View>
-              <Text style={styles.actionTitle}>New Board</Text>
-              <Text style={styles.actionSubtitle}>Plan workflow</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionCard}
-              onPress={handleNewNote}
-              activeOpacity={0.7}
-            >
-              <View
-                style={[
-                  styles.actionIconContainer,
-                  { backgroundColor: theme.accent.secondary + "20" },
-                ]}
-              >
-                <NotesIcon size={22} focused />
-              </View>
-              <Text style={styles.actionTitle}>New Note</Text>
-              <Text style={styles.actionSubtitle}>Capture ideas</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionCard}
-              onPress={handleSchedule}
-              activeOpacity={0.7}
-            >
-              <View
-                style={[
-                  styles.actionIconContainer,
-                  { backgroundColor: theme.accent.warning + "20" },
-                ]}
-              >
-                <AgendaIcon size={22} focused />
-              </View>
-              <Text style={styles.actionTitle}>Schedule</Text>
-              <Text style={styles.actionSubtitle}>Block time</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
         </ScrollView>
       </View>
     </SafeAreaView>

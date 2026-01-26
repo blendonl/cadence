@@ -33,7 +33,15 @@ export function WeekView({
   const getItemCount = (date: Date): number => {
     const dateStr = formatDateKey(date);
     const dayAgenda = agendaData.find(d => d.date === dateStr);
-    return dayAgenda?.items.length || 0;
+    if (!dayAgenda) return 0;
+    const sleepCount =
+      (dayAgenda.sleep.sleep ? 1 : 0) + (dayAgenda.sleep.wakeup ? 1 : 0);
+    return (
+      sleepCount
+      + dayAgenda.steps.length
+      + dayAgenda.routines.length
+      + dayAgenda.tasks.length
+    );
   };
 
   return (

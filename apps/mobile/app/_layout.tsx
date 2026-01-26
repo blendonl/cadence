@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { Slot } from 'expo-router';
+import { Stack } from 'expo-router';
 import { ErrorBoundary } from '@shared/components';
 import { ProjectProvider } from '../src/core/ProjectContext';
 import { initializeContainer, setInitializationProgressCallback, resetContainer } from '../src/core/di/container';
@@ -90,7 +90,11 @@ function RootLayoutContent() {
 
   return (
     <ProjectProvider>
-      <Slot />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+        }}
+      />
       <StatusBar style="light" />
     </ProjectProvider>
   );

@@ -5,6 +5,7 @@ import theme from '../../theme/colors';
 export type AppIconName =
   | 'calendar'
   | 'task'
+  | 'steps'
   | 'meeting'
   | 'milestone'
   | 'stack'
@@ -78,6 +79,25 @@ export default function AppIcon({ name, size = 20, color, strokeWidth = 1.8 }: A
           <Path d="M8 13H16" {...common} />
           <Path d="M8 17H13" {...common} />
           <Path d="M7.5 12.5L9 14L11.5 11.5" {...common} />
+        </Svg>
+      );
+    case 'steps':
+      return (
+        <Svg width={size} height={size} viewBox={viewBox}>
+          <Path
+            d="M6.5 15.5C6.5 13.3 8.2 11.6 10.4 11.6C12.6 11.6 14.3 13.3 14.3 15.5C14.3 17.7 12.6 19.4 10.4 19.4C8.2 19.4 6.5 17.7 6.5 15.5Z"
+            {...common}
+          />
+          <Circle cx="8" cy="10" r="1" {...common} />
+          <Circle cx="10.2" cy="9.2" r="0.9" {...common} />
+          <Circle cx="12" cy="10.2" r="0.8" {...common} />
+          <Path
+            d="M12 8C12 6.1 13.5 4.6 15.4 4.6C17.3 4.6 18.8 6.1 18.8 8C18.8 9.9 17.3 11.4 15.4 11.4C13.5 11.4 12 9.9 12 8Z"
+            {...common}
+          />
+          <Circle cx="14" cy="3.8" r="0.9" {...common} />
+          <Circle cx="16.2" cy="3.7" r="0.8" {...common} />
+          <Circle cx="17.8" cy="4.6" r="0.7" {...common} />
         </Svg>
       );
     case 'meeting':

@@ -1,268 +1,277 @@
-import { TaskId, BoardId, ProjectId, ColumnId, Timestamp, FilePath } from "@core/types";
 import { now } from "@utils/dateUtils";
-import { TaskType, MeetingData, TaskPriority } from "@features/boards/domain/entities/Task";
+
+export type AgendaItemStatus =
+  | "PENDING"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "UNFINISHED";
+export type AgendaItemType = "TASK" | "MEETING" | "MILESTONE";
 
 export interface AgendaItemProps {
   id?: string;
-  agenda_id?: string | null;
-  project_id: ProjectId;
-  board_id: BoardId;
-  task_id: TaskId;
-  column_id?: ColumnId | null;
-  task_title?: string;
-  task_description?: string;
-  project_name?: string;
-  board_name?: string;
-  column_name?: string | null;
-  task_goal_id?: string | null;
-  task_priority?: TaskPriority | null;
-  scheduled_date: string;
-  scheduled_time?: string | null;
-  duration_minutes?: number | null;
-  task_type?: TaskType;
-  meeting_data?: MeetingData | null;
-  notes?: string;
-  completed_at?: Timestamp | null;
-  notification_id?: string | null;
-  is_recurring?: boolean;
-  created_at?: Timestamp;
-  updated_at?: Timestamp;
-  file_path?: FilePath | null;
-  actual_value?: number | null;
-  unfinished_at?: Timestamp | null;
-  is_unfinished?: boolean;
+  agendaId: string;
+  taskId?: string | null;
+  routineTaskId?: string | null;
+  routineTaskName?: string | null;
+  routineName?: string | null;
+  routineType?: string | null;
+  routineTarget?: string | null;
+  projectId?: string;
+  boardId?: string;
+  columnId?: string | null;
+  taskTitle?: string;
+  taskDescription?: string | null;
+  taskGoalId?: string | null;
+  taskPriority?: string | null;
+  projectName?: string;
+  boardName?: string;
+  columnName?: string | null;
+  scheduledDate?: string;
+  scheduledTime?: string | null;
+  durationMinutes?: number | null;
+  taskType?: string;
+  meetingData?: any;
+  actualValue?: number | null;
+  type?: AgendaItemType;
+  status?: AgendaItemStatus;
+  startAt?: Date | string | null;
+  duration?: number | null;
+  position?: number;
+  notes?: string | null;
+  completedAt?: Date | string | null;
+  notificationId?: string | null;
+  unfinishedAt?: Date | string | null;
+  isUnfinished?: boolean;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }
 
 export class AgendaItem {
   id: string;
-  agenda_id: string | null;
-  project_id: ProjectId;
-  board_id: BoardId;
-  task_id: TaskId;
-  column_id: ColumnId | null;
-  task_title: string;
-  task_description: string;
-  project_name: string;
-  board_name: string;
-  column_name: string | null;
-  task_goal_id: string | null;
-  task_priority: TaskPriority | null;
-  scheduled_date: string;
-  scheduled_time: string | null;
-  duration_minutes: number | null;
-  task_type: TaskType;
-  meeting_data: MeetingData | null;
-  notes: string;
-  completed_at: Timestamp | null;
-  notification_id: string | null;
-  is_recurring: boolean;
-  created_at: Timestamp;
-  updated_at: Timestamp;
-  file_path: FilePath | null;
-  actual_value: number | null;
-  unfinished_at: Timestamp | null;
-  is_unfinished: boolean;
+  agendaId: string;
+  taskId: string | null;
+  routineTaskId: string | null;
+  routineTaskName: string | null;
+  routineName: string | null;
+  routineType: string | null;
+  routineTarget: string | null;
+  projectId: string;
+  boardId: string;
+  columnId: string | null;
+  taskTitle: string;
+  taskDescription: string | null;
+  taskGoalId: string | null;
+  taskPriority: string | null;
+  projectName: string;
+  boardName: string;
+  columnName: string | null;
+  scheduledDate: string;
+  scheduledTime: string | null;
+  durationMinutes: number | null;
+  taskType: string;
+  meetingData: any;
+  actualValue: number | null;
+  type: AgendaItemType;
+  status: AgendaItemStatus;
+  startAt: Date | null;
+  duration: number | null;
+  position: number;
+  notes: string | null;
+  completedAt: Date | null;
+  notificationId: string | null;
+  unfinishedAt: Date | null;
+  isUnfinished: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 
   constructor(props: AgendaItemProps) {
-    this.id = props.id || `agenda-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    this.agenda_id = props.agenda_id !== undefined ? props.agenda_id : null;
-    this.project_id = props.project_id;
-    this.board_id = props.board_id;
-    this.task_id = props.task_id;
-    this.column_id = props.column_id !== undefined ? props.column_id : null;
-    this.task_title = props.task_title || "";
-    this.task_description = props.task_description || "";
-    this.project_name = props.project_name || "";
-    this.board_name = props.board_name || "";
-    this.column_name = props.column_name !== undefined ? props.column_name : null;
-    this.task_goal_id = props.task_goal_id !== undefined ? props.task_goal_id : null;
-    this.task_priority = props.task_priority !== undefined ? props.task_priority : null;
-    this.scheduled_date = props.scheduled_date;
-    this.scheduled_time = props.scheduled_time !== undefined ? props.scheduled_time : null;
-    this.duration_minutes = props.duration_minutes !== undefined ? props.duration_minutes : null;
-    this.task_type = props.task_type || 'regular';
-    this.meeting_data = props.meeting_data !== undefined ? props.meeting_data : null;
-    this.notes = props.notes || "";
-    this.completed_at = props.completed_at !== undefined ? props.completed_at : null;
-    this.notification_id = props.notification_id !== undefined ? props.notification_id : null;
-    this.is_recurring = props.is_recurring !== undefined ? props.is_recurring : false;
+    this.id =
+      props.id ||
+      `agenda-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    this.agendaId = props.agendaId;
+    this.taskId = props.taskId ? props.taskId : null;
+    this.routineTaskId = props.routineTaskId ? props.routineTaskId : null;
+    this.routineTaskName = props.routineTaskName || null;
+    this.routineName = props.routineName || null;
+    this.routineType = props.routineType || null;
+    this.routineTarget = props.routineTarget || null;
+    this.projectId = props.projectId || "";
+    this.boardId = props.boardId || "";
+    this.columnId = props.columnId || null;
+    this.taskTitle = props.taskTitle || "";
+    this.taskDescription = props.taskDescription || null;
+    this.taskGoalId = props.taskGoalId || null;
+    this.taskPriority = props.taskPriority || null;
+    this.projectName = props.projectName || "";
+    this.boardName = props.boardName || "";
+    this.columnName = props.columnName || null;
+    this.scheduledDate = props.scheduledDate || "";
+    this.scheduledTime = props.scheduledTime || null;
+    this.durationMinutes = props.durationMinutes || null;
+    this.taskType = props.taskType || "regular";
+    this.meetingData = props.meetingData || null;
+    this.actualValue = props.actualValue || null;
+    this.type = props.type || "TASK";
+    this.status = props.status || "PENDING";
+    this.startAt =
+      props.startAt !== undefined && props.startAt !== null
+        ? props.startAt instanceof Date
+          ? props.startAt
+          : new Date(props.startAt)
+        : null;
+    this.duration = props.duration ? props.duration : null;
+    this.position = props.position ? props.position : 0;
+    this.notes = props.notes ? props.notes : null;
+    this.completedAt =
+      props.completedAt && props.completedAt !== null
+        ? props.completedAt instanceof Date
+          ? props.completedAt
+          : new Date(props.completedAt)
+        : null;
+    this.notificationId = props.notificationId ? props.notificationId : null;
+    this.unfinishedAt =
+      props.unfinishedAt && props.unfinishedAt !== null
+        ? props.unfinishedAt instanceof Date
+          ? props.unfinishedAt
+          : new Date(props.unfinishedAt)
+        : null;
+    this.isUnfinished = props.isUnfinished ? props.isUnfinished : false;
 
-    const created = props.created_at || now();
-    this.created_at = created instanceof Date ? created : new Date(created);
+    const created = props.createdAt || now();
+    this.createdAt = created instanceof Date ? created : new Date(created);
 
-    const updated = props.updated_at || now();
-    this.updated_at = updated instanceof Date ? updated : new Date(updated);
-
-    this.file_path = props.file_path !== undefined ? props.file_path : null;
-    this.actual_value = props.actual_value !== undefined ? props.actual_value : null;
-    this.unfinished_at = props.unfinished_at !== undefined ? props.unfinished_at : null;
-    this.is_unfinished = props.is_unfinished !== undefined ? props.is_unfinished : false;
+    const updated = props.updatedAt || now();
+    this.updatedAt = updated instanceof Date ? updated : new Date(updated);
   }
 
   get scheduledDateTime(): Date | null {
-    if (!this.scheduled_date) return null;
-    const dateStr = this.scheduled_time
-      ? `${this.scheduled_date}T${this.scheduled_time}`
-      : `${this.scheduled_date}T00:00`;
-    return new Date(dateStr);
+    return this.startAt;
   }
 
   get filename(): string {
-    return `${this.project_id}-${this.board_id}-${this.task_id}.md`;
+    return this.taskId ? `${this.taskId}.md` : `agenda-${this.id}.md`;
   }
 
-  reschedule(date: string, time?: string): void {
-    this.scheduled_date = date;
-    this.scheduled_time = time !== undefined ? time : this.scheduled_time;
-    this.updated_at = now();
+  reschedule(date: Date): void {
+    this.startAt = date;
+    this.updatedAt = now();
   }
 
   updateDuration(minutes: number): void {
-    this.duration_minutes = minutes;
-    this.updated_at = now();
+    this.duration = minutes;
+    this.updatedAt = now();
   }
 
   addNotes(notes: string): void {
     this.notes = notes;
-    this.updated_at = now();
+    this.updatedAt = now();
   }
 
   markComplete(): void {
-    this.completed_at = now();
-    this.updated_at = now();
+    this.completedAt = now();
+    this.status = "COMPLETED";
+    this.updatedAt = now();
   }
 
   markIncomplete(): void {
-    this.completed_at = null;
-    this.updated_at = now();
+    this.completedAt = null;
+    this.status = "PENDING";
+    this.updatedAt = now();
   }
 
   markAsUnfinished(): void {
-    this.is_unfinished = true;
-    this.unfinished_at = now();
-    this.updated_at = now();
+    this.isUnfinished = true;
+    this.unfinishedAt = now();
+    this.status = "UNFINISHED";
+    this.updatedAt = now();
   }
 
   clearUnfinished(): void {
-    this.is_unfinished = false;
-    this.unfinished_at = null;
-    this.updated_at = now();
-  }
-
-  updateActualValue(value: number): void {
-    this.actual_value = value;
-    this.updated_at = now();
+    this.isUnfinished = false;
+    this.unfinishedAt = null;
+    this.status = "PENDING";
+    this.updatedAt = now();
   }
 
   update(updates: Partial<AgendaItemProps>): void {
     Object.entries(updates).forEach(([key, value]) => {
-      if (key !== 'id' && key !== 'created_at') {
+      if (key !== "id" && key !== "createdAt") {
         (this as any)[key] = value;
       }
     });
-    this.updated_at = now();
+    this.updatedAt = now();
   }
 
   toDict(): Record<string, any> {
-    const result: Record<string, any> = {
+    return {
       id: this.id,
-      project_id: this.project_id,
-      board_id: this.board_id,
-      task_id: this.task_id,
-      scheduled_date: this.scheduled_date,
-      created_at: this.created_at instanceof Date ? this.created_at.toISOString() : this.created_at,
-      updated_at: this.updated_at instanceof Date ? this.updated_at.toISOString() : this.updated_at,
+      agendaId: this.agendaId,
+      taskId: this.taskId,
+      routineTaskId: this.routineTaskId,
+      routineTaskName: this.routineTaskName,
+      routineName: this.routineName,
+      routineType: this.routineType,
+      routineTarget: this.routineTarget,
+      type: this.type,
+      status: this.status,
+      startAt: this.startAt?.toISOString() ?? null,
+      duration: this.duration,
+      position: this.position,
+      notes: this.notes,
+      completedAt: this.completedAt?.toISOString() ?? null,
+      notificationId: this.notificationId,
+      unfinishedAt: this.unfinishedAt?.toISOString() ?? null,
+      isUnfinished: this.isUnfinished,
+      createdAt: this.createdAt.toISOString(),
+      updatedAt: this.updatedAt.toISOString(),
     };
-
-    if (this.agenda_id) {
-      result.agenda_id = this.agenda_id;
-    }
-
-    if (this.scheduled_time) result.scheduled_time = this.scheduled_time;
-    if (this.duration_minutes) result.duration_minutes = this.duration_minutes;
-    if (this.task_type !== 'regular') result.task_type = this.task_type;
-    if (this.meeting_data) result.meeting_data = this.meeting_data;
-    if (this.notes) result.notes = this.notes;
-    result.completed_at = this.completed_at instanceof Date
-      ? this.completed_at.toISOString()
-      : this.completed_at;
-    result.notification_id = this.notification_id;
-    result.is_recurring = this.is_recurring;
-
-    if (this.actual_value !== null) result.actual_value = this.actual_value;
-    result.unfinished_at = this.unfinished_at instanceof Date
-      ? this.unfinished_at.toISOString()
-      : this.unfinished_at;
-    result.is_unfinished = this.is_unfinished;
-
-    return result;
   }
 
   static fromDict(data: Record<string, any>): AgendaItem {
     const parseDate = (value: any): Date | undefined => {
       if (!value) return undefined;
       if (value instanceof Date) return value;
-      if (typeof value === 'string') return new Date(value);
+      if (typeof value === "string") return new Date(value);
       return undefined;
-    };
-    const normalizeTime = (value: any): string | null => {
-      if (value === null || value === undefined || value === '') return null;
-      if (typeof value === 'string') {
-        const trimmed = value.trim();
-        if (!trimmed) return null;
-        if (trimmed.includes(':')) return trimmed;
-        if (/^\d+$/.test(trimmed)) {
-          const padded = trimmed.padStart(4, '0');
-          if (padded.length === 4) {
-            return `${padded.slice(0, 2)}:${padded.slice(2)}`;
-          }
-        }
-        return null;
-      }
-      if (value instanceof Date && !Number.isNaN(value.getTime())) {
-        const hours = value.getHours().toString().padStart(2, '0');
-        const minutes = value.getMinutes().toString().padStart(2, '0');
-        return `${hours}:${minutes}`;
-      }
-      if (typeof value === 'number' && Number.isFinite(value)) {
-        const numeric = Math.trunc(value);
-        if (numeric >= 0 && numeric <= 2359) {
-          const padded = numeric.toString().padStart(4, '0');
-          return `${padded.slice(0, 2)}:${padded.slice(2)}`;
-        }
-      }
-      return null;
     };
 
     return new AgendaItem({
       id: data.id,
-      agenda_id: data.agenda_id ?? data.agendaId ?? null,
-      project_id: data.project_id,
-      board_id: data.board_id,
-      task_id: data.task_id,
-      column_id: data.column_id ?? data.columnId ?? data.task?.columnId ?? null,
-      task_title: data.task_title ?? data.taskTitle ?? data.task?.title ?? "",
-      task_description: data.task_description ?? data.taskDescription ?? data.task?.description ?? "",
-      project_name: data.project_name ?? data.projectName ?? data.task?.projectName ?? "",
-      board_name: data.board_name ?? data.boardName ?? data.task?.boardName ?? "",
-      column_name: data.column_name ?? data.columnName ?? data.task?.columnName ?? null,
-      task_goal_id: data.task_goal_id ?? data.goal_id ?? data.task?.goalId ?? null,
-      task_priority: data.task_priority ?? data.priority ?? data.task?.priority ?? null,
-      scheduled_date: data.scheduled_date,
-      scheduled_time: normalizeTime(data.scheduled_time),
-      duration_minutes: data.duration_minutes ?? data.duration ?? null,
-      task_type: data.task_type || data.taskType || 'regular',
-      meeting_data: data.meeting_data || null,
-      notes: data.notes || "",
-      completed_at: parseDate(data.completed_at) || null,
-      notification_id: data.notification_id || null,
-      is_recurring: data.is_recurring || false,
-      created_at: parseDate(data.created_at),
-      updated_at: parseDate(data.updated_at),
-      file_path: data.file_path,
-      actual_value: data.actual_value || null,
-      unfinished_at: parseDate(data.unfinished_at) || null,
-      is_unfinished: data.is_unfinished || false,
+      agendaId: data.agendaId || data.agenda_id,
+      taskId: data.taskId || data.task_id || null,
+      routineTaskId: data.routineTaskId || data.routine_task_id || null,
+      routineTaskName: data.routineTaskName || data.routine_task_name || null,
+      routineName: data.routineName || data.routine_name || null,
+      routineType: data.routineType || data.routine_type || null,
+      routineTarget: data.routineTarget || data.routine_target || null,
+      projectId: data.projectId || data.project_id || "",
+      boardId: data.boardId || data.board_id || "",
+      columnId: data.columnId || data.column_id || null,
+      taskTitle: data.taskTitle || data.task_title || "",
+      taskDescription: data.taskDescription || data.task_description || null,
+      taskGoalId: data.taskGoalId || data.task_goal_id || null,
+      taskPriority: data.taskPriority || data.task_priority || null,
+      projectName: data.projectName || data.project_name || "",
+      boardName: data.boardName || data.board_name || "",
+      columnName: data.columnName || data.column_name || null,
+      scheduledDate: data.scheduledDate || data.scheduled_date || "",
+      scheduledTime: data.scheduledTime || data.scheduled_time || null,
+      durationMinutes: data.durationMinutes || data.duration_minutes || null,
+      taskType: data.taskType || data.task_type || "regular",
+      meetingData: data.meetingData || data.meeting_data || null,
+      actualValue: data.actualValue || data.actual_value || null,
+      type: data.type ?? "TASK",
+      status: data.status ?? "PENDING",
+      startAt: parseDate(data.startAt || data.start_at) ?? null,
+      duration: data.duration ?? null,
+      position: data.position ?? 0,
+      notes: data.notes ?? null,
+      completedAt: parseDate(data.completedAt || data.completed_at) ?? null,
+      notificationId: data.notificationId ?? data.notification_id ?? null,
+      unfinishedAt: parseDate(data.unfinishedAt || data.unfinished_at) ?? null,
+      isUnfinished: data.isUnfinished ?? data.is_unfinished ?? false,
+      createdAt: parseDate(data.createdAt || data.created_at),
+      updatedAt: parseDate(data.updatedAt || data.updated_at),
     });
   }
 }

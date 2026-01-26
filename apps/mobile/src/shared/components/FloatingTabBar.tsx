@@ -14,6 +14,7 @@ import {
   BoardsIcon,
   AgendaIcon,
   GoalsIcon,
+  RoutinesIcon,
   NotesIcon,
   TimeIcon,
 } from '@shared/components/icons/TabIcons';
@@ -44,12 +45,14 @@ function TabItem({ route, focused, onPress, onLongPress }: TabItemProps) {
     BoardsTab: BoardsIcon,
     AgendaTab: AgendaIcon,
     GoalsTab: GoalsIcon,
+    RoutinesTab: RoutinesIcon,
     NotesTab: NotesIcon,
     TimeTab: TimeIcon,
     projects: ProjectsIcon,
     boards: BoardsIcon,
     agenda: AgendaIcon,
     goals: GoalsIcon,
+    routines: RoutinesIcon,
     notes: NotesIcon,
     time: TimeIcon,
   };

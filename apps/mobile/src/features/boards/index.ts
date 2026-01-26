@@ -16,9 +16,18 @@ export type { BoardRepository } from './domain/repositories/BoardRepository';
 export type { ColumnRepository } from './domain/repositories/ColumnRepository';
 export type { TaskRepository } from './domain/repositories/TaskRepository';
 export { BoardService } from './services/BoardService';
+export { ColumnService } from './services/ColumnService';
 export { TaskService } from './services/TaskService';
-export { CachedBoardService } from './services/CachedBoardService';
 export { BackendBoardRepository } from './infrastructure/BackendBoardRepository';
 export { BackendColumnRepository } from './infrastructure/BackendColumnRepository';
 export { BackendTaskRepository } from './infrastructure/BackendTaskRepository';
-export { MarkdownBoardRepository } from './infrastructure/MarkdownBoardRepository';
+
+// Hooks
+export {
+  useBoardScreen,
+  useBoardData,
+  useBoardModals,
+  useBoardNavigation,
+  useColumnActions,
+  useTaskActions,
+} from './hooks';

@@ -32,8 +32,4 @@ export interface NoteRepository {
   deleteNote(noteId: NoteId): Promise<boolean>;
 
   searchNotes(query: string): Promise<Note[]>;
-
-  getGlobalNotesDirectory(): string;
-
-  getProjectNotesDirectory(projectId: ProjectId): string;
 }

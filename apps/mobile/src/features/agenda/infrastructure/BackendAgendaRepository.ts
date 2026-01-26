@@ -1,8 +1,10 @@
 import { injectable } from "tsyringe";
 import { AgendaRepository } from "../domain/repositories/AgendaRepository";
 import { AgendaItem } from "../domain/entities/AgendaItem";
+import { DayAgenda, ScheduledAgendaItem } from "../domain/interfaces/AgendaService.interface";
 import { logger } from "@utils/logger";
 import { API_BASE_URL } from "@core/config/ApiConfig";
+import { AgendaItemEnrichedDto, AgendaEnrichedDto } from "shared-types";
 
 @injectable()
 export class BackendAgendaRepository implements AgendaRepository {
@@ -24,24 +26,73 @@ export class BackendAgendaRepository implements AgendaRepository {
     return JSON.parse(text) as T;
   }
 
-  async loadAgendaItemsForDate(date: string): Promise<AgendaItem[]> {
+  private async buildResponseError(
+    response: Response,
+    message: string,
+  ): Promise<Error> {
+    let responseText = "";
+    try {
+      responseText = await response.text();
+    } catch {
+      responseText = "";
+    }
+
+    const statusLabel = `${response.status} ${response.statusText}`.trim();
+    const details = responseText ? `: ${responseText}` : "";
+    return new Error(`${message} (${statusLabel})${details}`.trim());
+  }
+
+  private normalizeAgendaDate(dateValue: unknown, fallback: string): string {
+    if (!dateValue) {
+      return fallback;
+    }
+
+    if (dateValue instanceof Date && !Number.isNaN(dateValue.getTime())) {
+      return dateValue.toISOString().split("T")[0];
+    }
+
+    if (typeof dateValue === "string") {
+      const trimmed = dateValue.trim();
+      if (!trimmed) {
+        return fallback;
+      }
+
+      if (trimmed.includes("T")) {
+        return trimmed.split("T")[0];
+      }
+
+      if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+        return trimmed;
+      }
+
+      const parsed = new Date(trimmed);
+      if (!Number.isNaN(parsed.getTime())) {
+        return parsed.toISOString().split("T")[0];
+      }
+    }
+
+    return fallback;
+  }
+
+  async loadAgendaItemsForDate(date: string): Promise<DayAgenda | null> {
     try {
       const response = await fetch(
         `${this.agendaBaseUrl}/by-date/enriched?date=${date}`,
       );
       if (!response.ok) {
         if (response.status === 404) {
-          return [];
+          return null;
         }
+
+        console.log(response);
+
         throw new Error(`Failed to load agenda items for date: ${date}`);
       }
-      const data = await this.parseJson<{ items?: any[] }>(response);
-      if (!data || !data.items) {
-        return [];
+      const data = await this.parseJson<AgendaEnrichedDto>(response);
+      if (!data) {
+        return null;
       }
-      return data.items.map((item: any) =>
-        this.mapEnrichedItemToAgendaItem(item),
-      );
+      return this.mapAgendaDtoToDayAgenda(data, date);
     } catch (error) {
       logger.error("Failed to load agenda items for date:", error);
       throw error;
@@ -57,22 +108,21 @@ export class BackendAgendaRepository implements AgendaRepository {
         `${this.agendaBaseUrl}/date-range?start=${startDate}&end=${endDate}`,
       );
       if (!response.ok) {
-        throw new Error(
+        if (response.status === 404) {
+          return [];
+        }
+
+        const error = await this.buildResponseError(
+          response,
           `Failed to load agenda items for date range: ${startDate} - ${endDate}`,
         );
+        throw error;
       }
-      const agendas = (await this.parseJson<any[]>(response)) || [];
-      const allItems: AgendaItem[] = [];
-      for (const agenda of agendas) {
-        if (agenda.items) {
-          allItems.push(
-            ...agenda.items.map((item: any) =>
-              this.mapEnrichedItemToAgendaItem(item),
-            ),
-          );
-        }
-      }
-      return allItems;
+      const agendas = (await this.parseJson<AgendaEnrichedDto[]>(response)) || [];
+      return agendas.flatMap((agenda) => {
+        const dayAgenda = this.mapAgendaDtoToDayAgenda(agenda, startDate);
+        return this.flattenAgendaItems(dayAgenda);
+      });
     } catch (error) {
       logger.error("Failed to load agenda items for date range:", error);
       throw error;
@@ -84,52 +134,36 @@ export class BackendAgendaRepository implements AgendaRepository {
     endDate: string,
   ): Promise<any[]> {
     try {
+      type ScheduledItem = {
+        agendaItem: AgendaItem;
+        task: any;
+        boardId: string;
+        projectId: string;
+        projectName: string;
+        boardName: string;
+        columnName: string | null;
+        isOrphaned: boolean;
+      };
+
       const response = await fetch(
         `${this.agendaBaseUrl}/date-range?start=${startDate}&end=${endDate}`,
       );
       if (!response.ok) {
-        throw new Error(
+        if (response.status === 404) {
+          return [];
+        }
+
+        const error = await this.buildResponseError(
+          response,
           `Failed to load agendas for date range: ${startDate} - ${endDate}`,
         );
+        throw error;
       }
-      const agendas = (await this.parseJson<any[]>(response)) || [];
+      const agendas = (await this.parseJson<AgendaEnrichedDto[]>(response)) || [];
 
-      return agendas.map((agenda) => {
-        const items = (agenda.items || []).map((item: any) =>
-          this.mapEnrichedItemToAgendaItem(item),
-        );
-
-        const scheduledItems = items.map((item: AgendaItem) => ({
-          agendaItem: item,
-          task: this.buildTaskFromAgendaItem(item),
-          boardId: item.board_id,
-          projectId: item.project_id,
-          projectName: item.project_name || "",
-          boardName: item.board_name || "",
-          columnName: item.column_name || null,
-          isOrphaned: !item.task_id,
-        }));
-
-        const regularTasks = scheduledItems.filter(
-          (si) => si.agendaItem.task_type === "regular",
-        );
-        const meetings = scheduledItems.filter(
-          (si) => si.agendaItem.task_type === "meeting",
-        );
-        const milestones = scheduledItems.filter(
-          (si) => si.agendaItem.task_type === "milestone",
-        );
-
-        return {
-          date: agenda.date || startDate,
-          items: scheduledItems,
-          regularTasks,
-          meetings,
-          milestones,
-          orphanedItems: scheduledItems.filter((si) => si.isOrphaned),
-          tasks: regularTasks,
-        };
-      });
+      return agendas.map((agenda) =>
+        this.mapAgendaDtoToDayAgenda(agenda, startDate),
+      );
     } catch (error) {
       logger.error("Failed to load agendas for date range:", error);
       throw error;
@@ -137,26 +171,87 @@ export class BackendAgendaRepository implements AgendaRepository {
   }
 
   private buildTaskFromAgendaItem(item: AgendaItem): any {
-    if (!item.task_id) {
+    if (!item.taskId) {
       return null;
     }
 
     return {
-      id: item.task_id,
-      title: item.task_title || item.task_id,
-      column_id: item.column_id || "",
-      description: item.task_description || "",
-      project_id: item.project_id,
-      task_type: item.task_type,
-      priority: item.task_priority || "none",
-      goal_id: item.task_goal_id || null,
-      meeting_data: item.meeting_data,
+      id: item.taskId,
+      title: item.taskTitle || item.taskId,
+      column_id: item.columnId || "",
+      description: item.taskDescription || "",
+      project_id: item.projectId,
+      task_type: item.taskType,
+      priority: item.taskPriority || "none",
+      goal_id: item.taskGoalId || null,
+      meeting_data: item.meetingData,
     };
+  }
+
+  private mapAgendaDtoToDayAgenda(
+    agenda: AgendaEnrichedDto,
+    fallbackDate: string,
+  ): DayAgenda {
+    const normalizedDate = this.normalizeAgendaDate(agenda.date, fallbackDate);
+    const sleep = {
+      sleep: agenda.sleep?.sleep
+        ? this.mapEnrichedItemToScheduledItem(agenda.sleep.sleep)
+        : null,
+      wakeup: agenda.sleep?.wakeup
+        ? this.mapEnrichedItemToScheduledItem(agenda.sleep.wakeup)
+        : null,
+    };
+    const steps = (agenda.steps || []).map((item: AgendaItemEnrichedDto) =>
+      this.mapEnrichedItemToScheduledItem(item),
+    );
+    const routines = (agenda.routines || []).map((item: AgendaItemEnrichedDto) =>
+      this.mapEnrichedItemToScheduledItem(item),
+    );
+    const tasks = (agenda.tasks || []).map((item: AgendaItemEnrichedDto) =>
+      this.mapEnrichedItemToScheduledItem(item),
+    );
+    const combined = [...steps, ...routines, ...tasks];
+
+    return {
+      date: normalizedDate,
+      sleep,
+      steps,
+      routines,
+      tasks,
+      orphanedItems: combined.filter((item) => item.isOrphaned),
+    };
+  }
+
+  private mapEnrichedItemToScheduledItem(
+    enrichedItem: AgendaItemEnrichedDto,
+  ): ScheduledAgendaItem {
+    const agendaItem = this.mapEnrichedItemToAgendaItem(enrichedItem);
+    return {
+      agendaItem,
+      task: this.buildTaskFromAgendaItem(agendaItem),
+      boardId: agendaItem.boardId,
+      projectName: agendaItem.projectName || "",
+      boardName: agendaItem.boardName || "",
+      columnName: agendaItem.columnName || null,
+      isOrphaned: !agendaItem.taskId && !agendaItem.routineTaskId,
+    };
+  }
+
+  private flattenAgendaItems(dayAgenda: DayAgenda): AgendaItem[] {
+    const sleepItems = [dayAgenda.sleep.sleep, dayAgenda.sleep.wakeup].filter(
+      (item): item is ScheduledAgendaItem => !!item,
+    );
+    return [
+      ...sleepItems,
+      ...dayAgenda.steps,
+      ...dayAgenda.routines,
+      ...dayAgenda.tasks,
+    ].map((item) => item.agendaItem);
   }
 
   async loadAgendaItemById(agendaItemId: string): Promise<AgendaItem | null> {
     try {
-      const response = await fetch(`${this.baseUrl}/${agendaItemId}`);
+      const response = await fetch(`${this.itemsBaseUrl}/${agendaItemId}`);
       if (response.status === 404) {
         return null;
       }
@@ -176,15 +271,24 @@ export class BackendAgendaRepository implements AgendaRepository {
 
   async loadAllAgendaItems(): Promise<AgendaItem[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/all`);
+      const url = `${this.itemsBaseUrl}`;
+
+      const response = await fetch(url);
+
       if (!response.ok) {
-        throw new Error("Failed to load all agenda items");
+        const errorText = await response.text();
+        throw new Error(
+          `Failed to load all agenda items (${response.status}): ${errorText}`,
+        );
       }
-      const data = (await this.parseJson<any[]>(response)) || [];
-      return data.map((item: any) => AgendaItem.fromDict(item));
+      const data = (await this.parseJson<AgendaItemEnrichedDto[]>(response)) || [];
+      return data.map((item) => this.mapEnrichedItemToAgendaItem(item));
     } catch (error) {
-      logger.error("Failed to load all agenda items:", error);
-      throw error;
+      logger.error(
+        "Failed to load all agenda items:",
+        error instanceof Error ? error : new Error(String(error)),
+      );
+      return [];
     }
   }
 
@@ -195,7 +299,9 @@ export class BackendAgendaRepository implements AgendaRepository {
           ? "POST"
           : "PUT";
       const url =
-        method === "POST" ? `${this.baseUrl}` : `${this.baseUrl}/${item.id}`;
+        method === "POST"
+          ? `${this.itemsBaseUrl}`
+          : `${this.itemsBaseUrl}/${item.id}`;
 
       const response = await fetch(url, {
         method,
@@ -223,7 +329,7 @@ export class BackendAgendaRepository implements AgendaRepository {
 
   async deleteAgendaItem(item: AgendaItem): Promise<boolean> {
     try {
-      const response = await fetch(`${this.baseUrl}/${item.id}`, {
+      const response = await fetch(`${this.itemsBaseUrl}/${item.id}`, {
         method: "DELETE",
       });
 
@@ -248,8 +354,8 @@ export class BackendAgendaRepository implements AgendaRepository {
       if (!response.ok) {
         throw new Error("Failed to load orphaned agenda items");
       }
-      const data = (await this.parseJson<any[]>(response)) || [];
-      return data.map((item: any) => this.mapEnrichedItemToAgendaItem(item));
+      const data = (await this.parseJson<AgendaItemEnrichedDto[]>(response)) || [];
+      return data.map((item) => this.mapEnrichedItemToAgendaItem(item));
     } catch (error) {
       logger.error("Failed to load orphaned agenda items:", error);
       throw error;
@@ -262,8 +368,8 @@ export class BackendAgendaRepository implements AgendaRepository {
       if (!response.ok) {
         throw new Error("Failed to load overdue agenda items");
       }
-      const data = (await this.parseJson<any[]>(response)) || [];
-      return data.map((item: any) => this.mapEnrichedItemToAgendaItem(item));
+      const data = (await this.parseJson<AgendaItemEnrichedDto[]>(response)) || [];
+      return data.map((item) => this.mapEnrichedItemToAgendaItem(item));
     } catch (error) {
       logger.error("Failed to load overdue agenda items:", error);
       throw error;
@@ -278,8 +384,8 @@ export class BackendAgendaRepository implements AgendaRepository {
       if (!response.ok) {
         throw new Error("Failed to load upcoming agenda items");
       }
-      const data = (await this.parseJson<any[]>(response)) || [];
-      return data.map((item: any) => this.mapEnrichedItemToAgendaItem(item));
+      const data = (await this.parseJson<AgendaItemEnrichedDto[]>(response)) || [];
+      return data.map((item) => this.mapEnrichedItemToAgendaItem(item));
     } catch (error) {
       logger.error("Failed to load upcoming agenda items:", error);
       throw error;
@@ -295,15 +401,18 @@ export class BackendAgendaRepository implements AgendaRepository {
       if (!response.ok) {
         throw new Error("Failed to load unfinished agenda items");
       }
-      const data = (await this.parseJson<any[]>(response)) || [];
-      return data.map((item: any) => this.mapEnrichedItemToAgendaItem(item));
+      const data = (await this.parseJson<AgendaItemEnrichedDto[]>(response)) || [];
+      return data.map((item) => this.mapEnrichedItemToAgendaItem(item));
     } catch (error) {
       logger.error("Failed to load unfinished agenda items:", error);
       throw error;
     }
   }
 
-  async searchAgendaItems(query: string, mode: 'all' | 'unfinished'): Promise<any[]> {
+  async searchAgendaItems(
+    query: string,
+    mode: "all" | "unfinished",
+  ): Promise<any[]> {
     try {
       const url = `${this.itemsBaseUrl}/search?query=${encodeURIComponent(query)}&mode=${mode}`;
       const response = await fetch(url);
@@ -316,12 +425,12 @@ export class BackendAgendaRepository implements AgendaRepository {
         return {
           agendaItem,
           task: this.buildTaskFromAgendaItem(agendaItem),
-          boardId: agendaItem.board_id,
-          projectId: agendaItem.project_id,
-          projectName: agendaItem.project_name || "",
-          boardName: agendaItem.board_name || "",
-          columnName: agendaItem.column_name || null,
-          isOrphaned: !agendaItem.task_id,
+          boardId: agendaItem.boardId,
+          projectId: agendaItem.projectId,
+          projectName: agendaItem.projectName || "",
+          boardName: agendaItem.boardName || "",
+          columnName: agendaItem.columnName || null,
+          isOrphaned: !agendaItem.taskId && !agendaItem.routineTaskId,
         };
       });
     } catch (error) {
@@ -342,7 +451,7 @@ export class BackendAgendaRepository implements AgendaRepository {
       }
 
       const response = await fetch(
-        `${this.agendaBaseUrl}/${item.agenda_id}/items/${itemId}/complete`,
+        `${this.agendaBaseUrl}/${item.agendaId}/items/${itemId}/complete`,
         {
           method: "PUT",
           headers: {
@@ -383,7 +492,7 @@ export class BackendAgendaRepository implements AgendaRepository {
       }
 
       const response = await fetch(
-        `${this.agendaBaseUrl}/${item.agenda_id}/items/${itemId}/reschedule`,
+        `${this.agendaBaseUrl}/${item.agendaId}/items/${itemId}/reschedule`,
         {
           method: "PUT",
           headers: {
@@ -412,56 +521,50 @@ export class BackendAgendaRepository implements AgendaRepository {
     }
   }
 
-  private mapEnrichedItemToAgendaItem(enrichedItem: any): AgendaItem {
-    const task = enrichedItem.task || {};
-    const rawTaskType = task.taskType || task.type || enrichedItem.taskType;
-    const taskType =
-      typeof rawTaskType === "string"
-        ? (rawTaskType.toLowerCase() === "meeting"
-            ? "meeting"
-            : rawTaskType.toLowerCase() === "milestone"
-            ? "milestone"
-            : "regular")
-        : undefined;
-    const rawPriority = task.priority || enrichedItem.priority;
-    let taskPriority: string | null = null;
-    if (typeof rawPriority === "string") {
-      const normalized = rawPriority.toLowerCase();
-      if (normalized === "urgent") {
-        taskPriority = "high";
-      } else if (["high", "medium", "low", "none"].includes(normalized)) {
-        taskPriority = normalized;
-      }
-    }
+  private mapEnrichedItemToAgendaItem(enrichedItem: AgendaItemEnrichedDto): AgendaItem {
+    const task = enrichedItem.task;
+    const routineTask = enrichedItem.routineTask;
+    const routineTaskId = routineTask?.id || enrichedItem.routineTaskId || null;
+    const isRoutineTask = !!routineTaskId;
+
+    const taskType = task?.taskType || routineTask?.routineType || 'regular';
+    const taskPriority = task?.priority || null;
 
     return AgendaItem.fromDict({
       id: enrichedItem.id,
-      agenda_id: enrichedItem.agendaId || enrichedItem.agenda_id || null,
-      task_id: task.id || enrichedItem.taskId,
-      project_id: task.projectId || enrichedItem.projectId,
-      board_id: task.boardId || enrichedItem.boardId,
-      column_id: task.columnId || enrichedItem.columnId || null,
-      task_title: task.title || enrichedItem.taskTitle,
-      task_description: task.description || enrichedItem.taskDescription,
-      task_goal_id: task.goalId || enrichedItem.goalId || null,
-      task_priority: taskPriority,
-      project_name: task.projectName || enrichedItem.projectName || "",
-      board_name: task.boardName || enrichedItem.boardName || "",
-      column_name: task.columnName || enrichedItem.columnName || null,
-      scheduled_date: enrichedItem.startAt
+      agendaId: enrichedItem.agendaId,
+      taskId: task?.id || enrichedItem.taskId,
+      routineTaskId: routineTaskId,
+      routineTaskName: routineTask?.name || null,
+      routineName: routineTask?.routineName || null,
+      routineType: routineTask?.routineType || null,
+      routineTarget: routineTask?.routineTarget || null,
+      projectId: task?.projectId || (isRoutineTask ? "routine" : ""),
+      boardId: task?.boardId || (isRoutineTask ? "routine" : ""),
+      columnId: task?.columnId || null,
+      taskTitle: task?.title || routineTask?.name || "",
+      taskDescription: task?.description || null,
+      taskGoalId: task?.goalId || null,
+      taskPriority: taskPriority,
+      projectName: task?.projectName || (isRoutineTask ? "Routines" : ""),
+      boardName: task?.boardName || (isRoutineTask ? "Routine" : ""),
+      columnName: task?.columnName || null,
+      scheduledDate: enrichedItem.startAt
         ? new Date(enrichedItem.startAt).toISOString().split("T")[0]
-        : enrichedItem.scheduledDate || "",
-      scheduled_time: enrichedItem.startAt
+        : "",
+      scheduledTime: enrichedItem.startAt
         ? new Date(enrichedItem.startAt).toTimeString().slice(0, 5)
-        : enrichedItem.scheduledTime || undefined,
-      duration_minutes: enrichedItem.duration_minutes ?? enrichedItem.duration ?? null,
-      task_type: taskType,
+        : undefined,
+      durationMinutes: enrichedItem.duration ?? null,
+      taskType: taskType,
+      meetingData: task?.taskType === 'meeting' ? (enrichedItem as any).meeting_data : null,
+      actualValue: null,
       status: enrichedItem.status,
       position: enrichedItem.position,
       notes: enrichedItem.notes,
-      notification_id: enrichedItem.notificationId,
-      is_unfinished: enrichedItem.status === "UNFINISHED",
-      completed_at: enrichedItem.completedAt,
+      notificationId: enrichedItem.notificationId,
+      isUnfinished: enrichedItem.status === "UNFINISHED",
+      completedAt: enrichedItem.completedAt,
     });
   }
 }

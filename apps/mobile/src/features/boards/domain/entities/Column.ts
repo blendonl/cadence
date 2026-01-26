@@ -11,6 +11,7 @@ import { Task } from "./Task";
 export interface ColumnProps {
   id?: ColumnId;
   name: string;
+  color?: string;
   position?: number;
   limit?: number | null;
   created_at?: Timestamp;
@@ -21,6 +22,7 @@ export interface ColumnProps {
 export class Column {
   id: ColumnId;
   name: string;
+  color: string;
   position: number;
   limit: number | null;
   created_at: Timestamp;
@@ -29,6 +31,7 @@ export class Column {
 
   constructor(props: ColumnProps) {
     this.name = props.name;
+    this.color = props.color || "#3B82F6";
     this.position = props.position || 0;
     this.limit = props.limit !== undefined ? props.limit : null;
     this.created_at = props.created_at || now();
@@ -80,7 +83,8 @@ export class Column {
    * Move an existing task to the end of this column
    */
   moveTaskToEnd(task: Task): boolean {
-    task.moveToColumn(this.id);
+    task.column_id = this.id;
+    task.updated_at = now();
     this.tasks.push(task);
     return true;
   }
@@ -115,6 +119,7 @@ export class Column {
     return {
       id: this.id,
       name: this.name,
+      color: this.color,
       position: this.position,
       limit: this.limit,
       created_at: this.created_at instanceof Date ? this.created_at.toISOString() : this.created_at,
@@ -128,6 +133,7 @@ export class Column {
     return new Column({
       id: data.id,
       name: data.name,
+      color: data.color,
       position: data.position,
       limit: data.limit,
       created_at: data.created_at ? new Date(data.created_at) : undefined,

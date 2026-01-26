@@ -6,8 +6,7 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
-import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
-import { GoalsStackParamList } from "@/ui/navigation/TabNavigator";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Screen } from "@shared/components/Screen";
 import theme from "@shared/theme/colors";
 import { spacing } from "@shared/theme/spacing";
@@ -18,12 +17,10 @@ import { GoalProgress } from "@services/GoalService";
 import GoalFormModal from "../components/GoalFormModal";
 import AppIcon from "@shared/components/icons/AppIcon";
 
-type GoalDetailRouteProp = RouteProp<GoalsStackParamList, "GoalDetail">;
-
 export default function GoalDetailScreen() {
-  const route = useRoute<GoalDetailRouteProp>();
-  const navigation = useNavigation();
-  const { goalId } = route.params;
+  const router = useRouter();
+  const { goalId: goalIdParam } = useLocalSearchParams<{ goalId?: string | string[] }>();
+  const goalId = Array.isArray(goalIdParam) ? goalIdParam[0] : goalIdParam;
 
   const [goal, setGoal] = useState<Goal | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -38,6 +35,9 @@ export default function GoalDetailScreen() {
   const PROJECT_PAGE_SIZE = 50;
 
   const loadGoal = useCallback(async () => {
+    if (!goalId) {
+      return;
+    }
     try {
       setProjectsLoading(true);
       const goalService = getGoalService();
@@ -106,6 +106,9 @@ export default function GoalDetailScreen() {
     endDate: string;
     projectIds: string[];
   }) => {
+    if (!goalId) {
+      return;
+    }
     const goalService = getGoalService();
     await goalService.updateGoal(goalId, {
       title: data.title,
@@ -119,6 +122,9 @@ export default function GoalDetailScreen() {
   };
 
   const handleDeleteGoal = () => {
+    if (!goalId) {
+      return;
+    }
     Alert.alert(
       "Delete Goal",
       "Are you sure you want to delete this goal?",
@@ -131,7 +137,7 @@ export default function GoalDetailScreen() {
             try {
               const goalService = getGoalService();
               await goalService.deleteGoal(goalId);
-              navigation.goBack();
+              router.back();
             } catch (error) {
               Alert.alert("Error", "Failed to delete goal");
             }
@@ -140,6 +146,14 @@ export default function GoalDetailScreen() {
       ]
     );
   };
+
+  if (!goalId) {
+    return (
+      <Screen hasTabBar>
+        <Text style={styles.loadingText}>Goal not found.</Text>
+      </Screen>
+    );
+  }
 
   if (loading || !goal) {
     return (

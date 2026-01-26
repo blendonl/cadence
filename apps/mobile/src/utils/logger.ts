@@ -75,12 +75,59 @@ class Logger {
    */
   error(message: string, error?: Error | unknown, context?: LogContext): void {
     if (this.shouldLog(LogLevel.ERROR)) {
+      if (!message && !error) {
+        console.error(this.formatMessage(LogLevel.ERROR, '(empty error message)'));
+        return;
+      }
+
+      const errorValue = error instanceof Error
+        ? error.message
+        : error !== null && error !== undefined
+        ? this.formatUnknownError(error)
+        : undefined;
+
       const errorContext = error instanceof Error
         ? { ...context, error: error.message, stack: error.stack }
-        : { ...context, error };
+        : errorValue !== undefined
+        ? { ...context, error: errorValue }
+        : context || {};
 
-      console.error(this.formatMessage(LogLevel.ERROR, message, errorContext));
+      console.error(this.formatMessage(LogLevel.ERROR, message || 'Error occurred', errorContext));
     }
+  }
+
+  private formatUnknownError(error: unknown): string {
+    if (typeof error === 'string') {
+      return error;
+    }
+
+    if (typeof error === 'number' || typeof error === 'boolean' || typeof error === 'bigint') {
+      return String(error);
+    }
+
+    if (error && typeof error === 'object') {
+      const message = (error as { message?: unknown }).message;
+      if (message !== undefined) {
+        return String(message);
+      }
+
+      const seen = new WeakSet<object>();
+      try {
+        return JSON.stringify(error, (_key, value) => {
+          if (typeof value === 'object' && value !== null) {
+            if (seen.has(value)) {
+              return '[Circular]';
+            }
+            seen.add(value);
+          }
+          return value;
+        });
+      } catch {
+        return '[Unserializable error]';
+      }
+    }
+
+    return String(error);
   }
 
   /**

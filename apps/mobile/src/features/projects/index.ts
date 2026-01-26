@@ -6,5 +6,4 @@ export { default as ProjectCreateModal } from './components/ProjectCreateModal';
 export { Project } from './domain/entities/Project';
 export type { ProjectRepository } from './domain/repositories/ProjectRepository';
 export { ProjectService } from './services/ProjectService';
-export { CachedProjectService } from './services/CachedProjectService';
 export { BackendProjectRepository } from './infrastructure/BackendProjectRepository';

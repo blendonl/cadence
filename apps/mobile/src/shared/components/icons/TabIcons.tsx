@@ -174,6 +174,51 @@ export function GoalsIcon({ focused, size = 24 }: TabIconProps) {
   );
 }
 
+export function RoutinesIcon({ focused, size = 24 }: TabIconProps) {
+  const color = focused ? theme.accent.primary : theme.text.muted;
+  const fill = focused ? color + '20' : 'none';
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M4 12C4 7.58172 7.58172 4 12 4C15.3137 4 18.173 6.01472 19.4142 8.85786"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M20 4V9H15"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M20 12C20 16.4183 16.4183 20 12 20C8.68629 20 5.82703 17.9853 4.58579 15.1421"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M4 20V15H9"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M12 8V12L14.5 13.5"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill={fill}
+      />
+    </Svg>
+  );
+}
+
 export function ChevronRightIcon({ focused, size = 24 }: TabIconProps) {
   const color = focused ? theme.accent.primary : theme.text.muted;
   return (

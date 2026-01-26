@@ -1,7 +1,6 @@
-import { AgendaItem } from '../entities/AgendaItem';
+import { AgendaItem, AgendaTaskType, MeetingData } from '../entities/AgendaItem';
 import { Task } from '@features/boards/domain/entities/Task';
 import { TaskId, BoardId, ProjectId } from '@core/types';
-import { TaskType, MeetingData } from '@features/boards/domain/entities/Task';
 
 export interface ScheduledAgendaItem {
   agendaItem: AgendaItem;
@@ -22,12 +21,14 @@ export interface ScheduledTask {
 
 export interface DayAgenda {
   date: string;
-  items: ScheduledAgendaItem[];
-  regularTasks: ScheduledAgendaItem[];
-  meetings: ScheduledAgendaItem[];
-  milestones: ScheduledAgendaItem[];
-  orphanedItems: ScheduledAgendaItem[];
+  sleep: {
+    sleep: ScheduledAgendaItem | null;
+    wakeup: ScheduledAgendaItem | null;
+  };
+  steps: ScheduledAgendaItem[];
+  routines: ScheduledAgendaItem[];
   tasks: ScheduledAgendaItem[];
+  orphanedItems: ScheduledAgendaItem[];
 }
 
 export interface CreateAgendaItemRequest {
@@ -37,7 +38,7 @@ export interface CreateAgendaItemRequest {
   date: string;
   time?: string;
   durationMinutes?: number;
-  taskType?: TaskType;
+  taskType?: AgendaTaskType;
   meetingData?: MeetingData;
 }
 
@@ -47,7 +48,7 @@ export interface UpdateAgendaItemRequest {
     scheduled_date: string;
     scheduled_time: string | null;
     duration_minutes: number | null;
-    task_type: TaskType;
+    task_type: AgendaTaskType;
     meeting_data: MeetingData | null;
     notes: string;
     completed_at: Date | null;
@@ -73,7 +74,7 @@ export interface ScheduleTaskRequest {
 export interface SetTaskTypeRequest {
   boardId: BoardId;
   taskId: TaskId;
-  taskType: TaskType;
+  taskType: AgendaTaskType;
 }
 
 export interface UpdateMeetingDataRequest {

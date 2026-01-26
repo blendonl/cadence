@@ -6,7 +6,9 @@ import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 export default function TabLayout() {
   return (
     <Tabs
-      tabBar={(props) => <FloatingTabBar {...(props as BottomTabBarProps)} />}
+      tabBar={(props) => (
+        <FloatingTabBar {...(props as unknown as BottomTabBarProps)} />
+      )}
       screenOptions={{
         headerShown: false,
       }}
@@ -36,15 +38,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="notes"
+        name="routines"
         options={{
-          title: 'Notes',
+          title: 'Routines',
         }}
       />
       <Tabs.Screen
-        name="time"
+        name="notes"
         options={{
-          title: 'Time',
+          title: 'Notes',
         }}
       />
     </Tabs>

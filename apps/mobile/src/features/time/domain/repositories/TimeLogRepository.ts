@@ -19,6 +19,4 @@ export interface TimeLogRepository {
   getWeeklySummary(projectId: ProjectId, weekStartDate: string): Promise<WeeklySummary>;
 
   getMonthlySummary(projectId: ProjectId, yearMonth: string): Promise<MonthlySummary>;
-
-  getProjectTimeDirectory(projectId: ProjectId): string;
 }
