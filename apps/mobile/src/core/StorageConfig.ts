@@ -3,10 +3,8 @@
  * Manages persistent configuration for boards directory and other storage settings
  */
 
-import { injectable, inject } from 'tsyringe';
+import { injectable } from 'tsyringe';
 import * as FileSystem from 'expo-file-system/legacy';
-import { FileSystemManager } from '../infrastructure/storage/FileSystemManager';
-import { FILE_SYSTEM_MANAGER } from './di/tokens';
 
 interface StorageConfigData {
   boardsDirectory?: string;
@@ -25,14 +23,12 @@ export class StorageConfig {
   private configDir: string;
   private configFile: string;
   private cachedConfig: StorageConfigData | null = null;
-  private fileSystemManager: FileSystemManager;
 
-  constructor(@inject(FILE_SYSTEM_MANAGER) fileSystemManager: FileSystemManager) {
+  constructor() {
     const defaultDir = FileSystem.documentDirectory || '';
     const docDir = defaultDir.endsWith('/') ? defaultDir.slice(0, -1) : defaultDir;
     this.configDir = `${docDir}/.mkanban/`;
     this.configFile = `${this.configDir}config.json`;
-    this.fileSystemManager = fileSystemManager;
   }
 
   /**
@@ -246,7 +242,17 @@ export class StorageConfig {
    * @param boardsDirectory Path to check for boards
    */
   async hasExistingBoards(boardsDirectory: string): Promise<boolean> {
-    return await this.fileSystemManager.hasBoards(boardsDirectory);
+    try {
+      const info = await FileSystem.getInfoAsync(boardsDirectory);
+      if (!info.exists) {
+        return false;
+      }
+      const boards = await this.listBoards(boardsDirectory);
+      return boards.length > 0;
+    } catch (error) {
+      console.error('Error checking for existing boards:', error);
+      return false;
+    }
   }
 
   /**
@@ -288,7 +294,7 @@ export class StorageConfig {
       }
 
       // Validate destination is writable
-      const isWritable = await this.fileSystemManager.isDirectoryWritable(newPath);
+      const isWritable = await this.isDirectoryWritable(newPath);
       if (!isWritable) {
         return {
           success: false,
@@ -298,11 +304,7 @@ export class StorageConfig {
 
       // Perform the migration
       console.log(`Starting board migration from ${oldPath} to ${newPath}`);
-      const result = await this.fileSystemManager.copyDirectory(
-        oldPath,
-        newPath,
-        onProgress
-      );
+      const result = await this.copyDirectory(oldPath, newPath, onProgress);
 
       if (!result.success) {
         return {
@@ -334,6 +336,89 @@ export class StorageConfig {
    */
   async listBoards(boardsDirectory?: string): Promise<string[]> {
     const dir = boardsDirectory || await this.getBoardsDirectory();
-    return await this.fileSystemManager.listBoards(dir);
+    try {
+      const info = await FileSystem.getInfoAsync(dir);
+      if (!info.exists) {
+        return [];
+      }
+      const items = await FileSystem.readDirectoryAsync(dir);
+      return items.filter(item => item.endsWith('.md'));
+    } catch (error) {
+      console.error('Error listing boards:', error);
+      return [];
+    }
+  }
+
+  private async isDirectoryWritable(path: string): Promise<boolean> {
+    try {
+      const testFile = `${path}/.test-${Date.now()}`;
+      await FileSystem.writeAsStringAsync(testFile, 'test');
+      await FileSystem.deleteAsync(testFile, { idempotent: true });
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  private async copyDirectory(
+    sourcePath: string,
+    destPath: string,
+    onProgress?: (current: number, total: number) => void
+  ): Promise<{ success: boolean; copiedFiles: number; errors: string[] }> {
+    const errors: string[] = [];
+    let copiedFiles = 0;
+
+    try {
+      const sourceInfo = await FileSystem.getInfoAsync(sourcePath);
+      if (!sourceInfo.exists) {
+        errors.push(`Source directory does not exist: ${sourcePath}`);
+        return { success: false, copiedFiles, errors };
+      }
+
+      const destInfo = await FileSystem.getInfoAsync(destPath);
+      if (!destInfo.exists) {
+        await FileSystem.makeDirectoryAsync(destPath, { intermediates: true });
+      }
+
+      const items = await FileSystem.readDirectoryAsync(sourcePath);
+      const totalFiles = items.length;
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const sourceItemPath = `${sourcePath}/${item}`;
+        const destItemPath = `${destPath}/${item}`;
+
+        try {
+          const itemInfo = await FileSystem.getInfoAsync(sourceItemPath);
+
+          if (itemInfo.isDirectory) {
+            const subResult = await this.copyDirectory(sourceItemPath, destItemPath, onProgress);
+            copiedFiles += subResult.copiedFiles;
+            errors.push(...subResult.errors);
+          } else {
+            await FileSystem.copyAsync({
+              from: sourceItemPath,
+              to: destItemPath,
+            });
+            copiedFiles++;
+          }
+
+          if (onProgress) {
+            onProgress(i + 1, totalFiles);
+          }
+        } catch (error) {
+          errors.push(`Failed to copy ${item}: ${error}`);
+        }
+      }
+
+      return {
+        success: errors.length === 0,
+        copiedFiles,
+        errors,
+      };
+    } catch (error) {
+      errors.push(`Directory copy failed: ${error}`);
+      return { success: false, copiedFiles, errors };
+    }
   }
 }

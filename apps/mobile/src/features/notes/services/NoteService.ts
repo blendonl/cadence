@@ -1,14 +1,10 @@
 import { Note, NoteType, EntityType } from '../domain/entities/Note';
 import { NoteRepository, NoteFilter } from '../domain/repositories/NoteRepository';
-import { ValidationService } from '@services/ValidationService';
 import { NoteId, ProjectId, TaskId, BoardId } from '@core/types';
 import { ValidationError } from '@core/exceptions';
 
 export class NoteService {
-  constructor(
-    private repository: NoteRepository,
-    private validator: ValidationService
-  ) {}
+  constructor(private repository: NoteRepository) {}
 
   async getAllNotes(): Promise<Note[]> {
     return this.repository.loadAllNotes();

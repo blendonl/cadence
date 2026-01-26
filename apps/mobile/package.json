@@ -49,6 +49,7 @@
     "react-native-svg": "15.12.1",
     "react-native-worklets": "0.5.1",
     "reflect-metadata": "^0.2.2",
+    "shared-types": "workspace:*",
     "socket.io-client": "^4.8.3",
     "tsyringe": "^4.10.0",
     "yaml": "^2.8.1"

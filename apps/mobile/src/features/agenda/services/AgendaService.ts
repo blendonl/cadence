@@ -56,34 +56,16 @@ export class AgendaService {
 
   async getAgendaForDate(date: string): Promise<DayAgenda> {
     logger.debug(`[AgendaService] Loading agenda for date: ${date}`);
-    const items = await this.agendaRepository.loadAgendaItemsForDate(date);
+    const dayAgenda = await this.agendaRepository.loadAgendaItemsForDate(date);
+    if (!dayAgenda) {
+      return this.buildEmptyDayAgenda(date);
+    }
+
     logger.debug(
-      `[AgendaService] Found ${items.length} agenda items for ${date}`,
+      `[AgendaService] Found ${this.flattenAgendaItems(dayAgenda).length} agenda items for ${date}`,
     );
 
-    const scheduledItems = items.map((item) =>
-      this.mapToScheduledAgendaItem(item),
-    );
-
-    const regularTasks = scheduledItems.filter(
-      (si) => si.agendaItem.task_type === "regular",
-    );
-    const meetings = scheduledItems.filter(
-      (si) => si.agendaItem.task_type === "meeting",
-    );
-    const milestones = scheduledItems.filter(
-      (si) => si.agendaItem.task_type === "milestone",
-    );
-
-    return {
-      date,
-      items: scheduledItems,
-      regularTasks,
-      meetings,
-      milestones,
-      orphanedItems: scheduledItems.filter((si) => si.isOrphaned),
-      tasks: regularTasks,
-    };
+    return dayAgenda;
   }
 
   private mapToScheduledAgendaItem(item: AgendaItem): ScheduledAgendaItem {
@@ -95,7 +77,7 @@ export class AgendaService {
       boardId: item.board_id,
       projectId: item.project_id,
       projectName: item.project_name || "",
-      isOrphaned: !item.task_id,
+      isOrphaned: !item.task_id && !item.routine_task_id,
       boardName: item.board_name || "",
       columnName: item.column_name || null,
     };
@@ -345,8 +327,8 @@ export class AgendaService {
       return dayAgenda;
     }
 
-    const filterItems = (items: ScheduledAgendaItem[]) => {
-      return items.filter((item) => {
+    const filterItems = (items: ScheduledAgendaItem[]) =>
+      items.filter((item) => {
         if (
           filters?.projectId &&
           item.agendaItem.project_id !== filters.projectId
@@ -358,22 +340,30 @@ export class AgendaService {
         }
         return true;
       });
-    };
 
-    const filtered = filterItems(dayAgenda.items);
+    const filteredSteps = filterItems(dayAgenda.steps);
+    const filteredRoutines = filterItems(dayAgenda.routines);
+    const filteredTasks = filterItems(dayAgenda.tasks);
+    const filteredSleep = {
+      sleep: dayAgenda.sleep.sleep && filterItems([dayAgenda.sleep.sleep])[0],
+      wakeup: dayAgenda.sleep.wakeup && filterItems([dayAgenda.sleep.wakeup])[0],
+    };
+    const combined = [
+      ...filteredSteps,
+      ...filteredRoutines,
+      ...filteredTasks,
+    ];
 
     return {
       date,
-      items: filtered,
-      regularTasks: filtered.filter(
-        (si) => si.agendaItem.task_type === "regular",
-      ),
-      meetings: filtered.filter((si) => si.agendaItem.task_type === "meeting"),
-      milestones: filtered.filter(
-        (si) => si.agendaItem.task_type === "milestone",
-      ),
-      orphanedItems: filtered.filter((si) => si.isOrphaned),
-      tasks: filtered.filter((si) => si.agendaItem.task_type === "regular"),
+      sleep: {
+        sleep: filteredSleep.sleep ?? null,
+        wakeup: filteredSleep.wakeup ?? null,
+      },
+      steps: filteredSteps,
+      routines: filteredRoutines,
+      tasks: filteredTasks,
+      orphanedItems: combined.filter((si) => si.isOrphaned),
     };
   }
 
@@ -460,5 +450,28 @@ export class AgendaService {
     items: AgendaItem[],
   ): Promise<ScheduledAgendaItem[]> {
     return items.map((item) => this.mapToScheduledAgendaItem(item));
+  }
+
+  private buildEmptyDayAgenda(date: string): DayAgenda {
+    return {
+      date,
+      sleep: { sleep: null, wakeup: null },
+      steps: [],
+      routines: [],
+      tasks: [],
+      orphanedItems: [],
+    };
+  }
+
+  private flattenAgendaItems(dayAgenda: DayAgenda): ScheduledAgendaItem[] {
+    const sleepItems = [dayAgenda.sleep.sleep, dayAgenda.sleep.wakeup].filter(
+      (item): item is ScheduledAgendaItem => !!item,
+    );
+    return [
+      ...sleepItems,
+      ...dayAgenda.steps,
+      ...dayAgenda.routines,
+      ...dayAgenda.tasks,
+    ];
   }
 }

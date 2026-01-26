@@ -22,6 +22,13 @@ export type EventType =
   | "column_created"
   | "column_updated"
   | "column_deleted"
+  // Routine events
+  | "routine_created"
+  | "routine_updated"
+  | "routine_deleted"
+  | "routine_enabled"
+  | "routine_disabled"
+  | "routine_task_logged"
   // Git events (for future expansion)
   | "git_branch_created"
   | "git_branch_deleted"

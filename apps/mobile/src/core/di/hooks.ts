@@ -7,24 +7,22 @@ import {
   TASK_REPOSITORY,
   PROJECT_REPOSITORY,
   AGENDA_REPOSITORY,
-  MARKDOWN_AGENDA_REPOSITORY,
   NOTE_REPOSITORY,
   GOAL_REPOSITORY,
   TIME_LOG_REPOSITORY,
   CALENDAR_REPOSITORY,
-  STORAGE_REPOSITORY,
+  ROUTINE_REPOSITORY,
   BOARD_SERVICE,
+  COLUMN_SERVICE,
   PROJECT_SERVICE,
   AGENDA_SERVICE,
   NOTE_SERVICE,
   TASK_SERVICE,
   GOAL_SERVICE,
-  VALIDATION_SERVICE,
   TIME_TRACKING_SERVICE,
   CALENDAR_SYNC_SERVICE,
   NOTIFICATION_SERVICE,
-  UNFINISHED_TASKS_SERVICE,
-  FILE_SYSTEM_MANAGER,
+  ROUTINE_SERVICE,
   STORAGE_CONFIG,
   ACTIONS_CONFIG,
   BACKEND_API_CLIENT,
@@ -41,21 +39,20 @@ import type { NoteRepository } from "@features/notes/domain/repositories/NoteRep
 import type { GoalRepository } from "@features/goals/domain/repositories/GoalRepository";
 import type { TimeLogRepository } from "@features/time/domain/repositories/TimeLogRepository";
 import type { CalendarRepository } from "@domain/repositories/CalendarRepository";
-import type { StorageRepository } from "@domain/repositories/StorageRepository";
+import type { RoutineRepository } from "@features/routines/domain/repositories/RoutineRepository";
 
 import type { BoardService } from "@features/boards/services/BoardService";
+import type { ColumnService } from "@features/boards/services/ColumnService";
 import type { ProjectService } from "@features/projects/services/ProjectService";
 import type { AgendaService } from "@features/agenda/services/AgendaService";
 import type { NoteService } from "@features/notes/services/NoteService";
 import type { TaskService } from "@features/boards/services/TaskService";
 import type { GoalService } from "@features/goals/services/GoalService";
-import type { ValidationService } from "@services/ValidationService";
 import type { TimeTrackingService } from "@features/time/services/TimeTrackingService";
+import type { RoutineService } from "@features/routines/services/RoutineService";
 import type { CalendarSyncService } from "@services/CalendarSyncService";
 import type { NotificationService } from "@services/NotificationService";
-import type { UnfinishedTasksService } from "@features/agenda/services/UnfinishedTasksService";
 
-import type { FileSystemManager } from "@infrastructure/storage/FileSystemManager";
 import type { StorageConfig } from "@core/StorageConfig";
 import type { ActionsConfig } from "@core/ActionsConfig";
 import type { BackendApiClient } from "../../infrastructure/api/BackendApiClient";
@@ -97,13 +94,6 @@ export function useAgendaRepository(): AgendaRepository {
   );
 }
 
-export function useMarkdownAgendaRepository(): AgendaRepository {
-  return useMemo(
-    () => container.resolve<AgendaRepository>(MARKDOWN_AGENDA_REPOSITORY),
-    []
-  );
-}
-
 export function useNoteRepository(): NoteRepository {
   return useMemo(
     () => container.resolve<NoteRepository>(NOTE_REPOSITORY),
@@ -132,15 +122,12 @@ export function useCalendarRepository(): CalendarRepository {
   );
 }
 
-export function useStorageRepository(): StorageRepository {
-  return useMemo(
-    () => container.resolve<StorageRepository>(STORAGE_REPOSITORY),
-    []
-  );
-}
-
 export function useBoardService(): BoardService {
   return useMemo(() => container.resolve<BoardService>(BOARD_SERVICE), []);
+}
+
+export function useColumnService(): ColumnService {
+  return useMemo(() => container.resolve<ColumnService>(COLUMN_SERVICE), []);
 }
 
 export function useProjectService(): ProjectService {
@@ -163,16 +150,16 @@ export function useGoalService(): GoalService {
   return useMemo(() => container.resolve<GoalService>(GOAL_SERVICE), []);
 }
 
-export function useValidationService(): ValidationService {
+export function useTimeTrackingService(): TimeTrackingService {
   return useMemo(
-    () => container.resolve<ValidationService>(VALIDATION_SERVICE),
+    () => container.resolve<TimeTrackingService>(TIME_TRACKING_SERVICE),
     []
   );
 }
 
-export function useTimeTrackingService(): TimeTrackingService {
+export function useRoutineService(): RoutineService {
   return useMemo(
-    () => container.resolve<TimeTrackingService>(TIME_TRACKING_SERVICE),
+    () => container.resolve<RoutineService>(ROUTINE_SERVICE),
     []
   );
 }
@@ -187,20 +174,6 @@ export function useCalendarSyncService(): CalendarSyncService {
 export function useNotificationService(): NotificationService {
   return useMemo(
     () => container.resolve<NotificationService>(NOTIFICATION_SERVICE),
-    []
-  );
-}
-
-export function useUnfinishedTasksService(): UnfinishedTasksService {
-  return useMemo(
-    () => container.resolve<UnfinishedTasksService>(UNFINISHED_TASKS_SERVICE),
-    []
-  );
-}
-
-export function useFileSystemManager(): FileSystemManager {
-  return useMemo(
-    () => container.resolve<FileSystemManager>(FILE_SYSTEM_MANAGER),
     []
   );
 }
@@ -235,6 +208,10 @@ export function getBoardService(): BoardService {
   return container.resolve<BoardService>(BOARD_SERVICE);
 }
 
+export function getColumnService(): ColumnService {
+  return container.resolve<ColumnService>(COLUMN_SERVICE);
+}
+
 export function getProjectService(): ProjectService {
   return container.resolve<ProjectService>(PROJECT_SERVICE);
 }
@@ -255,12 +232,12 @@ export function getGoalService(): GoalService {
   return container.resolve<GoalService>(GOAL_SERVICE);
 }
 
-export function getValidationService(): ValidationService {
-  return container.resolve<ValidationService>(VALIDATION_SERVICE);
-}
-
 export function getTimeTrackingService(): TimeTrackingService {
   return container.resolve<TimeTrackingService>(TIME_TRACKING_SERVICE);
+}
+
+export function getRoutineService(): RoutineService {
+  return container.resolve<RoutineService>(ROUTINE_SERVICE);
 }
 
 export function getCalendarSyncService(): CalendarSyncService {
@@ -269,14 +246,6 @@ export function getCalendarSyncService(): CalendarSyncService {
 
 export function getNotificationService(): NotificationService {
   return container.resolve<NotificationService>(NOTIFICATION_SERVICE);
-}
-
-export function getUnfinishedTasksService(): UnfinishedTasksService {
-  return container.resolve<UnfinishedTasksService>(UNFINISHED_TASKS_SERVICE);
-}
-
-export function getFileSystemManager(): FileSystemManager {
-  return container.resolve<FileSystemManager>(FILE_SYSTEM_MANAGER);
 }
 
 export function getStorageConfig(): StorageConfig {
@@ -319,10 +288,6 @@ export function getAgendaRepository(): AgendaRepository {
   return container.resolve<AgendaRepository>(AGENDA_REPOSITORY);
 }
 
-export function getMarkdownAgendaRepository(): AgendaRepository {
-  return container.resolve<AgendaRepository>(MARKDOWN_AGENDA_REPOSITORY);
-}
-
 export function getNoteRepository(): NoteRepository {
   return container.resolve<NoteRepository>(NOTE_REPOSITORY);
 }
@@ -339,6 +304,3 @@ export function getCalendarRepository(): CalendarRepository {
   return container.resolve<CalendarRepository>(CALENDAR_REPOSITORY);
 }
 
-export function getStorageRepository(): StorageRepository {
-  return container.resolve<StorageRepository>(STORAGE_REPOSITORY);
-}

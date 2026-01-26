@@ -6,24 +6,20 @@
 import { Board } from '../domain/entities/Board';
 import { Task } from '../domain/entities/Task';
 import { TaskRepository } from '../domain/repositories/TaskRepository';
-import { ValidationService } from './ValidationService';
 import { TaskId, ColumnId, ParentId } from '@core/types';
 import {
   ItemNotFoundError,
   ColumnNotFoundError,
   ValidationError,
 } from '@core/exceptions';
-import { DEFAULT_ISSUE_TYPE } from '@core/constants';
 import { getEventBus } from '@core/EventBus';
 import { logger } from '@utils/logger';
 
 export class TaskService {
   private taskRepository: TaskRepository;
-  private validator: ValidationService;
 
-  constructor(taskRepository: TaskRepository, validator: ValidationService) {
+  constructor(taskRepository: TaskRepository) {
     this.taskRepository = taskRepository;
-    this.validator = validator;
   }
 
   /**
@@ -39,16 +35,12 @@ export class TaskService {
     parentId?: ParentId | null
   ): Promise<Task> {
     logger.info(`[TaskService] Creating task: ${title} in board: ${board.name}`);
-    this.validator.validateTaskTitle(title);
 
     const column = board.getColumnById(columnId);
     if (!column) {
       logger.warn(`[TaskService] Column not found: ${columnId}`);
       throw new ColumnNotFoundError(`Column with id '${columnId}' not found`);
     }
-
-    // Check if column is at capacity before adding
-    this.validator.validateColumnCapacity(column);
 
     if (parentId) {
       const parentTaskExists = board.columns.some((col) =>
@@ -74,11 +66,8 @@ export class TaskService {
     );
     column.tasks.push(task);
 
-    // Set default issue type for manually created tasks
-    task.metadata.issue_type = DEFAULT_ISSUE_TYPE;
-
     logger.info(
-      `[TaskService] Successfully created task: ${title} [${taskId}] in column: ${column.name}`
+      `[TaskService] Successfully created task: ${title} [${task.id}] in column: ${column.name}`
     );
 
     // Emit task created event
@@ -102,10 +91,6 @@ export class TaskService {
     for (const column of board.columns) {
       const task = column.getTaskById(taskId);
       if (task) {
-        if (updates.title) {
-          this.validator.validateTaskTitle(updates.title);
-        }
-
         const updated = await this.taskRepository.updateTask(
           board.id,
           column.id,
@@ -115,12 +100,16 @@ export class TaskService {
             description: updates.description,
             parentId: updates.parent_id,
             priority: updates.priority,
-            taskType: updates.task_type,
+            taskType: updates.type,
             position: updates.position,
             columnId: updates.column_id,
           },
         );
-        column.tasks[taskIndex] = updated;
+
+        const taskIndex = column.tasks.findIndex((t) => t.id === taskId);
+        if (taskIndex !== -1) {
+          column.tasks[taskIndex] = updated;
+        }
 
         // Emit task updated event
         await getEventBus().publish('task_updated', {
@@ -221,17 +210,11 @@ export class TaskService {
       );
     }
 
-    // Check if target column is at capacity before moving
-    this.validator.validateColumnCapacity(targetColumn);
-
-    const updated = await this.taskRepository.updateTask(
+    const updated = await this.taskRepository.moveTask(
       board.id,
       sourceColumn.id,
       taskToMove.id,
-      {
-        columnId: targetColumnId,
-        position: targetColumn.tasks.length,
-      },
+      targetColumnId,
     );
 
     // Update board structure after successful backend move
@@ -360,33 +343,5 @@ export class TaskService {
       const bPriority = priorityOrder[b.priority] ?? 3;
       return aPriority - bPriority;
     });
-  }
-
-  async setTaskMeasurableGoal(
-    board: Board,
-    taskId: TaskId,
-    targetValue: number,
-    valueUnit: string
-  ): Promise<void> {
-    for (const column of board.columns) {
-      const task = column.getTaskById(taskId);
-      if (task) {
-        task.target_value = targetValue;
-        task.value_unit = valueUnit;
-        return;
-      }
-    }
-    throw new ItemNotFoundError(`Task with id '${taskId}' not found`);
-  }
-
-  async setTaskGoal(board: Board, taskId: TaskId, goalId: string | null): Promise<void> {
-    for (const column of board.columns) {
-      const task = column.getTaskById(taskId);
-      if (task) {
-        task.goal_id = goalId;
-        return;
-      }
-    }
-    throw new ItemNotFoundError(`Task with id '${taskId}' not found`);
   }
 }

@@ -3,7 +3,6 @@ import {
   ProjectRepository,
   ProjectListResult,
 } from "../domain/repositories/ProjectRepository";
-import { ValidationService } from "./ValidationService";
 import { ProjectId } from "@core/types";
 import { getEventBus } from "@core/EventBus";
 
@@ -15,10 +14,13 @@ export class ProjectNotFoundError extends Error {
 }
 
 export class ProjectService {
-  constructor(
-    private readonly repository: ProjectRepository,
-    private readonly validator: ValidationService,
-  ) {}
+  constructor(private readonly repository: ProjectRepository) {}
+
+  private validateBoardName(name: string): void {
+    if (!name || name.trim().length === 0) {
+      throw new Error("Board name cannot be empty");
+    }
+  }
 
   async getProjectsPaginated(
     page: number,
@@ -54,7 +56,7 @@ export class ProjectService {
     description: string = "",
     color?: string,
   ): Promise<Project> {
-    this.validator.validateBoardName(name);
+    this.validateBoardName(name);
 
     const project = await this.repository.createProjectWithDefaults(
       name,
@@ -78,7 +80,7 @@ export class ProjectService {
     const project = await this.getProjectById(projectId);
 
     if (updates.name) {
-      this.validator.validateBoardName(updates.name);
+      this.validateBoardName(updates.name);
     }
 
     project.update(updates);
@@ -120,17 +122,5 @@ export class ProjectService {
     }
 
     return deleted;
-  }
-
-  getProjectBoardsDirectory(project: Project): string {
-    return this.repository.getProjectBoardsDirectory(project);
-  }
-
-  getProjectNotesDirectory(project: Project): string {
-    return this.repository.getProjectNotesDirectory(project);
-  }
-
-  getProjectTimeDirectory(project: Project): string {
-    return this.repository.getProjectTimeDirectory(project);
   }
 }
