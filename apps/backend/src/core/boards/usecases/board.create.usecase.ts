@@ -14,6 +14,22 @@ export class BoardCreateUseCase {
   ) {}
 
   async execute(data: BoardCreateData): Promise<Board> {
-    return this.boardRepository.create(data);
+    const columnsToCreate =
+      data.columns && data.columns.length > 0
+        ? data.columns
+        : this.getDefaultColumns();
+
+    return this.boardRepository.create({
+      ...data,
+      columns: columnsToCreate,
+    });
+  }
+
+  private getDefaultColumns() {
+    return [
+      { name: 'To Do', color: '#6B7280' },
+      { name: 'In Progress', color: '#3B82F6' },
+      { name: 'Done', color: '#10B981' },
+    ];
   }
 }

@@ -1,5 +1,7 @@
-import { Board } from '@prisma/client';
-import { BoardDto } from 'shared-types';
+import { Board, Column } from '@prisma/client';
+import { BoardDetailDto, BoardDto } from 'shared-types';
+
+type BoardWithColumns = Board & { columns?: Column[] };
 
 export class BoardMapper {
   static mapToResponse(board: Board): BoardDto {
@@ -13,6 +15,19 @@ export class BoardMapper {
       filePath: null,
       createdAt: board.createdAt.toISOString(),
       updatedAt: board.updatedAt.toISOString(),
+    };
+  }
+
+  static mapToDetailResponse(board: BoardWithColumns): BoardDetailDto {
+    return {
+      ...this.mapToResponse(board),
+      columns: (board.columns || []).map((column) => ({
+        id: column.id,
+        name: column.name,
+        position: column.position,
+        taskCount: 0,
+      })),
+      projectName: '',
     };
   }
 }

@@ -10,7 +10,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { BoardDto } from 'shared-types';
+import { BoardDetailDto, BoardDto } from 'shared-types';
 import { BoardsCoreService } from 'src/core/boards/service/boards.core.service';
 import { BoardCreateRequest } from '../dto/board.create.request';
 import { BoardListQuery } from '../dto/board.list.query';
@@ -55,14 +55,14 @@ export class BoardsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get board by ID' })
-  async getOne(@Param('id') id: string): Promise<BoardDto> {
+  async getOne(@Param('id') id: string): Promise<BoardDetailDto> {
     const board = await this.boardsService.getBoardById(id);
 
     if (!board) {
       throw new NotFoundException('Board not found');
     }
 
-    return BoardMapper.mapToResponse(board);
+    return BoardMapper.mapToDetailResponse(board);
   }
 
   @Put(':id')
