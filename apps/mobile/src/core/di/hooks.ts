@@ -30,9 +30,9 @@ import {
   WEBSOCKET_MANAGER,
 } from "./tokens";
 
-import type { BoardRepository } from "@features/boards/domain/repositories/BoardRepository";
-import type { ColumnRepository } from "@features/boards/domain/repositories/ColumnRepository";
-import type { TaskRepository } from "@features/boards/domain/repositories/TaskRepository";
+import type { BoardRepository } from "@features/boards";
+import type { ColumnRepository } from "@features/columns";
+import type { TaskRepository } from "@features/tasks";
 import type { ProjectRepository } from "@features/projects/domain/repositories/ProjectRepository";
 import type { AgendaRepository } from "@features/agenda/domain/repositories/AgendaRepository";
 import type { NoteRepository } from "@features/notes/domain/repositories/NoteRepository";
@@ -41,12 +41,12 @@ import type { TimeLogRepository } from "@features/time/domain/repositories/TimeL
 import type { CalendarRepository } from "@domain/repositories/CalendarRepository";
 import type { RoutineRepository } from "@features/routines/domain/repositories/RoutineRepository";
 
-import type { BoardService } from "@features/boards/services/BoardService";
-import type { ColumnService } from "@features/boards/services/ColumnService";
+import type { BoardService } from "@features/boards";
+import type { ColumnService } from "@features/columns";
 import type { ProjectService } from "@features/projects/services/ProjectService";
 import type { AgendaService } from "@features/agenda/services/AgendaService";
 import type { NoteService } from "@features/notes/services/NoteService";
-import type { TaskService } from "@features/boards/services/TaskService";
+import type { TaskService } from "@features/tasks";
 import type { GoalService } from "@features/goals/services/GoalService";
 import type { TimeTrackingService } from "@features/time/services/TimeTrackingService";
 import type { RoutineService } from "@features/routines/services/RoutineService";

@@ -19,7 +19,7 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import theme from "@shared/theme/colors";
 import { spacing } from "@shared/theme/spacing";
 import { Project } from "@domain/entities/Project";
-import { Board } from "@features/boards/domain/entities/Board";
+import { Board } from "@features/boards";
 import { Note } from "@features/notes/domain/entities/Note";
 import {
   getProjectService,

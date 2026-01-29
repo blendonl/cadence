@@ -5,7 +5,7 @@ export type RootStackParamList = {
   ProjectDetail: { projectId: ProjectId };
   BoardList: { projectId: ProjectId };
   Board: { boardId: BoardId; projectId: ProjectId };
-  ItemDetail: { taskId: TaskId; boardId: BoardId; projectId: ProjectId };
+  TaskDetail: { taskId: TaskId; boardId: BoardId; projectId: ProjectId };
   AgendaDay: { date: string };
   AgendaItemDetail: { itemId: string };
   TaskSchedule: { taskId: TaskId; boardId: BoardId };

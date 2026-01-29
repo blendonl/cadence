@@ -34,9 +34,9 @@ import { StorageConfig } from "@core/StorageConfig";
 import { ActionsConfig } from "@core/ActionsConfig";
 import { BackendApiClient } from "@infrastructure/api/BackendApiClient";
 
-import { BackendBoardRepository } from "@features/boards/infrastructure/BackendBoardRepository";
-import { BackendColumnRepository } from "@features/boards/infrastructure/BackendColumnRepository";
-import { BackendTaskRepository } from "@features/boards/infrastructure/BackendTaskRepository";
+import { BackendBoardRepository } from "@features/boards";
+import { BackendColumnRepository } from "@features/columns";
+import { BackendTaskRepository } from "@features/tasks";
 import { BackendProjectRepository } from "@features/projects/infrastructure/BackendProjectRepository";
 import { BackendAgendaRepository } from "@features/agenda/infrastructure/BackendAgendaRepository";
 import { BackendNoteRepository } from "@features/notes/infrastructure/BackendNoteRepository";
@@ -45,9 +45,9 @@ import { BackendTimeLogRepository } from "@features/time/infrastructure/BackendT
 import { BackendRoutineRepository } from "@features/routines/infrastructure/BackendRoutineRepository";
 
 import { GoogleCalendarRepository } from "@infrastructure/calendar/GoogleCalendarRepository";
-import { BoardService } from "@features/boards/services/BoardService";
-import { ColumnService } from "@features/boards/services/ColumnService";
-import { TaskService } from "@features/boards/services/TaskService";
+import { BoardService } from "@features/boards";
+import { ColumnService } from "@features/columns";
+import { TaskService } from "@features/tasks";
 import { ProjectService } from "@features/projects/services/ProjectService";
 import { AgendaService } from "@features/agenda/services/AgendaService";
 import { NoteService } from "@features/notes/services/NoteService";
@@ -135,9 +135,7 @@ export async function initializeContainer(
   });
 
   container.register(TASK_SERVICE, {
-    useFactory: (c) => {
-      return new TaskService(c.resolve(TASK_REPOSITORY));
-    },
+    useClass: TaskService,
   });
 
   container.register(PROJECT_SERVICE, {

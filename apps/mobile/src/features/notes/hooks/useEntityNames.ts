@@ -15,8 +15,10 @@ interface UseEntityNamesOptions {
   taskIds?: string[];
 }
 
+const EMPTY_IDS: string[] = [];
+
 export const useEntityNames = (options: UseEntityNamesOptions = {}) => {
-  const { notes, projectIds = [], boardIds = [], taskIds = [] } = options;
+  const { notes, projectIds = EMPTY_IDS, boardIds = EMPTY_IDS, taskIds = EMPTY_IDS } = options;
 
   const [entityNames, setEntityNames] = useState<EntityNames>({
     projects: new Map(),
@@ -88,10 +90,13 @@ export const useEntityNames = (options: UseEntityNamesOptions = {}) => {
   }, [notes, projectIds, boardIds, taskIds]);
 
   useEffect(() => {
-    if (notes || projectIds.length > 0 || boardIds.length > 0 || taskIds.length > 0) {
+    const hasNotes = !!notes && notes.length > 0;
+    const hasIds = projectIds.length > 0 || boardIds.length > 0 || taskIds.length > 0;
+
+    if (hasNotes || hasIds) {
       loadEntityNames();
     }
-  }, [loadEntityNames]);
+  }, [loadEntityNames, notes, projectIds.length, boardIds.length, taskIds.length]);
 
   return {
     entityNames,
