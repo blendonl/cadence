@@ -1,5 +1,6 @@
 import { TaskStatusType } from '../../enums/task-status.enum';
 import { TaskPriorityType } from '../../enums/task-priority.enum';
+import { TaskType } from '../../enums/task-type.enum';
 import { EntityTimestamps } from '../../types/common.types';
 
 /**
@@ -9,7 +10,7 @@ export interface TaskDto extends EntityTimestamps {
   id: string;
   title: string;
   description: string | null;
-  taskType: 'regular' | 'meeting' | 'milestone';
+  taskType: TaskType;
   status: TaskStatusType;
   priority: TaskPriorityType | null;
   columnId: string;
@@ -22,6 +23,7 @@ export interface TaskDto extends EntityTimestamps {
   actualMinutes: number | null;
   filePath: string | null;
   completedAt: string | null;
+  parentId: string | null;
 }
 
 /**
@@ -39,13 +41,14 @@ export interface TaskDetailDto extends TaskDto {
 export interface TaskCreateRequestDto {
   title: string;
   description?: string;
-  taskType?: 'regular' | 'meeting' | 'milestone';
+  taskType?: TaskType;
   priority?: TaskPriorityType;
   columnId: string;
   goalId?: string;
   position?: number;
   dueDate?: string;
   estimatedMinutes?: number;
+  parentId?: string;
 }
 
 /**
@@ -54,7 +57,7 @@ export interface TaskCreateRequestDto {
 export interface TaskUpdateRequestDto {
   title?: string;
   description?: string;
-  taskType?: 'regular' | 'meeting' | 'milestone';
+  taskType?: TaskType;
   status?: TaskStatusType;
   priority?: TaskPriorityType;
   columnId?: string;
@@ -64,6 +67,7 @@ export interface TaskUpdateRequestDto {
   estimatedMinutes?: number;
   actualMinutes?: number;
   completedAt?: string;
+  parentId?: string;
 }
 
 /**

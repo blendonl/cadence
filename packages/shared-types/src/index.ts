@@ -10,6 +10,7 @@ export * from './types/pagination.types';
 // Enums
 export * from './enums/task-status.enum';
 export * from './enums/task-priority.enum';
+export * from './enums/task-type.enum';
 export * from './enums/agenda-item-status.enum';
 
 // DTOs by domain
