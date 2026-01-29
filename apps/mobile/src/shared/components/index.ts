@@ -7,6 +7,8 @@ export { default as EmptyState } from './EmptyState';
 export { default as EntityChip } from './EntityChip';
 export { default as EntityPicker } from './EntityPicker';
 export { default as ErrorBoundary } from './ErrorBoundary';
+export { default as ErrorState } from './ErrorState';
+export { default as LoadingOverlay } from './LoadingOverlay';
 export { default as FilterChipBar } from './FilterChipBar';
 export { default as GlassCard } from './GlassCard';
 export { default as Input } from './Input';
