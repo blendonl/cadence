@@ -16,7 +16,7 @@ import { ScheduledAgendaItem } from '@features/agenda/services/AgendaService';
 import { OrphanedItemBadge } from '@shared/components/OrphanedItemBadge';
 import { theme } from '@shared/theme/colors';
 import AppIcon from '@shared/components/icons/AppIcon';
-import { Task } from '@features/boards/domain/entities/Task';
+import { Task } from '@features/tasks';
 
 import { Screen } from '@shared/components/Screen';
 
@@ -166,10 +166,10 @@ export const AgendaItemDetailScreen: React.FC<Props> = ({ route, navigation }) =
   const handleNavigateToTask = () => {
     if (scheduledItem?.task && !scheduledItem.isOrphaned) {
       navigation.getParent()?.navigate('BoardsTab', {
-        screen: 'ItemDetail',
+        screen: 'TaskDetail',
         params: {
           boardId: scheduledItem.boardId,
-          itemId: scheduledItem.task.id,
+          taskId: scheduledItem.task.id,
         },
       });
     }

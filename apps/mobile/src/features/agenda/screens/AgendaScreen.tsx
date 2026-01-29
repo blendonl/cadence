@@ -22,7 +22,7 @@ import { AgendaItemCard } from '../components/AgendaItemCard';
 import { AgendaItemFormModal, AgendaFormData } from '../components/AgendaItemFormModal';
 import AppIcon, { AppIconName } from '@shared/components/icons/AppIcon';
 import { Project } from '@features/projects/domain/entities/Project';
-import { Board } from '@features/boards/domain/entities/Board';
+import { Board } from '@features/boards';
 import { getBoardService, getGoalService } from '@core/di/hooks';
 import { useAutoRefresh } from '@shared/hooks/useAutoRefresh';
 import TaskSelectorModal from '../components/TaskSelectorModal';

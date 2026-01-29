@@ -16,7 +16,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
 import { getAgendaService, getBoardService } from '@core/di/hooks';
-import { Task, TaskType, RecurrenceRule } from '@features/boards/domain/entities/Task';
+import { Task, TaskType, RecurrenceRule } from '@features/tasks';
 import { AgendaStackParamList } from '@shared/types/navigation';
 import AppIcon, { AppIconName } from '@shared/components/icons/AppIcon';
 import BaseModal from '@shared/components/BaseModal';

@@ -1,5 +1,5 @@
 import { AgendaItem } from "../domain/entities/AgendaItem";
-import { Task } from "@features/boards/domain/entities/Task";
+import { Task } from "@features/tasks";
 import { AgendaRepository } from "../domain/repositories/AgendaRepository";
 import { NotificationService } from "@services/NotificationService";
 import { logger } from "@utils/logger";

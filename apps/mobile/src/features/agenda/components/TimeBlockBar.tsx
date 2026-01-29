@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { TaskType } from '@features/boards/domain/entities/Task';
+import { TaskType } from '@features/tasks';
 import { theme } from '@shared/theme/colors';
 
 interface TimeBlockBarProps {

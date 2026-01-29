@@ -1,5 +1,5 @@
 import { AgendaItem, AgendaTaskType, MeetingData } from '../entities/AgendaItem';
-import { Task } from '@features/boards/domain/entities/Task';
+import { Task } from '@features/tasks';
 import { TaskId, BoardId, ProjectId } from '@core/types';
 
 export interface ScheduledAgendaItem {

@@ -8,9 +8,10 @@ import {
   Alert,
 } from 'react-native';
 import { Project } from '@features/projects/domain/entities/Project';
-import { Board } from '@features/boards/domain/entities/Board';
-import { Task, TaskType } from '@features/boards/domain/entities/Task';
+import { Board } from '@features/boards';
+import { Task } from '@features/tasks';
 import { ProjectId, BoardId, TaskId } from '@core/types';
+import { TaskType } from '@mprojectmanager/shared-types';
 import BaseModal from '@shared/components/BaseModal';
 import theme from '@shared/theme';
 import AppIcon from '@shared/components/icons/AppIcon';

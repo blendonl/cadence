@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { Alert } from 'react-native';
 import { getAgendaService, getBoardService } from '@core/di/hooks';
 import { ScheduledAgendaItem } from '../domain/interfaces/AgendaService.interface';
-import { Board } from '@features/boards/domain/entities/Board';
+import { Board } from '@features/boards';
 import { AgendaFormData } from '../components/AgendaItemFormModal';
 
 interface UseAgendaActionsProps {
