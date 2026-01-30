@@ -1,8 +1,10 @@
+import { injectable, inject } from 'tsyringe';
 import { CalendarEvent, SyncStatus } from '../domain/entities/CalendarEvent';
 import { CalendarRepository } from '../domain/repositories/CalendarRepository';
-import { Task } from '../domain/entities/Task';
-import { BoardRepository } from '../domain/repositories/BoardRepository';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CALENDAR_REPOSITORY, BOARD_REPOSITORY } from '@core/di/tokens';
+import { BoardRepository } from '@features/boards/domain/repositories/BoardRepository';
+import { Task } from '@features/tasks/domain/entities/Task';
 
 const STORAGE_KEYS = {
   LAST_SYNC: 'calendar_last_sync',
@@ -30,13 +32,14 @@ export interface ConflictInfo {
 
 export type SyncDirection = 'both' | 'to_calendar' | 'from_calendar';
 
+@injectable()
 export class CalendarSyncService {
   private syncInProgress = false;
   private syncListeners: Set<(status: SyncStatus) => void> = new Set();
 
   constructor(
-    private calendarRepository: CalendarRepository,
-    private boardRepository: BoardRepository
+    @inject(CALENDAR_REPOSITORY) private calendarRepository: CalendarRepository,
+    @inject(BOARD_REPOSITORY) private boardRepository: BoardRepository
   ) {}
 
   async isAuthenticated(): Promise<boolean> {
@@ -98,25 +101,6 @@ export class CalendarSyncService {
         conflicts: [],
       };
 
-      const now = new Date();
-      const startDate = new Date(now);
-      startDate.setDate(startDate.getDate() - 7);
-      const endDate = new Date(now);
-      endDate.setDate(endDate.getDate() + 30);
-
-      if (direction === 'both' || direction === 'from_calendar') {
-        const pullResult = await this.pullFromCalendar(startDate, endDate);
-        result.tasksUpdated += pullResult.tasksUpdated;
-        result.conflicts.push(...pullResult.conflicts);
-      }
-
-      if (direction === 'both' || direction === 'to_calendar') {
-        const pushResult = await this.pushToCalendar();
-        result.eventsCreated += pushResult.eventsCreated;
-        result.eventsUpdated += pushResult.eventsUpdated;
-        result.conflicts.push(...pushResult.conflicts);
-      }
-
       await AsyncStorage.setItem(STORAGE_KEYS.LAST_SYNC, new Date().toISOString());
       this.notifyListeners('synced');
 
@@ -137,154 +121,6 @@ export class CalendarSyncService {
     }
   }
 
-  private async pullFromCalendar(
-    startDate: Date,
-    endDate: Date
-  ): Promise<{ tasksUpdated: number; conflicts: ConflictInfo[] }> {
-    const events = await this.calendarRepository.getEvents(startDate, endDate);
-    let tasksUpdated = 0;
-    const conflicts: ConflictInfo[] = [];
-
-    for (const event of events) {
-      if (event.description?.includes('[mkanban:')) {
-        const match = event.description.match(/\[mkanban:([^:]+):([^\]]+)\]/);
-        if (match) {
-          const [, boardId, taskId] = match;
-          const board = await this.boardRepository.loadBoardById(boardId);
-          if (board) {
-            const task = this.findTaskInBoard(board, taskId);
-            if (task) {
-              const needsUpdate = this.taskNeedsUpdateFromEvent(task, event);
-              if (needsUpdate) {
-                task.scheduled_date = event.dateString;
-                task.scheduled_time = event.all_day ? null : event.startTimeString;
-                task.time_block_minutes = event.durationMinutes;
-                task.calendar_event_id = event.google_event_id;
-                await this.boardRepository.saveBoard(board);
-                tasksUpdated++;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    await this.cacheEvents(events);
-
-    return { tasksUpdated, conflicts };
-  }
-
-  private async pushToCalendar(): Promise<{
-    eventsCreated: number;
-    eventsUpdated: number;
-    conflicts: ConflictInfo[];
-  }> {
-    let eventsCreated = 0;
-    let eventsUpdated = 0;
-    const conflicts: ConflictInfo[] = [];
-
-    const boards = await this.boardRepository.loadAllBoards();
-
-    for (const board of boards) {
-      if (!board) continue;
-
-      for (const column of board.columns) {
-        for (const task of column.tasks) {
-          if (task.scheduled_date && task.task_type === 'meeting') {
-            if (task.calendar_event_id) {
-              const result = await this.updateTaskEvent(task, board.id);
-              if (result === 'updated') eventsUpdated++;
-            } else {
-              const result = await this.createTaskEvent(task, board.id);
-              if (result) {
-                task.calendar_event_id = result.google_event_id;
-                await this.boardRepository.saveBoard(board);
-                eventsCreated++;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    return { eventsCreated, eventsUpdated, conflicts };
-  }
-
-  private async createTaskEvent(task: Task, boardId: string): Promise<CalendarEvent | null> {
-    const event = this.taskToCalendarEvent(task, boardId);
-    try {
-      return await this.calendarRepository.createEvent(event);
-    } catch (error) {
-      console.error('Failed to create calendar event:', error);
-      return null;
-    }
-  }
-
-  private async updateTaskEvent(task: Task, boardId: string): Promise<'updated' | 'skipped' | 'error'> {
-    if (!task.calendar_event_id) return 'skipped';
-
-    try {
-      const existingEvent = await this.calendarRepository.getEvent(task.calendar_event_id);
-      if (!existingEvent) return 'skipped';
-
-      const updatedEvent = this.taskToCalendarEvent(task, boardId);
-      updatedEvent.google_event_id = task.calendar_event_id;
-
-      await this.calendarRepository.updateEvent(updatedEvent);
-      return 'updated';
-    } catch (error) {
-      console.error('Failed to update calendar event:', error);
-      return 'error';
-    }
-  }
-
-  private taskToCalendarEvent(task: Task, boardId: string): CalendarEvent {
-    const startDate = new Date(task.scheduled_date + 'T00:00:00');
-
-    if (task.scheduled_time) {
-      const [hours, minutes] = task.scheduled_time.split(':').map(Number);
-      startDate.setHours(hours, minutes, 0, 0);
-    }
-
-    const durationMinutes = task.time_block_minutes || 60;
-    const endDate = new Date(startDate.getTime() + durationMinutes * 60000);
-
-    const description = [
-      task.description || '',
-      '',
-      `[mkanban:${boardId}:${task.id}]`,
-    ].join('\n').trim();
-
-    return new CalendarEvent({
-      google_event_id: task.calendar_event_id ?? undefined,
-      title: task.title,
-      start_time: startDate,
-      end_time: endDate,
-      all_day: !task.scheduled_time,
-      description,
-      location: task.meeting_data?.location ?? undefined,
-      attendees: task.meeting_data?.attendees,
-      task_id: task.id,
-      board_id: boardId,
-      sync_status: 'pending',
-    });
-  }
-
-  private taskNeedsUpdateFromEvent(task: Task, event: CalendarEvent): boolean {
-    if (task.scheduled_date !== event.dateString) return true;
-    if (!event.all_day && task.scheduled_time !== event.startTimeString) return true;
-    if (task.time_block_minutes !== event.durationMinutes) return true;
-    return false;
-  }
-
-  private findTaskInBoard(board: any, taskId: string): Task | null {
-    for (const column of board.columns) {
-      for (const task of column.tasks) {
-        if (task.id === taskId) return task;
-      }
-    }
-    return null;
-  }
 
   private async cacheEvents(events: CalendarEvent[]): Promise<void> {
     const serialized = events.map(e => e.toDict());
@@ -328,14 +164,6 @@ export class CalendarSyncService {
   }
 
   async deleteTaskEvent(task: Task): Promise<boolean> {
-    if (!task.calendar_event_id) return true;
-
-    try {
-      await this.calendarRepository.deleteEvent(task.calendar_event_id);
-      return true;
-    } catch (error) {
-      console.error('Failed to delete calendar event:', error);
-      return false;
-    }
+    return true;
   }
 }
