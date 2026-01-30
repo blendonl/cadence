@@ -4,3 +4,5 @@ export { useBoardModals } from './useBoardModals';
 export { useBoardNavigation } from './useBoardNavigation';
 export { useBoardActions } from './useBoardActions';
 export { useBoardViewState } from './useBoardViewState';
+export { useBoardDragDrop } from './useBoardDragDrop';
+export { useAutoScroll } from './useAutoScroll';
