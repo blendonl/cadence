@@ -137,10 +137,10 @@ const ColumnActionsModal: React.FC<ColumnActionsModalProps> = ({
                   size={20}
                   color={
                     action.disabled
-                      ? theme.colors.textTertiary
+                      ? theme.text.tertiary
                       : action.destructive
-                      ? theme.colors.error
-                      : theme.colors.text
+                      ? theme.accent.error
+                      : theme.text.primary
                   }
                 />
               </View>
@@ -180,9 +180,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: theme.radius.md,
     marginBottom: theme.spacing.sm,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.background.elevated,
   },
   actionItemDisabled: {
     opacity: 0.5,
@@ -196,28 +196,28 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: theme.colors.surfaceVariant,
+    backgroundColor: theme.background.elevatedHigh,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: theme.spacing.md,
   },
   iconContainerDestructive: {
-    backgroundColor: theme.colors.error + '20',
+    backgroundColor: theme.accent.error + '20',
   },
   actionLabel: {
     fontSize: 16,
     fontWeight: '500',
-    color: theme.colors.text,
+    color: theme.text.primary,
     flex: 1,
   },
   actionLabelDisabled: {
-    color: theme.colors.textTertiary,
+    color: theme.text.tertiary,
   },
   actionLabelDestructive: {
-    color: theme.colors.error,
+    color: theme.accent.error,
   },
   badge: {
-    backgroundColor: theme.colors.primary + '20',
+    backgroundColor: theme.accent.primary + '20',
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: 4,
     borderRadius: 12,
@@ -226,11 +226,11 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 12,
     fontWeight: '600',
-    color: theme.colors.primary,
+    color: theme.accent.primary,
   },
   disabledHint: {
     fontSize: 12,
-    color: theme.colors.textTertiary,
+    color: theme.text.tertiary,
     marginLeft: theme.spacing.sm,
   },
 });

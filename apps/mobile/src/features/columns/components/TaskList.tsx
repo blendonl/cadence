@@ -1,29 +1,43 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, forwardRef } from 'react';
 import { FlatList, StyleSheet, ListRenderItem } from 'react-native';
 import { Task } from '@features/tasks/domain/entities/Task';
-import { TaskCard } from '@features/tasks/components';
+import { Parent } from '@domain/entities/Parent';
+import { DraggableTaskCard } from '@features/boards/components/drag-drop';
 import theme from '@shared/theme';
 
 interface TaskListProps {
   tasks: Task[];
+  parents?: Parent[];
   onTaskPress: (task: Task) => void;
-  onTaskLongPress?: (task: Task) => void;
+  onDragStart?: (task: Task) => void;
+  onDragEnd?: (taskId: string, targetColumnId: string | null) => void;
+  onContentSizeChange?: (width: number, height: number) => void;
 }
 
-const TaskList: React.FC<TaskListProps> = React.memo(({
+const TaskList = React.memo(forwardRef<FlatList, TaskListProps>(({
   tasks,
+  parents = [],
   onTaskPress,
-  onTaskLongPress,
-}) => {
+  onDragStart,
+  onDragEnd,
+  onContentSizeChange,
+}, ref) => {
+  const getTaskParent = useCallback((task: Task): Parent | undefined => {
+    if (!task.parentId) return undefined;
+    return parents.find((p) => p.id === task.parentId);
+  }, [parents]);
+
   const renderTask: ListRenderItem<Task> = useCallback(
     ({ item: task }) => (
-      <TaskCard
+      <DraggableTaskCard
         task={task}
+        parent={getTaskParent(task)}
         onPress={() => onTaskPress(task)}
-        onLongPress={onTaskLongPress ? () => onTaskLongPress(task) : undefined}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
       />
     ),
-    [onTaskPress, onTaskLongPress]
+    [onTaskPress, onDragStart, onDragEnd, getTaskParent]
   );
 
   const keyExtractor = useCallback((task: Task) => task.id, []);
@@ -39,6 +53,7 @@ const TaskList: React.FC<TaskListProps> = React.memo(({
 
   return (
     <FlatList
+      ref={ref}
       data={tasks}
       renderItem={renderTask}
       keyExtractor={keyExtractor}
@@ -48,10 +63,12 @@ const TaskList: React.FC<TaskListProps> = React.memo(({
       windowSize={5}
       removeClippedSubviews={true}
       contentContainerStyle={styles.container}
-      scrollEnabled={false}
+      scrollEnabled={true}
+      nestedScrollEnabled={true}
+      onContentSizeChange={onContentSizeChange}
     />
   );
-});
+}));
 
 TaskList.displayName = 'TaskList';
 

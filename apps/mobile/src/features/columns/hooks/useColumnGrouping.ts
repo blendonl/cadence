@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Task } from '@features/tasks/domain/entities/Task';
 import { Parent } from '@domain/entities/Parent';
-import { TaskPriority } from '@mprojectmanager/shared-types';
+import { TaskPriority } from 'shared-types';
 
 interface GroupedTasks {
   parentId: string | null;

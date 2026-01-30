@@ -14,7 +14,7 @@ const AddTaskButton: React.FC<AddTaskButtonProps> = React.memo(({ onPress }) => 
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <AppIcon name="add" size={18} color={theme.colors.primary} />
+      <AppIcon name="add" size={18} color={theme.accent.primary} />
       <Text style={styles.text}>Add Task</Text>
     </TouchableOpacity>
   );
@@ -30,17 +30,17 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
     marginHorizontal: theme.spacing.md,
     marginVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: theme.radius.md,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: theme.border.primary,
     borderStyle: 'dashed',
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.background.elevated,
   },
   text: {
     marginLeft: theme.spacing.xs,
     fontSize: 14,
     fontWeight: '500',
-    color: theme.colors.primary,
+    color: theme.accent.primary,
   },
 });
 

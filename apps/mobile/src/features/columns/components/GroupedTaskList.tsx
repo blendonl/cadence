@@ -15,13 +15,15 @@ interface GroupedTasksData {
 interface GroupedTaskListProps {
   groups: GroupedTasksData[];
   onTaskPress: (task: Task) => void;
-  onTaskLongPress?: (task: Task) => void;
+  onDragStart?: (task: Task) => void;
+  onDragEnd?: (taskId: string, targetColumnId: string | null) => void;
 }
 
 const GroupedTaskList: React.FC<GroupedTaskListProps> = React.memo(({
   groups,
   onTaskPress,
-  onTaskLongPress,
+  onDragStart,
+  onDragEnd,
 }) => {
   const renderGroup: ListRenderItem<GroupedTasksData> = useCallback(
     ({ item: group }) => (
@@ -29,10 +31,11 @@ const GroupedTaskList: React.FC<GroupedTaskListProps> = React.memo(({
         parent={group.parent}
         tasks={group.tasks}
         onTaskPress={onTaskPress}
-        onTaskLongPress={onTaskLongPress}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
       />
     ),
-    [onTaskPress, onTaskLongPress]
+    [onTaskPress, onDragStart, onDragEnd]
   );
 
   const keyExtractor = useCallback(

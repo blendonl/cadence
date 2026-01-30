@@ -58,7 +58,7 @@ const ColumnHeader: React.FC<ColumnHeaderProps> = React.memo(({
           onPress={onMenuPress}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <AppIcon name="ellipsis-vertical" size={18} color={theme.colors.textSecondary} />
+          <AppIcon name="ellipsis-vertical" size={18} color={theme.text.secondary} />
         </TouchableOpacity>
       </View>
     </View>
@@ -75,8 +75,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
+    borderBottomColor: theme.border.primary,
+    backgroundColor: theme.background.elevated,
   },
   leftSection: {
     flexDirection: 'row',
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: '600',
-    color: theme.colors.text,
+    color: theme.text.primary,
     flex: 1,
   },
   rightSection: {
@@ -105,32 +105,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: 4,
     borderRadius: 12,
-    backgroundColor: theme.colors.surfaceVariant,
+    backgroundColor: theme.background.elevatedHigh,
   },
   wipLimitBadgeNearCapacity: {
-    backgroundColor: theme.colors.warning + '20',
+    backgroundColor: theme.accent.warning + '20',
   },
   wipLimitBadgeAtCapacity: {
-    backgroundColor: theme.colors.error + '20',
+    backgroundColor: theme.accent.error + '20',
   },
   wipLimitText: {
     fontSize: 12,
     fontWeight: '600',
-    color: theme.colors.textSecondary,
+    color: theme.text.secondary,
   },
   wipLimitTextWarning: {
-    color: theme.colors.error,
+    color: theme.accent.error,
   },
   taskCountBadge: {
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: 4,
     borderRadius: 12,
-    backgroundColor: theme.colors.primary + '20',
+    backgroundColor: theme.accent.primary + '20',
   },
   taskCountText: {
     fontSize: 12,
     fontWeight: '600',
-    color: theme.colors.primary,
+    color: theme.accent.primary,
   },
   menuButton: {
     padding: theme.spacing.xs,

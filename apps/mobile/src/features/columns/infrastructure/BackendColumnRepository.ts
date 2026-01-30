@@ -4,7 +4,7 @@ import { ColumnRepository } from "../domain/repositories/ColumnRepository";
 import { BackendApiClient } from "@infrastructure/api/BackendApiClient";
 import { BACKEND_API_CLIENT } from "@core/di/tokens";
 import { BoardId, ColumnId } from "@core/types";
-import { ColumnDto } from "@mprojectmanager/shared-types";
+import { ColumnDto } from "shared-types";
 
 @injectable()
 export class BackendColumnRepository implements ColumnRepository {

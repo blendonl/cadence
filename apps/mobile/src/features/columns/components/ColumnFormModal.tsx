@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 12,
-    color: theme.colors.error,
+    color: theme.accent.error,
     marginTop: -theme.spacing.sm,
   },
 });

@@ -3,10 +3,10 @@
  * Ported from Python: src/domain/entities/column.py
  */
 
+import { Task } from "@/features/tasks";
 import { ColumnId, ParentId, Timestamp, FilePath } from "@core/types";
 import { now } from "@utils/dateUtils";
 import { generateIdFromName } from "@utils/stringUtils";
-import { Task } from "./Task";
 
 export interface ColumnProps {
   id?: ColumnId;
@@ -44,7 +44,8 @@ export class Column {
     } else if (this.file_path) {
       // Extract ID from file path (directory name)
       const pathParts = this.file_path.split("/");
-      const dirName = pathParts[pathParts.length - 2] || pathParts[pathParts.length - 1];
+      const dirName =
+        pathParts[pathParts.length - 2] || pathParts[pathParts.length - 1];
       this.id = dirName;
       if (!this.name || this.name === dirName) {
         this.name = dirName.replace(/-/g, " ").replace(/_/g, " ");
@@ -122,7 +123,10 @@ export class Column {
       color: this.color,
       position: this.position,
       limit: this.limit,
-      created_at: this.created_at instanceof Date ? this.created_at.toISOString() : this.created_at,
+      created_at:
+        this.created_at instanceof Date
+          ? this.created_at.toISOString()
+          : this.created_at,
     };
   }
 

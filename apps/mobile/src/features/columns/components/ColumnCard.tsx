@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
+import { View, StyleSheet, FlatList } from 'react-native';
 import { Column } from '../domain/entities/Column';
 import { Task } from '@features/tasks/domain/entities/Task';
 import { Parent } from '@domain/entities/Parent';
@@ -16,8 +16,17 @@ interface ColumnCardProps {
   showParentGroups?: boolean;
   onTaskPress: (task: Task) => void;
   onTaskLongPress?: (task: Task) => void;
+  onDragStart?: (task: Task) => void;
+  onDragEnd?: (taskId: string, targetColumnId: string | null) => void;
   onAddTask: () => void;
   onColumnMenu?: () => void;
+  registerVerticalScroll?: (
+    columnId: string,
+    ref: React.RefObject<FlatList | null>,
+    contentHeight: number,
+    viewportHeight: number
+  ) => void;
+  unregisterVerticalScroll?: (columnId: string) => void;
 }
 
 const ColumnCard: React.FC<ColumnCardProps> = React.memo(
@@ -27,15 +36,47 @@ const ColumnCard: React.FC<ColumnCardProps> = React.memo(
     showParentGroups = false,
     onTaskPress,
     onTaskLongPress,
+    onDragStart,
+    onDragEnd,
     onAddTask,
     onColumnMenu,
+    registerVerticalScroll,
+    unregisterVerticalScroll,
   }) => {
+    const taskListRef = useRef<FlatList>(null);
+    const [contentSize, setContentSize] = useState({ height: 0, width: 0 });
+    const [viewportHeight, setViewportHeight] = useState(0);
+
     const { groupedTasks, totalTaskCount } = useColumnGrouping({
       tasks: column.tasks,
       parents,
       showParentGroups,
       sortByPriority: false,
     });
+
+    useEffect(() => {
+      if (registerVerticalScroll && !showParentGroups) {
+        registerVerticalScroll(
+          column.id,
+          taskListRef,
+          contentSize.height,
+          viewportHeight
+        );
+      }
+
+      return () => {
+        if (unregisterVerticalScroll) {
+          unregisterVerticalScroll(column.id);
+        }
+      };
+    }, [
+      column.id,
+      registerVerticalScroll,
+      unregisterVerticalScroll,
+      contentSize.height,
+      viewportHeight,
+      showParentGroups,
+    ]);
 
     return (
       <View style={styles.container}>
@@ -45,18 +86,28 @@ const ColumnCard: React.FC<ColumnCardProps> = React.memo(
           onMenuPress={onColumnMenu || (() => {})}
         />
 
-        <View style={styles.content}>
+        <View
+          style={styles.content}
+          onLayout={(e) => setViewportHeight(e.nativeEvent.layout.height)}
+        >
           {showParentGroups ? (
             <GroupedTaskList
               groups={groupedTasks}
               onTaskPress={onTaskPress}
-              onTaskLongPress={onTaskLongPress}
+              onDragStart={onDragStart}
+              onDragEnd={onDragEnd}
             />
           ) : (
             <TaskList
+              ref={taskListRef}
               tasks={column.tasks}
+              parents={parents}
               onTaskPress={onTaskPress}
-              onTaskLongPress={onTaskLongPress}
+              onDragStart={onDragStart}
+              onDragEnd={onDragEnd}
+              onContentSizeChange={(width, height) =>
+                setContentSize({ width, height })
+              }
             />
           )}
         </View>
@@ -83,17 +134,17 @@ ColumnCard.displayName = 'ColumnCard';
 const styles = StyleSheet.create({
   container: {
     width: 320,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
+    backgroundColor: theme.background.elevated,
+    borderRadius: theme.radius.lg,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: theme.border.primary,
     overflow: 'hidden',
     marginRight: theme.spacing.md,
+    flex: 1,
   },
   content: {
     flex: 1,
     minHeight: 200,
-    maxHeight: 600,
   },
 });
 
