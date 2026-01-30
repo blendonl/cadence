@@ -1,14 +1,16 @@
-import { TaskDto } from 'shared-types';
+import { TaskDto, TaskPriority, TaskStatus, TaskType } from 'shared-types';
 
 export class TaskMapper {
   static toResponse(task: any): TaskDto {
     return {
       id: task.id,
+      slug: task.slug,
       title: task.title,
       description: task.description ?? null,
-      taskType: task.type as any,
-      status: 'pending' as any,
-      priority: task.priority as any,
+      taskType: task.type as TaskType,
+      status: task.status as TaskStatus,
+      parentId: task.parentId || null,
+      priority: task.priority as TaskPriority,
       columnId: task.columnId,
       boardId: task.column?.boardId || '',
       projectId: task.column?.board?.projectId || '',
@@ -19,8 +21,12 @@ export class TaskMapper {
       actualMinutes: null,
       filePath: null,
       completedAt: null,
-      createdAt: task.createdAt ? task.createdAt.toISOString() : new Date().toISOString(),
-      updatedAt: task.updatedAt ? task.updatedAt.toISOString() : new Date().toISOString(),
+      createdAt: task.createdAt
+        ? task.createdAt.toISOString()
+        : new Date().toISOString(),
+      updatedAt: task.updatedAt
+        ? task.updatedAt.toISOString()
+        : new Date().toISOString(),
     };
   }
 }

@@ -7,18 +7,20 @@ import {
   Param,
   Post,
   Put,
+  Query,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { TaskDto, TaskLogDto, WorkDurationDto } from 'shared-types';
+import { TaskDto, TaskLogDto, WorkDurationDto, PaginatedResponse } from 'shared-types';
 import { TaskCreateRequest } from '../dto/task.create.request';
 import { TaskUpdateRequest } from '../dto/task.update.request';
+import { TaskListQueryRequest } from '../dto/task.list.query.request';
 import { TasksCoreService } from 'src/core/tasks/service/tasks.core.service';
 import { TaskLogsCoreService } from 'src/core/task-logs/service/task-logs.core.service';
 import { TaskMapper } from '../task.mapper';
 import { TaskLogMapper } from '../task-log.mapper';
 
 @ApiTags('tasks')
-@Controller('boards/:boardId/columns/:columnId/tasks')
+@Controller('tasks')
 export class TasksController {
   constructor(
     private readonly tasksService: TasksCoreService,
@@ -27,19 +29,15 @@ export class TasksController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new task' })
-  async create(
-    @Param('boardId') boardId: string,
-    @Param('columnId') columnId: string,
-    @Body() body: TaskCreateRequest,
-  ): Promise<TaskDto> {
-    const task = await this.tasksService.createTask(columnId, {
+  async create(@Body() body: TaskCreateRequest): Promise<TaskDto> {
+    const task = await this.tasksService.createTask({
       title: body.title,
-      columnId: body.column_id,
+      columnId: body.columnId,
       description: body.description,
-      parentId: body.parent_id ?? null,
-      type: body.task_type,
+      parentId: body.parentId ?? null,
+      type: body.taskType,
       priority: body.priority as any,
-      position: body.position,
+      position: 0,
     });
 
     if (!task) {
@@ -50,26 +48,27 @@ export class TasksController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List all tasks in a column' })
-  async list(
-    @Param('boardId') boardId: string,
-    @Param('columnId') columnId: string,
-  ): Promise<TaskDto[]> {
-    const tasks = await this.tasksService.getTasks(columnId);
-    if (!tasks) {
-      throw new NotFoundException('Column not found');
-    }
+  @ApiOperation({ summary: 'List tasks with pagination' })
+  async list(@Query() query: TaskListQueryRequest): Promise<PaginatedResponse<TaskDto>> {
+    const result = await this.tasksService.getTasks({
+      boardId: query.boardId,
+      columnId: query.columnId,
+      search: query.search,
+      page: query.page ?? 1,
+      limit: query.limit ?? 50,
+    });
 
-    return tasks.map(TaskMapper.toResponse);
+    return {
+      items: result.items.map(TaskMapper.toResponse),
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+    };
   }
 
   @Get(':taskId')
   @ApiOperation({ summary: 'Get task by ID' })
-  async getOne(
-    @Param('boardId') boardId: string,
-    @Param('columnId') columnId: string,
-    @Param('taskId') taskId: string,
-  ): Promise<TaskDto> {
+  async getOne(@Param('taskId') taskId: string): Promise<TaskDto> {
     const task = await this.tasksService.getTask(taskId);
     if (!task) {
       throw new NotFoundException('Task not found');
@@ -81,17 +80,15 @@ export class TasksController {
   @Put(':taskId')
   @ApiOperation({ summary: 'Update task' })
   async update(
-    @Param('boardId') boardId: string,
-    @Param('columnId') columnId: string,
     @Param('taskId') taskId: string,
     @Body() body: TaskUpdateRequest,
   ): Promise<TaskDto> {
     const task = await this.tasksService.updateTask(taskId, {
       title: body.title,
-      columnId: body.column_id,
-      parentId: body.parent_id ?? null,
+      columnId: body.columnId,
+      parentId: body.parentId ?? null,
       description: body.description,
-      type: body.task_type as any,
+      type: body.taskType as any,
       priority: body.priority as any,
       position: body.position,
     });
@@ -105,11 +102,7 @@ export class TasksController {
 
   @Delete(':taskId')
   @ApiOperation({ summary: 'Delete task' })
-  async delete(
-    @Param('boardId') boardId: string,
-    @Param('columnId') columnId: string,
-    @Param('taskId') taskId: string,
-  ): Promise<{ deleted: boolean }> {
+  async delete(@Param('taskId') taskId: string): Promise<{ deleted: boolean }> {
     const deleted = await this.tasksService.deleteTask(taskId);
     if (!deleted) {
       throw new NotFoundException('Task not found');
@@ -121,8 +114,6 @@ export class TasksController {
   @Post(':taskId/move')
   @ApiOperation({ summary: 'Move task to another column' })
   async moveTask(
-    @Param('boardId') boardId: string,
-    @Param('columnId') columnId: string,
     @Param('taskId') taskId: string,
     @Body() body: { targetColumnId: string },
   ): Promise<TaskDto> {
@@ -133,8 +124,6 @@ export class TasksController {
   @Get(':taskId/work-duration')
   @ApiOperation({ summary: 'Get task work duration' })
   async getWorkDuration(
-    @Param('boardId') boardId: string,
-    @Param('columnId') columnId: string,
     @Param('taskId') taskId: string,
   ): Promise<WorkDurationDto | null> {
     const duration = await this.taskLogsService.getWorkDuration(taskId);
@@ -146,11 +135,7 @@ export class TasksController {
 
   @Get(':taskId/logs')
   @ApiOperation({ summary: 'Get task logs' })
-  async getTaskLogs(
-    @Param('boardId') boardId: string,
-    @Param('columnId') columnId: string,
-    @Param('taskId') taskId: string,
-  ): Promise<TaskLogDto[]> {
+  async getTaskLogs(@Param('taskId') taskId: string): Promise<TaskLogDto[]> {
     const logs = await this.taskLogsService.getTaskHistory(taskId);
     return logs.map(TaskLogMapper.toResponse);
   }
