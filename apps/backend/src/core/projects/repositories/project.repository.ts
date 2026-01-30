@@ -12,4 +12,6 @@ export interface ProjectRepository {
   findAll(options: ProjectListOptions): Promise<ProjectListRepositoryResult>;
   findById(id: string): Promise<Project | null>;
   findByIdWithDetails(id: string): Promise<ProjectWithDetails | null>;
+  findBySlug(slug: string): Promise<Project | null>;
+  incrementTaskCounter(projectId: string): Promise<{ slug: string; taskNumber: number }>;
 }

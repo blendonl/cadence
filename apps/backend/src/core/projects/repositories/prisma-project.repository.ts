@@ -14,10 +14,12 @@ export class PrismaProjectRepository implements ProjectRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(data: ProjectCreateData): Promise<Project> {
-    return this.prisma.project.create({ data });
+    return this.prisma.project.create({ data: { ...data, slug: data.slug! } });
   }
 
-  async findAll(options: ProjectListOptions): Promise<ProjectListRepositoryResult> {
+  async findAll(
+    options: ProjectListOptions,
+  ): Promise<ProjectListRepositoryResult> {
     const where: Prisma.ProjectWhereInput = {};
     const search = options.search?.trim();
 
@@ -101,6 +103,25 @@ export class PrismaProjectRepository implements ProjectRepository {
         noteCount: 0,
         timeThisWeek: totalMinutes,
       },
+    };
+  }
+
+  async findBySlug(slug: string): Promise<Project | null> {
+    return this.prisma.project.findUnique({ where: { slug } });
+  }
+
+  async incrementTaskCounter(
+    projectId: string,
+  ): Promise<{ slug: string; taskNumber: number }> {
+    const project = await this.prisma.project.update({
+      where: { id: projectId },
+      data: { taskCounter: { increment: 1 } },
+      select: { slug: true, taskCounter: true },
+    });
+
+    return {
+      slug: project.slug,
+      taskNumber: project.taskCounter,
     };
   }
 }

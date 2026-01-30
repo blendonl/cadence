@@ -8,7 +8,11 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ProjectDto, ProjectDetailDto, ProjectListResponseDto } from 'shared-types';
+import {
+  ProjectDto,
+  ProjectDetailDto,
+  ProjectListResponseDto,
+} from 'shared-types';
 import { ProjectsCoreService } from 'src/core/projects/service/projects.core.service';
 import { ProjectCreateRequest } from '../dto/project.create.request';
 import { ProjectListQuery } from '../dto/project.list.query';
@@ -21,12 +25,15 @@ export class ProjectsController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new project' })
-  @ApiResponse({ status: 201, description: 'Project created successfully', type: 'ProjectDto' })
+  @ApiResponse({
+    status: 201,
+    description: 'Project created successfully',
+    type: 'ProjectDto',
+  })
   async create(@Body() body: ProjectCreateRequest): Promise<ProjectDto> {
     const project = await this.projectsService.createProject({
       name: body.name,
       description: body.description || null,
-      slug: body.slug ?? '',
       color: body.color,
       status: body.status,
     });
@@ -36,8 +43,14 @@ export class ProjectsController {
 
   @Get()
   @ApiOperation({ summary: 'List all projects' })
-  @ApiResponse({ status: 200, description: 'Projects list', type: 'ProjectListResponseDto' })
-  async list(@Query() query: ProjectListQuery): Promise<ProjectListResponseDto> {
+  @ApiResponse({
+    status: 200,
+    description: 'Projects list',
+    type: 'ProjectListResponseDto',
+  })
+  async list(
+    @Query() query: ProjectListQuery,
+  ): Promise<ProjectListResponseDto> {
     const result = await this.projectsService.getProjects({
       page: query.page,
       limit: query.limit,
@@ -55,7 +68,11 @@ export class ProjectsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get project by ID with details' })
-  @ApiResponse({ status: 200, description: 'Project details', type: 'ProjectDetailDto' })
+  @ApiResponse({
+    status: 200,
+    description: 'Project details',
+    type: 'ProjectDetailDto',
+  })
   @ApiResponse({ status: 404, description: 'Project not found' })
   async getOne(@Param('id') id: string): Promise<ProjectDetailDto> {
     const project = await this.projectsService.getProjectByIdWithDetails(id);

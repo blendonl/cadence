@@ -2,7 +2,7 @@ import { ProjectStatus } from '../domain/project';
 
 export interface ProjectCreateData {
   name: string;
-  slug: string;
+  slug?: string;
   description: string | null;
   color?: string;
   status?: ProjectStatus;

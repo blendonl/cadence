@@ -13,11 +13,6 @@ export class ProjectCreateRequest {
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional({ description: 'Project slug (URL-safe identifier)', example: 'my-project' })
-  @IsOptional()
-  @IsString()
-  slug?: string;
-
   @ApiPropertyOptional({ description: 'Project color (hex code)', example: '#3B82F6' })
   @IsOptional()
   @IsString()

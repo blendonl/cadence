@@ -29,6 +29,6 @@ import { RepositoryEventWrapper } from '../events/services/repository-event-wrap
     ProjectsCoreService,
   ],
 
-  exports: [ProjectsCoreService],
+  exports: [ProjectsCoreService, PROJECT_REPOSITORY],
 })
 export class ProjectsCoreModule {}

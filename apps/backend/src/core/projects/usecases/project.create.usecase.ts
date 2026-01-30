@@ -22,7 +22,7 @@ export class ProjectCreateUseCase {
       throw new InvalidProjectNameError();
     }
 
-    const slug = input.slug?.trim() || this.generateSlug(name);
+    const slug = await this.generateUniqueProjectSlug(name);
     const status = this.normalizeStatus(input.status);
 
     return this.projectRepository.create({
@@ -35,12 +35,24 @@ export class ProjectCreateUseCase {
     });
   }
 
-  private generateSlug(name: string): string {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .substring(0, 50);
+  private async generateUniqueProjectSlug(name: string): Promise<string> {
+    const letters = name.replace(/[^a-zA-Z]/g, '').toUpperCase();
+
+    if (letters.length === 0) {
+      throw new InvalidProjectNameError();
+    }
+
+    for (let length = 3; length <= letters.length; length++) {
+      const candidate = letters.substring(0, length);
+      const existing = await this.projectRepository.findBySlug(candidate);
+
+      if (!existing) {
+        return candidate;
+      }
+    }
+
+    const timestamp = Date.now().toString(36).slice(-3).toUpperCase();
+    return letters.substring(0, 3) + timestamp;
   }
 
   private normalizeStatus(status?: ProjectStatus): ProjectStatus | undefined {
