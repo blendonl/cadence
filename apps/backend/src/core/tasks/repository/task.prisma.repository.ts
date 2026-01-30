@@ -3,18 +3,22 @@ import { TaskRepository } from './task.repository';
 import { Task } from '@prisma/client';
 import { TaskCreateData } from '../data/task.create.data';
 import { TaskUpdateData } from '../data/task.update.data';
+import { TaskListQueryData } from '../data/task.list.query.data';
+import { TaskListResultData } from '../data/task.list.result.data';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class TaskPrismaRepository implements TaskRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(columnId: string, data: TaskCreateData): Promise<Task> {
+  create(data: TaskCreateData): Promise<Task> {
     return this.prisma.task.create({
       data: {
         title: data.title,
+        slug: data.slug!,
+        taskNumber: data.taskNumber!,
         description: data.description,
-        columnId: data.columnId ?? columnId,
+        columnId: data.columnId,
         parentId: data.parentId ?? undefined,
         type: data.type,
         priority: data.priority,
@@ -45,11 +49,47 @@ export class TaskPrismaRepository implements TaskRepository {
     await this.prisma.task.delete({ where: { id } });
   }
 
-  async findAll(columnId: string): Promise<Task[]> {
-    return this.prisma.task.findMany({
-      where: { columnId },
-      orderBy: { position: 'asc' },
-    });
+  async findAll(query: TaskListQueryData): Promise<TaskListResultData> {
+    const where: any = {};
+
+    if (query.columnId) {
+      where.columnId = query.columnId;
+    }
+
+    if (query.boardId) {
+      where.column = {
+        boardId: query.boardId,
+      };
+    }
+
+    if (query.search) {
+      where.OR = [
+        { title: { contains: query.search, mode: 'insensitive' } },
+        { description: { contains: query.search, mode: 'insensitive' } },
+        { column: { name: { contains: query.search, mode: 'insensitive' } } },
+        { column: { board: { name: { contains: query.search, mode: 'insensitive' } } } },
+        { column: { board: { project: { name: { contains: query.search, mode: 'insensitive' } } } } },
+      ];
+    }
+
+    const skip = (query.page - 1) * query.limit;
+
+    const [items, total] = await Promise.all([
+      this.prisma.task.findMany({
+        where,
+        orderBy: { position: 'asc' },
+        skip,
+        take: query.limit,
+      }),
+      this.prisma.task.count({ where }),
+    ]);
+
+    return {
+      items,
+      total,
+      page: query.page,
+      limit: query.limit,
+    };
   }
 
   async moveToColumn(taskId: string, columnId: string): Promise<Task> {

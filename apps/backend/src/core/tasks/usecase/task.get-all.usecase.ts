@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Task } from '../domain/task';
+import { TaskListQueryData } from '../data/task.list.query.data';
+import { TaskListResultData } from '../data/task.list.result.data';
 import {
   TASK_REPOSITORY,
   type TaskRepository,
@@ -12,9 +13,8 @@ export class TaskGetAllUseCase {
     private readonly taskRepository: TaskRepository,
   ) {}
 
-  async execute(columnId: string): Promise<Task[]> {
-    const result = this.taskRepository.findAll(columnId);
-
+  async execute(query: TaskListQueryData): Promise<TaskListResultData> {
+    const result = await this.taskRepository.findAll(query);
     return result;
   }
 }

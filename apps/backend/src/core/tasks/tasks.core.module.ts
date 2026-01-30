@@ -14,9 +14,15 @@ import { EntityEventEmitter } from '../events/services/entity-event-emitter.serv
 import { RepositoryEventWrapper } from '../events/services/repository-event-wrapper';
 import { TaskLogsCoreModule } from '../task-logs/task-logs.core.module';
 import { ColumnsCoreModule } from '../columns/columns.core.module';
+import { ProjectsCoreModule } from '../projects/projects.core.module';
 
 @Module({
-  imports: [PrismaModule, TaskLogsCoreModule, ColumnsCoreModule],
+  imports: [
+    PrismaModule,
+    TaskLogsCoreModule,
+    ColumnsCoreModule,
+    ProjectsCoreModule,
+  ],
   controllers: [],
   providers: [
     {

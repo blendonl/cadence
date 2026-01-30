@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { TaskCreateData } from '../data/task.create.data';
 import { TaskUpdateData } from '../data/task.update.data';
+import { TaskListQueryData } from '../data/task.list.query.data';
 import { TaskCreateUseCase } from '../usecase/task.create.usecase';
 import { TaskDeleteUseCase } from '../usecase/task.delete.usecase';
 import { TaskGetAllUseCase } from '../usecase/task.get-all.usecase';
@@ -19,12 +20,12 @@ export class TasksCoreService {
     private readonly taskMoveUseCase: TaskMoveUseCase,
   ) {}
 
-  async createTask(columnId: string, data: TaskCreateData) {
-    return this.taskCreateUseCase.execute(columnId, data);
+  async createTask(data: TaskCreateData) {
+    return this.taskCreateUseCase.execute(data);
   }
 
-  async getTasks(columnId: string) {
-    return this.taskGetAllUseCase.execute(columnId);
+  async getTasks(query: TaskListQueryData) {
+    return this.taskGetAllUseCase.execute(query);
   }
 
   async getTask(taskId: string) {

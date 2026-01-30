@@ -1,12 +1,14 @@
 import { Task } from '@prisma/client';
 import { TaskCreateData } from '../data/task.create.data';
 import { TaskUpdateData } from '../data/task.update.data';
+import { TaskListQueryData } from '../data/task.list.query.data';
+import { TaskListResultData } from '../data/task.list.result.data';
 
 export const TASK_REPOSITORY = 'TASK_REPOSITORY';
 
 export interface TaskRepository {
-  findAll(columnId: string): Promise<Task[]>;
-  create(columnId: string, data: TaskCreateData): Promise<Task>;
+  findAll(query: TaskListQueryData): Promise<TaskListResultData>;
+  create(data: TaskCreateData): Promise<Task>;
   findById(id: string): Promise<Task | null>;
   update(id: string, data: TaskUpdateData): Promise<Task>;
   delete(id: string): Promise<void>;
