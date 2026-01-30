@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { getProjectService } from '@core/di/hooks';
+import { useProjectService } from '@core/di/hooks';
 import { Project } from '../domain/entities/Project';
 
 const PROJECT_PAGE_SIZE = 50;
@@ -19,17 +19,19 @@ export function useProjectListData(): UseProjectListDataReturn {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
+  const projectService = useProjectService();
 
   const loadProjects = useCallback(async (page = 1, append = false) => {
     setLoading(true);
     try {
-      const projectService = getProjectService();
       const result = await projectService.getProjectsPaginated(page, PROJECT_PAGE_SIZE);
 
+      const sanitizedItems = result.items.filter((item): item is Project => Boolean(item));
+
       if (append) {
-        setProjects((prev) => [...prev, ...result.items]);
+        setProjects((prev) => [...prev, ...sanitizedItems]);
       } else {
-        setProjects(result.items);
+        setProjects(sanitizedItems);
       }
 
       setCurrentPage(page);
@@ -39,7 +41,7 @@ export function useProjectListData(): UseProjectListDataReturn {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [projectService]);
 
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) {

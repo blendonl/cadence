@@ -1,3 +1,4 @@
+import { injectable, inject } from "tsyringe";
 import { Project } from "../domain/entities/Project";
 import {
   ProjectRepository,
@@ -5,6 +6,7 @@ import {
 } from "../domain/repositories/ProjectRepository";
 import { ProjectId } from "@core/types";
 import { getEventBus } from "@core/EventBus";
+import { PROJECT_REPOSITORY } from "@core/di/tokens";
 
 export class ProjectNotFoundError extends Error {
   constructor(message: string) {
@@ -13,8 +15,11 @@ export class ProjectNotFoundError extends Error {
   }
 }
 
+@injectable()
 export class ProjectService {
-  constructor(private readonly repository: ProjectRepository) {}
+  constructor(
+    @inject(PROJECT_REPOSITORY) private readonly repository: ProjectRepository
+  ) {}
 
   private validateBoardName(name: string): void {
     if (!name || name.trim().length === 0) {
@@ -49,6 +54,20 @@ export class ProjectService {
     }
 
     return project;
+  }
+
+  async getProjectByIdWithDetails(projectId: ProjectId) {
+    const repository = this.repository as any;
+    if (!repository.loadProjectByIdWithDetails) {
+      throw new Error("Repository does not support loading project details");
+    }
+
+    const result = await repository.loadProjectByIdWithDetails(projectId);
+    if (!result) {
+      throw new ProjectNotFoundError(`Project with id '${projectId}' not found`);
+    }
+
+    return result;
   }
 
   async createProject(

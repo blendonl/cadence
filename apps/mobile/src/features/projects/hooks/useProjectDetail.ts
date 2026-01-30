@@ -1,7 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { container } from "tsyringe";
-import { BackendProjectRepository } from "../infrastructure/BackendProjectRepository";
-import { BACKEND_API_CLIENT } from "@core/di/tokens";
+import { useProjectService } from "@core/di/hooks";
 
 export function useProjectDetail(projectId: string | undefined) {
   const [data, setData] = useState<{
@@ -14,13 +12,13 @@ export function useProjectDetail(projectId: string | undefined) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const repository = container.resolve(BackendProjectRepository);
+  const projectService = useProjectService();
 
   const loadData = useCallback(async () => {
     if (!projectId) return;
 
     try {
-      const result = await repository.loadProjectByIdWithDetails(projectId);
+      const result = await projectService.getProjectByIdWithDetails(projectId);
       if (result) {
         setData(result);
         setError(null);
@@ -34,7 +32,7 @@ export function useProjectDetail(projectId: string | undefined) {
     } finally {
       setLoading(false);
     }
-  }, [projectId, repository]);
+  }, [projectId, projectService]);
 
   useEffect(() => {
     loadData();
