@@ -122,27 +122,16 @@ export async function initializeContainer(
 
   progressCallback?.("Registering services...");
 
-  container.register(BOARD_SERVICE, {
-    useFactory: (c) => {
-      return c.resolve(BoardService);
-    },
-  });
-
-  container.register(COLUMN_SERVICE, {
-    useFactory: (c) => {
-      return new ColumnService(c.resolve(COLUMN_REPOSITORY));
-    },
-  });
-
-  container.register(TASK_SERVICE, {
-    useClass: TaskService,
-  });
-
-  container.register(PROJECT_SERVICE, {
-    useFactory: (c) => {
-      return new ProjectService(c.resolve(PROJECT_REPOSITORY));
-    },
-  });
+  container.registerSingleton(BOARD_SERVICE, BoardService);
+  container.registerSingleton(COLUMN_SERVICE, ColumnService);
+  container.registerSingleton(TASK_SERVICE, TaskService);
+  container.registerSingleton(PROJECT_SERVICE, ProjectService);
+  container.registerSingleton(AGENDA_SERVICE, AgendaService);
+  container.registerSingleton(NOTE_SERVICE, NoteService);
+  container.registerSingleton(GOAL_SERVICE, GoalService);
+  container.registerSingleton(TIME_TRACKING_SERVICE, TimeTrackingService);
+  container.registerSingleton(ROUTINE_SERVICE, RoutineService);
+  container.registerSingleton(CALENDAR_SYNC_SERVICE, CalendarSyncService);
 
   container.register(NOTIFICATION_SERVICE, {
     useFactory: (c) => {
@@ -151,52 +140,6 @@ export async function initializeContainer(
         console.error("Failed to initialize NotificationService:", error);
       });
       return service;
-    },
-  });
-
-  container.register(AGENDA_SERVICE, {
-    useFactory: (c) => {
-      return new AgendaService(
-        c.resolve(AGENDA_REPOSITORY),
-        c.resolve(NOTIFICATION_SERVICE)
-      );
-    },
-  });
-
-  container.register(NOTE_SERVICE, {
-    useFactory: (c) => {
-      return new NoteService(c.resolve(NOTE_REPOSITORY));
-    },
-  });
-
-  container.register(GOAL_SERVICE, {
-    useFactory: (c) => {
-      return new GoalService(
-        c.resolve(GOAL_REPOSITORY),
-        c.resolve(BOARD_SERVICE),
-        c.resolve(AGENDA_REPOSITORY)
-      );
-    },
-  });
-
-  container.register(TIME_TRACKING_SERVICE, {
-    useFactory: (c) => {
-      return new TimeTrackingService(c.resolve(TIME_LOG_REPOSITORY));
-    },
-  });
-
-  container.register(ROUTINE_SERVICE, {
-    useFactory: (c) => {
-      return new RoutineService(c.resolve(ROUTINE_REPOSITORY));
-    },
-  });
-
-  container.register(CALENDAR_SYNC_SERVICE, {
-    useFactory: (c) => {
-      return new CalendarSyncService(
-        c.resolve(CALENDAR_REPOSITORY),
-        c.resolve(BOARD_REPOSITORY)
-      );
     },
   });
 
