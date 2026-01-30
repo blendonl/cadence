@@ -1,27 +1,38 @@
 import { useState, useCallback } from 'react';
+import { Task } from '@features/tasks';
 
 export function useAgendaModals() {
-  const [showFormModal, setShowFormModal] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showTaskSelector, setShowTaskSelector] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
-  const openFormModal = useCallback(() => setShowFormModal(true), []);
-  const closeFormModal = useCallback(() => setShowFormModal(false), []);
+  const openScheduleModal = useCallback((task: Task) => {
+    setSelectedTask(task);
+    setShowScheduleModal(true);
+  }, []);
+
+  const closeScheduleModal = useCallback(() => {
+    setShowScheduleModal(false);
+    setSelectedTask(null);
+  }, []);
 
   const openTaskSelector = useCallback(() => setShowTaskSelector(true), []);
+
   const closeTaskSelector = useCallback(() => setShowTaskSelector(false), []);
 
-  const openTaskSelectorThenForm = useCallback(() => {
+  const openTaskSelectorThenSchedule = useCallback((task: Task) => {
     closeTaskSelector();
-    openFormModal();
-  }, [closeTaskSelector, openFormModal]);
+    openScheduleModal(task);
+  }, [closeTaskSelector, openScheduleModal]);
 
   return {
-    showFormModal,
+    showScheduleModal,
     showTaskSelector,
-    openFormModal,
-    closeFormModal,
+    selectedTask,
+    openScheduleModal,
+    closeScheduleModal,
     openTaskSelector,
     closeTaskSelector,
-    openTaskSelectorThenForm,
+    openTaskSelectorThenSchedule,
   };
 }

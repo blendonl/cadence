@@ -11,7 +11,7 @@ import { Project } from '@features/projects/domain/entities/Project';
 import { Board } from '@features/boards';
 import { Task } from '@features/tasks';
 import { ProjectId, BoardId, TaskId } from '@core/types';
-import { TaskType } from '@mprojectmanager/shared-types';
+import { TaskType } from 'shared-types';
 import BaseModal from '@shared/components/BaseModal';
 import theme from '@shared/theme';
 import AppIcon from '@shared/components/icons/AppIcon';

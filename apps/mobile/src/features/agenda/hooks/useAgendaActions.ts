@@ -1,9 +1,8 @@
 import { useCallback } from 'react';
 import { Alert } from 'react-native';
-import { getAgendaService, getBoardService } from '@core/di/hooks';
+import { getAgendaService } from '@core/di/hooks';
 import { ScheduledAgendaItem } from '../domain/interfaces/AgendaService.interface';
-import { Board } from '@features/boards';
-import { AgendaFormData } from '../components/AgendaItemFormModal';
+import { TaskScheduleData } from '../components/TaskScheduleModal';
 
 interface UseAgendaActionsProps {
   onDataChanged: (date?: string) => void;
@@ -41,42 +40,32 @@ export function useAgendaActions({ onDataChanged }: UseAgendaActionsProps) {
     }
   }, [onDataChanged]);
 
-  const handleCreate = useCallback(async (data: AgendaFormData) => {
+  const handleCreate = useCallback(async (data: TaskScheduleData) => {
     try {
       const agendaService = getAgendaService();
-      await agendaService.createAgendaItem(
-        data.projectId,
-        data.boardId,
-        data.taskId,
-        data.date,
-        data.time,
-        data.durationMinutes,
-        data.taskType,
-        data.location || data.attendees ? {
-          location: data.location,
-          attendees: data.attendees,
-        } : undefined
-      );
+      const agendaId = data.date;
+
+      await agendaService.createAgendaItem({
+        agendaId,
+        taskId: data.taskId,
+        type: data.taskType,
+        startAt: data.time ? `${data.date}T${data.time}:00` : null,
+        duration: data.durationMinutes,
+        status: 'PENDING',
+        position: 0,
+        notes: null,
+        notificationId: null,
+      });
+
       onDataChanged(data.date);
     } catch (error) {
       throw error;
     }
   }, [onDataChanged]);
 
-  const handleLoadBoards = useCallback(async (projectId: string): Promise<Board[]> => {
-    try {
-      const boardService = getBoardService();
-      return await boardService.getBoardsByProject(projectId);
-    } catch (error) {
-      console.error('Failed to load boards:', error);
-      return [];
-    }
-  }, []);
-
   return {
     handleToggleComplete,
     handleDelete,
     handleCreate,
-    handleLoadBoards,
   };
 }

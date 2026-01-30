@@ -15,20 +15,16 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
-import { getAgendaService, getProjectService } from '@core/di/hooks';
+import { getAgendaService } from '@core/di/hooks';
 import { ScheduledAgendaItem, DayAgenda } from '@features/agenda/services/AgendaService';
 import { AgendaStackParamList } from '@shared/types/navigation';
 import { AgendaItemCard } from '../components/AgendaItemCard';
-import { AgendaItemFormModal, AgendaFormData } from '../components/AgendaItemFormModal';
 import AppIcon, { AppIconName } from '@shared/components/icons/AppIcon';
-import { Project } from '@features/projects/domain/entities/Project';
-import { Board } from '@features/boards';
-import { getBoardService, getGoalService } from '@core/di/hooks';
 import { useAutoRefresh } from '@shared/hooks/useAutoRefresh';
 import TaskSelectorModal from '../components/TaskSelectorModal';
-import { ScheduledTask } from '@features/agenda/services/AgendaService';
-import { Goal } from '@features/goals/domain/entities/Goal';
+import { TaskScheduleModal, TaskScheduleData } from '../components/TaskScheduleModal';
 import { useDebounce } from '@shared/hooks/useDebounce';
+import { Task } from '@features/tasks';
 
 type AgendaScreenNavProp = StackNavigationProp<AgendaStackParamList, 'AgendaMain'>;
 
@@ -49,13 +45,9 @@ export default function AgendaScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [monthLoading, setMonthLoading] = useState(false);
-  const [showFormModal, setShowFormModal] = useState(false);
   const [showTaskSelector, setShowTaskSelector] = useState(false);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [projectsPage, setProjectsPage] = useState(1);
-  const [projectsHasMore, setProjectsHasMore] = useState(true);
-  const [projectsLoading, setProjectsLoading] = useState(false);
-  const [goals, setGoals] = useState<Goal[]>([]);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
   const [lastRefreshTime, setLastRefreshTime] = useState(0);
   const [unfinishedItems, setUnfinishedItems] = useState<ScheduledAgendaItem[]>([]);
@@ -165,52 +157,10 @@ export default function AgendaScreen() {
     setLastRefreshTime(Date.now());
   }, [loadWeekData, loadMonthData, loadUnfinished, viewMode, allScheduledItems.length, loadAllScheduledItems]);
 
-  const loadProjects = async () => {
-    setProjectsLoading(true);
-    try {
-      console.log('Loading projects and goals...');
-      const projectService = getProjectService();
-      const goalService = getGoalService();
-      const [projectResult, allGoals] = await Promise.all([
-        projectService.getProjectsPaginated(1, PROJECT_PAGE_SIZE),
-        goalService.getAllGoals(),
-      ]);
-      console.log('Loaded projects:', projectResult.items.length, 'goals:', allGoals.length);
-      setProjects(projectResult.items);
-      setProjectsPage(1);
-      setProjectsHasMore(projectResult.hasMore);
-      setGoals(allGoals);
-    } catch (error) {
-      console.error('Failed to load projects and goals:', error);
-    } finally {
-      setProjectsLoading(false);
-    }
-  };
-
-  const loadMoreProjects = useCallback(async () => {
-    if (projectsLoading || !projectsHasMore) {
-      return;
-    }
-
-    const nextPage = projectsPage + 1;
-    setProjectsLoading(true);
-    try {
-      const projectService = getProjectService();
-      const result = await projectService.getProjectsPaginated(nextPage, PROJECT_PAGE_SIZE);
-      setProjects((prev) => [...prev, ...result.items]);
-      setProjectsPage(nextPage);
-      setProjectsHasMore(result.hasMore);
-    } catch (error) {
-      console.error('Failed to load more projects:', error);
-    } finally {
-      setProjectsLoading(false);
-    }
-  }, [projectsLoading, projectsHasMore, projectsPage]);
 
   useEffect(() => {
     const selectedDateStr = selectedDate.toISOString().split('T')[0];
     loadWeekData(selectedDateStr);
-    loadProjects();
   }, [loadWeekData]);
 
   useEffect(() => {
@@ -401,37 +351,6 @@ export default function AgendaScreen() {
     }
   }, [loadSingleDay]);
 
-  const handleLoadBoards = async (projectId: string): Promise<Board[]> => {
-    try {
-      const boardService = getBoardService();
-      return await boardService.getBoardsByProject(projectId);
-    } catch (error) {
-      console.error('Failed to load boards:', error);
-      return [];
-    }
-  };
-
-  const handleCreateAgendaItem = async (data: AgendaFormData) => {
-    try {
-      const agendaService = getAgendaService();
-      await agendaService.createAgendaItem(
-        data.projectId,
-        data.boardId,
-        data.taskId,
-        data.date,
-        data.time,
-        data.durationMinutes,
-        data.taskType,
-        data.location || data.attendees ? {
-          location: data.location,
-          attendees: data.attendees,
-        } : undefined
-      );
-      await loadWeekData();
-    } catch (error) {
-      throw error;
-    }
-  };
 
   const goToPreviousMonth = () => {
     const prev = new Date(monthAnchor);
@@ -606,10 +525,6 @@ export default function AgendaScreen() {
     />
   ), [handleAgendaItemPress, handleAgendaItemLongPress, handleToggleComplete]);
 
-  const goalTitleMap = useMemo(() => {
-    return new Map(goals.map(goal => [goal.id, goal.title]));
-  }, [goals]);
-
   const searchSections = useMemo(() => {
     if (debouncedSearchQuery.length === 0) {
       return [];
@@ -621,8 +536,7 @@ export default function AgendaScreen() {
     const matchesQuery = (item: ScheduledAgendaItem) => {
       const projectName = item.projectName || '';
       const taskTitle = item.task?.title || '';
-      const goalTitle = item.task?.goal_id ? goalTitleMap.get(item.task.goal_id) || '' : '';
-      const haystack = `${projectName} ${taskTitle} ${goalTitle}`.toLowerCase();
+      const haystack = `${projectName} ${taskTitle}`.toLowerCase();
       return haystack.includes(normalizedQuery);
     };
 
@@ -645,7 +559,7 @@ export default function AgendaScreen() {
           return leftTime.localeCompare(rightTime);
         }),
       }));
-  }, [debouncedSearchQuery, searchMode, unfinishedItems, allScheduledItems, goalTitleMap]);
+  }, [debouncedSearchQuery, searchMode, unfinishedItems, allScheduledItems]);
 
   const renderSearchResults = () => {
     if (searchLoading) {
@@ -708,10 +622,36 @@ export default function AgendaScreen() {
     </View>
   ), []);
 
-  const handleTaskSelected = useCallback((scheduledTask: ScheduledTask) => {
+  const handleTaskSelected = useCallback((task: Task) => {
+    setSelectedTask(task);
     setShowTaskSelector(false);
-    setShowFormModal(true);
+    setShowScheduleModal(true);
   }, []);
+
+  const handleScheduleTask = useCallback(async (data: TaskScheduleData) => {
+    try {
+      const agendaService = getAgendaService();
+      const agendaId = data.date;
+
+      await agendaService.createAgendaItem({
+        agendaId,
+        taskId: data.taskId,
+        type: data.taskType,
+        startAt: data.time ? `${data.date}T${data.time}:00` : null,
+        duration: data.durationMinutes,
+        status: 'pending',
+        position: 0,
+        notes: null,
+        notificationId: null,
+      });
+
+      await loadSingleDay(data.date);
+      setSelectedTask(null);
+    } catch (error) {
+      console.error('Failed to schedule task:', error);
+      throw error;
+    }
+  }, [loadSingleDay]);
 
   const renderDayContent = () => {
     if (debouncedSearchQuery.length > 0) {
@@ -748,7 +688,7 @@ export default function AgendaScreen() {
           <Text style={styles.emptySubtitle}>{selectedDateStr}</Text>
           <TouchableOpacity
             style={styles.scheduleButton}
-            onPress={() => setShowFormModal(true)}
+            onPress={() => setShowTaskSelector(true)}
           >
             <Text style={styles.scheduleButtonText}>+ Schedule a task</Text>
           </TouchableOpacity>
@@ -911,16 +851,15 @@ export default function AgendaScreen() {
         onTaskSelected={handleTaskSelected}
       />
 
-      <AgendaItemFormModal
-        visible={showFormModal}
-        onClose={() => setShowFormModal(false)}
-        onSubmit={handleCreateAgendaItem}
-        projects={projects}
-        onLoadBoards={handleLoadBoards}
-        onLoadMoreProjects={loadMoreProjects}
-        hasMoreProjects={projectsHasMore}
-        projectsLoading={projectsLoading}
+      <TaskScheduleModal
+        visible={showScheduleModal}
+        task={selectedTask}
         prefilledDate={formatDateKey(selectedDate)}
+        onClose={() => {
+          setShowScheduleModal(false);
+          setSelectedTask(null);
+        }}
+        onSubmit={handleScheduleTask}
       />
     </Screen>
   );

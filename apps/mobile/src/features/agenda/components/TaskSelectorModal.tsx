@@ -11,41 +11,29 @@ import {
 import BaseModal from '@shared/components/BaseModal';
 import theme from '@shared/theme';
 import AppIcon from '@shared/components/icons/AppIcon';
-import { getAgendaService, getProjectService, getGoalService } from '@core/di/hooks';
-import { ScheduledTask } from '@features/agenda/services/AgendaService';
-import { Project } from '@features/projects/domain/entities/Project';
-import { Goal } from '@features/goals/domain/entities/Goal';
+import { getAgendaService } from '@core/di/hooks';
+import { Task } from '@features/tasks';
 
 interface TaskSelectorModalProps {
   visible: boolean;
   onClose: () => void;
-  onTaskSelected: (task: ScheduledTask) => void;
+  onTaskSelected: (task: Task) => void;
 }
 
-type FilterType = 'all' | 'project' | 'goal' | 'priority';
+type FilterType = 'all' | 'priority';
 
 export default function TaskSelectorModal({
   visible,
   onClose,
   onTaskSelected,
 }: TaskSelectorModalProps) {
-  const [tasks, setTasks] = useState<ScheduledTask[]>([]);
-  const [filteredTasks, setFilteredTasks] = useState<ScheduledTask[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [projectsPage, setProjectsPage] = useState(1);
-  const [projectsHasMore, setProjectsHasMore] = useState(true);
-  const [projectsLoading, setProjectsLoading] = useState(false);
-  const [goals, setGoals] = useState<Goal[]>([]);
-
   const [selectedFilter, setSelectedFilter] = useState<FilterType>('all');
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
   const [selectedPriority, setSelectedPriority] = useState<string | null>(null);
-
-  const PROJECT_PAGE_SIZE = 50;
 
   useEffect(() => {
     if (visible) {
@@ -55,81 +43,32 @@ export default function TaskSelectorModal({
 
   useEffect(() => {
     applyFilters();
-  }, [tasks, searchQuery, selectedFilter, selectedProjectId, selectedGoalId, selectedPriority]);
+  }, [tasks, selectedPriority]);
 
   const loadData = async () => {
     setLoading(true);
     try {
       const agendaService = getAgendaService();
-      const projectService = getProjectService();
-      const goalService = getGoalService();
-
-      const [allTasks, projectResult, allGoals] = await Promise.all([
-        agendaService.getAllSchedulableTasks(),
-        projectService.getProjectsPaginated(1, PROJECT_PAGE_SIZE),
-        goalService.getAllGoals(),
-      ]);
-
+      const allTasks = await agendaService.getAllSchedulableTasks(searchQuery);
       setTasks(allTasks);
-      setProjects(projectResult.items);
-      setProjectsPage(1);
-      setProjectsHasMore(projectResult.hasMore);
-      setGoals(allGoals);
     } catch (error) {
       console.error('Failed to load tasks:', error);
     } finally {
-      setProjectsLoading(false);
       setLoading(false);
-    }
-  };
-
-  const loadMoreProjects = async () => {
-    if (projectsLoading || !projectsHasMore) {
-      return;
-    }
-
-    setProjectsLoading(true);
-    try {
-      const projectService = getProjectService();
-      const nextPage = projectsPage + 1;
-      const result = await projectService.getProjectsPaginated(nextPage, PROJECT_PAGE_SIZE);
-      setProjects(prev => [...prev, ...result.items]);
-      setProjectsPage(nextPage);
-      setProjectsHasMore(result.hasMore);
-    } catch (error) {
-      console.error('Failed to load more projects:', error);
-    } finally {
-      setProjectsLoading(false);
     }
   };
 
   const applyFilters = () => {
     let filtered = [...tasks];
 
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(st =>
-        st.task.title.toLowerCase().includes(query) ||
-        st.task.description.toLowerCase().includes(query)
-      );
-    }
-
-    if (selectedProjectId) {
-      filtered = filtered.filter(st => st.task.project_id === selectedProjectId);
-    }
-
-    if (selectedGoalId) {
-      filtered = filtered.filter(st => st.task.goal_id === selectedGoalId);
-    }
-
     if (selectedPriority) {
-      filtered = filtered.filter(st => st.task.priority === selectedPriority);
+      filtered = filtered.filter(task => task.priority === selectedPriority);
     }
 
     setFilteredTasks(filtered);
   };
 
-  const handleTaskPress = (task: ScheduledTask) => {
+  const handleTaskPress = (task: Task) => {
     onTaskSelected(task);
     onClose();
   };
@@ -161,8 +100,8 @@ export default function TaskSelectorModal({
     }
   };
 
-  const renderTask = ({ item }: { item: ScheduledTask }) => {
-    const priorityColor = getPriorityColor(item.task.priority);
+  const renderTask = ({ item }: { item: Task }) => {
+    const priorityColor = getPriorityColor(item.priority);
     return (
       <TouchableOpacity
         style={styles.taskItem}
@@ -172,21 +111,21 @@ export default function TaskSelectorModal({
           <View style={styles.taskTitleRow}>
             <View style={[styles.priorityBadge, { borderColor: priorityColor, backgroundColor: `${priorityColor}22` }]}>
               <AppIcon
-                name={getPriorityIcon(item.task.priority)}
+                name={getPriorityIcon(item.priority)}
                 size={12}
                 color={priorityColor}
               />
               <Text style={[styles.priorityText, { color: priorityColor }]}>
-                {getPriorityLabel(item.task.priority)}
+                {getPriorityLabel(item.priority)}
               </Text>
             </View>
             <Text style={styles.taskTitle} numberOfLines={1}>
-              {item.task.title}
+              {item.title}
             </Text>
           </View>
         </View>
         <Text style={styles.taskMeta} numberOfLines={1}>
-          {item.projectName || 'No project'}
+          {item.slug || 'No project'}
         </Text>
       </TouchableOpacity>
     );
@@ -201,8 +140,6 @@ export default function TaskSelectorModal({
         ]}
         onPress={() => {
           setSelectedFilter('all');
-          setSelectedProjectId(null);
-          setSelectedGoalId(null);
           setSelectedPriority(null);
         }}
       >
@@ -232,40 +169,6 @@ export default function TaskSelectorModal({
           Priority
         </Text>
       </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[
-          styles.filterChip,
-          selectedFilter === 'project' && styles.filterChipActive,
-        ]}
-        onPress={() => setSelectedFilter('project')}
-      >
-        <Text
-          style={[
-            styles.filterChipText,
-            selectedFilter === 'project' && styles.filterChipTextActive,
-          ]}
-        >
-          Project
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[
-          styles.filterChip,
-          selectedFilter === 'goal' && styles.filterChipActive,
-        ]}
-        onPress={() => setSelectedFilter('goal')}
-      >
-        <Text
-          style={[
-            styles.filterChipText,
-            selectedFilter === 'goal' && styles.filterChipTextActive,
-          ]}
-        >
-          Goal
-        </Text>
-      </TouchableOpacity>
     </View>
   );
 
@@ -290,55 +193,6 @@ export default function TaskSelectorModal({
               <Text style={styles.filterOptionText}>
                 {priority.charAt(0).toUpperCase() + priority.slice(1)}
               </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      );
-    }
-
-    if (selectedFilter === 'project') {
-      return (
-        <View style={styles.filterOptionsContainer}>
-          {projects.map(project => (
-            <TouchableOpacity
-              key={project.id}
-              style={[
-                styles.filterOption,
-                selectedProjectId === project.id && styles.filterOptionActive,
-              ]}
-              onPress={() => setSelectedProjectId(selectedProjectId === project.id ? null : project.id)}
-            >
-              <Text style={styles.filterOptionText}>{project.name}</Text>
-            </TouchableOpacity>
-          ))}
-          {projectsHasMore && (
-            <TouchableOpacity
-              style={styles.loadMoreOption}
-              onPress={loadMoreProjects}
-              disabled={projectsLoading}
-            >
-              <Text style={styles.loadMoreText}>
-                {projectsLoading ? 'Loading more...' : 'Load more projects'}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      );
-    }
-
-    if (selectedFilter === 'goal') {
-      return (
-        <View style={styles.filterOptionsContainer}>
-          {goals.map(goal => (
-            <TouchableOpacity
-              key={goal.id}
-              style={[
-                styles.filterOption,
-                selectedGoalId === goal.id && styles.filterOptionActive,
-              ]}
-              onPress={() => setSelectedGoalId(selectedGoalId === goal.id ? null : goal.id)}
-            >
-              <Text style={styles.filterOptionText}>{goal.title}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -384,7 +238,7 @@ export default function TaskSelectorModal({
         <FlatList
           data={filteredTasks}
           renderItem={renderTask}
-          keyExtractor={item => `${item.boardId}-${item.task.id}`}
+          keyExtractor={item => item.id}
           style={styles.list}
           contentContainerStyle={styles.listContent}
         />
@@ -461,19 +315,6 @@ const styles = StyleSheet.create({
     borderColor: theme.accent.primary,
   },
   filterOptionText: {
-    color: theme.text.secondary,
-    fontSize: theme.typography.fontSizes.xs,
-    fontWeight: '600',
-  },
-  loadMoreOption: {
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.xs,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: theme.border.primary,
-    backgroundColor: theme.card.background,
-  },
-  loadMoreText: {
     color: theme.text.secondary,
     fontSize: theme.typography.fontSizes.xs,
     fontWeight: '600',

@@ -8,8 +8,6 @@ import { useAgendaRefresh } from './useAgendaRefresh';
 import { useAgendaModals } from './useAgendaModals';
 import { useAgendaActions } from './useAgendaActions';
 import { useAgendaItemHandlers } from './useAgendaItemHandlers';
-import { useProjects } from '@features/projects/hooks/useProjects';
-import { useGoals } from '@features/goals/hooks/useGoals';
 
 export function useAgendaScreen() {
   // Sub-hooks
@@ -18,8 +16,6 @@ export function useAgendaScreen() {
   const { agendaData, loading: agendaLoading, loadData, updateSingleDay } = useAgendaData();
   const { unfinishedItems, loadUnfinished } = useUnfinishedItems();
   const search = useAgendaSearch();
-  const projects = useProjects();
-  const goals = useGoals();
 
   // Business logic - load current view
   const loadCurrentView = useCallback(async () => {
@@ -65,8 +61,8 @@ export function useAgendaScreen() {
     await refreshAll();
   }, [actions, refreshAll]);
 
-  const handleTaskSelected = useCallback(() => {
-    modals.openTaskSelectorThenForm();
+  const handleTaskSelected = useCallback((task: any) => {
+    modals.openTaskSelectorThenSchedule(task);
   }, [modals]);
 
   // Refresh setup
@@ -78,8 +74,6 @@ export function useAgendaScreen() {
       await Promise.all([
         loadCurrentView(),
         loadUnfinished(),
-        projects.loadProjects(),
-        goals.loadGoals(),
       ]);
     };
     init();
@@ -107,8 +101,6 @@ export function useAgendaScreen() {
       agendaData,
       unfinishedItems,
       searchResults: search.searchResults,
-      projects: projects.projects,
-      goals: goals.goals,
     },
 
     // Search
@@ -122,10 +114,11 @@ export function useAgendaScreen() {
 
     // Modals
     modals: {
-      showFormModal: modals.showFormModal,
+      showScheduleModal: modals.showScheduleModal,
       showTaskSelector: modals.showTaskSelector,
-      openFormModal: modals.openFormModal,
-      closeFormModal: modals.closeFormModal,
+      selectedTask: modals.selectedTask,
+      openScheduleModal: modals.openScheduleModal,
+      closeScheduleModal: modals.closeScheduleModal,
       openTaskSelector: modals.openTaskSelector,
       closeTaskSelector: modals.closeTaskSelector,
     },
@@ -151,12 +144,8 @@ export function useAgendaScreen() {
 
     // Form actions
     formActions: {
-      onCreateAgendaItem: handleCreateAgendaItem,
+      onScheduleTask: handleCreateAgendaItem,
       onTaskSelected: handleTaskSelected,
-      onLoadBoards: actions.handleLoadBoards,
-      onLoadMoreProjects: projects.loadMore,
-      projectsHasMore: projects.hasMore,
-      projectsLoading: projects.loading,
     },
 
     // Refresh

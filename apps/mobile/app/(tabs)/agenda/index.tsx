@@ -12,7 +12,7 @@ import { MonthView } from '@features/agenda/components/MonthView';
 import { AgendaSearchBar } from '@features/agenda/components/AgendaSearchBar';
 import { AgendaDayContent } from '@features/agenda/components/AgendaDayContent';
 import { AgendaFAB } from '@features/agenda/components/AgendaFAB';
-import { AgendaItemFormModal } from '@features/agenda/components/AgendaItemFormModal';
+import { TaskScheduleModal } from '@features/agenda/components/TaskScheduleModal';
 import TaskSelectorModal from '@features/agenda/components/TaskSelectorModal';
 
 export default function AgendaScreen() {
@@ -90,7 +90,7 @@ export default function AgendaScreen() {
         onItemPress={itemActions.onItemPress}
         onItemLongPress={itemActions.onItemLongPress}
         onToggleComplete={itemActions.onToggleComplete}
-        onScheduleTask={modals.openFormModal}
+        onScheduleTask={modals.openTaskSelector}
       />
 
       <AgendaFAB onPress={modals.openTaskSelector} />
@@ -101,16 +101,12 @@ export default function AgendaScreen() {
         onTaskSelected={formActions.onTaskSelected}
       />
 
-      <AgendaItemFormModal
-        visible={modals.showFormModal}
-        onClose={modals.closeFormModal}
-        onSubmit={formActions.onCreateAgendaItem}
-        projects={data.projects}
-        onLoadBoards={formActions.onLoadBoards}
-        onLoadMoreProjects={formActions.onLoadMoreProjects}
-        hasMoreProjects={formActions.projectsHasMore}
-        projectsLoading={formActions.projectsLoading}
+      <TaskScheduleModal
+        visible={modals.showScheduleModal}
+        task={modals.selectedTask}
         prefilledDate={formatDateKey(viewState.selectedDate)}
+        onClose={modals.closeScheduleModal}
+        onSubmit={formActions.onScheduleTask}
       />
     </Screen>
   );
