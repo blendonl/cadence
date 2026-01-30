@@ -1,13 +1,17 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { View, StyleSheet, FlatList, RefreshControl, ActivityIndicator, ListRenderItem } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { RootStackParamList } from '@shared/types/navigation';
 import { useBoardScreen } from '@features/boards/hooks';
-import { ColumnCard, AddColumnCard } from '@features/columns/components';
+import { useBoardDragDrop } from '@features/boards/hooks/useBoardDragDrop';
+import { useAutoScroll } from '@features/boards/hooks/useAutoScroll';
+import { BoardDragProvider, DragOverlay, DroppableColumn, useBoardDrag } from '@features/boards/components/drag-drop';
+import { AddColumnCard } from '@features/columns/components';
 import { useColumnFormModal } from '@features/columns/hooks';
-import { useTaskMoveModal } from '@features/tasks/hooks';
+import { Task } from '@features/tasks/domain/entities/Task';
 import EmptyState from '@shared/components/EmptyState';
 import theme from '@shared/theme';
 import uiConstants from '@shared/theme/uiConstants';
@@ -20,9 +24,12 @@ interface Props {
   route: BoardScreenRouteProp;
 }
 
-export default function BoardScreen({ navigation, route }: Props) {
+function BoardScreenContent({ navigation, route }: Props) {
   const { boardId } = route.params;
   const insets = useSafeAreaInsets();
+  const boardListRef = useRef<FlatList>(null);
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const dragContext = useBoardDrag();
 
   const {
     board,
@@ -37,6 +44,48 @@ export default function BoardScreen({ navigation, route }: Props) {
     retryLoad,
   } = useBoardScreen(boardId);
 
+  useEffect(() => {
+    if (boardListRef.current) {
+      dragContext.setHorizontalScrollRef(boardListRef);
+    }
+  }, [dragContext]);
+
+  const {
+    handleHorizontalScroll,
+    handleHorizontalContentSize,
+    handleHorizontalLayout,
+    registerVerticalScroll,
+    unregisterVerticalScroll,
+  } = useAutoScroll({
+    dragPosition: dragContext.dragPosition,
+    isDragging: dragContext.isDragging,
+    activeColumnId: dragContext.activeColumnId,
+    horizontalScrollRef: boardListRef,
+  });
+
+  const { handleDragStart, handleDragEnd, validateDrop } = useBoardDragDrop({
+    board,
+    onMoveTask: taskActions.handleMoveTask,
+    onValidateMove: async (board, taskId, targetColumnId) => {
+      const targetColumn = board.getColumnById(targetColumnId);
+      const task = board.getTaskById(taskId);
+
+      if (!targetColumn || !task) {
+        return { valid: false, reason: 'Column or task not found' };
+      }
+
+      if (task.columnId === targetColumnId) {
+        return { valid: false, reason: 'Task is already in this column' };
+      }
+
+      if (targetColumn.limit !== null && targetColumn.tasks.length >= targetColumn.limit) {
+        return { valid: false, reason: `Column "${targetColumn.name}" is at WIP limit (${targetColumn.limit})` };
+      }
+
+      return { valid: true };
+    },
+  });
+
   const columnFormModal = useColumnFormModal({
     onSubmit: async (name, wipLimit, columnId) => {
       if (columnId) {
@@ -45,11 +94,6 @@ export default function BoardScreen({ navigation, route }: Props) {
         await columnActions.handleCreateColumn(name, wipLimit);
       }
     },
-  });
-
-  const taskMoveModal = useTaskMoveModal({
-    boardId,
-    onMove: taskActions.handleMoveTask,
   });
 
   React.useEffect(() => {
@@ -70,10 +114,22 @@ export default function BoardScreen({ navigation, route }: Props) {
     [taskActions]
   );
 
-  const handleTaskLongPress = useCallback(
-    (task: any) => taskMoveModal.open(task),
-    [taskMoveModal]
+  const handleTaskDragStart = useCallback(
+    (task: Task) => {
+      setDraggedTaskId(task.id);
+      handleDragStart(task);
+    },
+    [handleDragStart]
   );
+
+  useEffect(() => {
+    setDraggedTaskId(null);
+  }, [board]);
+
+  const currentDraggedTask = useMemo(() => {
+    if (!draggedTaskId || !board) return null;
+    return board.getTaskById(draggedTaskId);
+  }, [draggedTaskId, board]);
 
   const handleAddTask = useCallback(
     (columnId: string) => taskActions.handleAddTask(columnId),
@@ -87,16 +143,20 @@ export default function BoardScreen({ navigation, route }: Props) {
 
   const renderColumn: ListRenderItem<any> = useCallback(
     ({ item: column }) => (
-      <ColumnCard
+      <DroppableColumn
         column={column}
         showParentGroups={viewState.showParentGroups}
         onTaskPress={handleTaskPress}
-        onTaskLongPress={handleTaskLongPress}
+        onDragStart={handleTaskDragStart}
+        onDragEnd={handleDragEnd}
         onAddTask={() => handleAddTask(column.id)}
         onColumnMenu={() => handleColumnMenu(column)}
+        onValidateDrop={validateDrop}
+        registerVerticalScroll={registerVerticalScroll}
+        unregisterVerticalScroll={unregisterVerticalScroll}
       />
     ),
-    [viewState.showParentGroups, handleTaskPress, handleTaskLongPress, handleAddTask, handleColumnMenu]
+    [viewState.showParentGroups, handleTaskPress, handleTaskDragStart, handleDragEnd, handleAddTask, handleColumnMenu, validateDrop, registerVerticalScroll, unregisterVerticalScroll]
   );
 
   const keyExtractor = useCallback((column: any) => column.id, []);
@@ -119,7 +179,7 @@ export default function BoardScreen({ navigation, route }: Props) {
     return (
       <SafeAreaView style={styles.container} edges={['left', 'right']}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <ActivityIndicator size="large" color={theme.accent.primary} />
         </View>
       </SafeAreaView>
     );
@@ -154,6 +214,7 @@ export default function BoardScreen({ navigation, route }: Props) {
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <FlatList
+        ref={boardListRef}
         horizontal
         data={board.columns}
         keyExtractor={keyExtractor}
@@ -164,22 +225,48 @@ export default function BoardScreen({ navigation, route }: Props) {
           { paddingBottom: bottomPadding },
         ]}
         showsHorizontalScrollIndicator={false}
+        onLayout={(event) => {
+          handleHorizontalLayout(event.nativeEvent.layout.width);
+        }}
+        onContentSizeChange={(width) => {
+          handleHorizontalContentSize(width);
+        }}
+        onScroll={(event) => {
+          const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+          handleHorizontalScroll(
+            contentOffset.x,
+            contentSize?.width,
+            layoutMeasurement?.width,
+          );
+        }}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
             refreshing={refreshing || isAutoRefreshing}
             onRefresh={refreshBoard}
-            tintColor={theme.colors.primary}
+            tintColor={theme.accent.primary}
           />
         }
       />
+      <DragOverlay task={currentDraggedTask} />
     </SafeAreaView>
+  );
+}
+
+export default function BoardScreen(props: Props) {
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <BoardDragProvider>
+        <BoardScreenContent {...props} />
+      </BoardDragProvider>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.background.primary,
   },
   loadingContainer: {
     flex: 1,

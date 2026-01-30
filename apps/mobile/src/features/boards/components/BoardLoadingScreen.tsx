@@ -71,7 +71,7 @@ const BoardLoadingScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.background.primary,
   },
   header: {
     flexDirection: 'row',
@@ -79,19 +79,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: theme.spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    borderBottomColor: theme.border.primary,
   },
   headerTitle: {
     width: 120,
     height: 24,
-    backgroundColor: theme.colors.surfaceVariant,
-    borderRadius: theme.borderRadius.sm,
+    backgroundColor: theme.background.elevatedHigh,
+    borderRadius: theme.radius.sm,
   },
   headerButton: {
     width: 32,
     height: 32,
-    backgroundColor: theme.colors.surfaceVariant,
-    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.background.elevatedHigh,
+    borderRadius: theme.radius.md,
   },
   columnsContainer: {
     flexDirection: 'row',
@@ -100,8 +100,8 @@ const styles = StyleSheet.create({
   column: {
     width: 280,
     marginRight: theme.spacing.md,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
+    backgroundColor: theme.background.elevated,
+    borderRadius: theme.radius.lg,
     padding: theme.spacing.md,
   },
   columnHeader: {
@@ -113,33 +113,33 @@ const styles = StyleSheet.create({
   columnTitle: {
     width: 100,
     height: 20,
-    backgroundColor: theme.colors.surfaceVariant,
-    borderRadius: theme.borderRadius.sm,
+    backgroundColor: theme.background.elevatedHigh,
+    borderRadius: theme.radius.sm,
   },
   columnBadge: {
     width: 40,
     height: 20,
-    backgroundColor: theme.colors.surfaceVariant,
+    backgroundColor: theme.background.elevatedHigh,
     borderRadius: 10,
   },
   taskCard: {
-    backgroundColor: theme.colors.background,
-    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.background.primary,
+    borderRadius: theme.radius.md,
     padding: theme.spacing.md,
     marginBottom: theme.spacing.sm,
   },
   taskTitle: {
     width: '80%',
     height: 16,
-    backgroundColor: theme.colors.surfaceVariant,
-    borderRadius: theme.borderRadius.sm,
+    backgroundColor: theme.background.elevatedHigh,
+    borderRadius: theme.radius.sm,
     marginBottom: theme.spacing.sm,
   },
   taskDescription: {
     width: '60%',
     height: 12,
-    backgroundColor: theme.colors.surfaceVariant,
-    borderRadius: theme.borderRadius.sm,
+    backgroundColor: theme.background.elevatedHigh,
+    borderRadius: theme.radius.sm,
     marginBottom: theme.spacing.sm,
   },
   taskFooter: {
@@ -149,15 +149,15 @@ const styles = StyleSheet.create({
   taskBadge: {
     width: 50,
     height: 16,
-    backgroundColor: theme.colors.surfaceVariant,
-    borderRadius: theme.borderRadius.sm,
+    backgroundColor: theme.background.elevatedHigh,
+    borderRadius: theme.radius.sm,
   },
   addButton: {
     height: 40,
-    backgroundColor: theme.colors.surfaceVariant,
-    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.background.elevatedHigh,
+    borderRadius: theme.radius.md,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: theme.border.primary,
     borderStyle: 'dashed',
   },
 });
