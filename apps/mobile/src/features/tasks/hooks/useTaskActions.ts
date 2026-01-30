@@ -5,7 +5,7 @@ import { Task } from '../domain/entities/Task';
 import { getTaskService, getBoardService } from '@/core/di/hooks';
 import alertService from '@/services/AlertService';
 import logger from '@/utils/logger';
-import { TaskStatus } from '@mprojectmanager/shared-types';
+import { TaskStatus } from 'shared-types';
 
 interface UseTaskActionsOptions {
   boardId: string;
@@ -47,16 +47,29 @@ export function useTaskActions(options: UseTaskActionsOptions): UseTaskActionsRe
       try {
         const board = await boardService.getBoardById(boardId);
 
-        const validation = await taskService.validateTaskMove(board, taskId, targetColumnId);
-        if (!validation.valid) {
-          alertService.showError(validation.reason || 'Cannot move task');
+        const targetColumn = board.getColumnById(targetColumnId);
+        const task = board.getTaskById(taskId);
+
+        if (!targetColumn || !task) {
+          alertService.showError('Column or task not found');
           return false;
         }
 
-        await taskService.moveTaskBetweenColumns(board, taskId, targetColumnId);
+        if (task.columnId === targetColumnId) {
+          alertService.showError('Task is already in this column');
+          return false;
+        }
+
+        if (targetColumn.limit !== null && targetColumn.tasks.length >= targetColumn.limit) {
+          alertService.showError(
+            `Column "${targetColumn.name}" is at WIP limit (${targetColumn.limit})`
+          );
+          return false;
+        }
+
+        await taskService.moveTaskBetweenColumns(taskId, targetColumnId);
 
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        alertService.showSuccess('Task moved');
 
         if (onDataChanged) {
           await onDataChanged();

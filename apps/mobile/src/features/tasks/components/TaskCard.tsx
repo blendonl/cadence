@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Task } from '../domain/entities/Task';
 import { Parent } from '@domain/entities/Parent';
-import { TaskPriority } from '@mprojectmanager/shared-types';
+import { TaskPriority } from 'shared-types';
 import ParentBadge from '@shared/components/ParentBadge';
 import theme from '@shared/theme';
 import AppIcon from '@shared/components/icons/AppIcon';
@@ -45,7 +45,7 @@ const TaskCard: React.FC<TaskCardProps> = React.memo(({
 
       {isLoading && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="small" color={theme.colors.primary} />
+          <ActivityIndicator size="small" color={theme.accent.primary} />
         </View>
       )}
 
@@ -53,7 +53,7 @@ const TaskCard: React.FC<TaskCardProps> = React.memo(({
         <View style={styles.header}>
           {showDragHandle && (
             <View style={styles.dragHandle}>
-              <AppIcon name="reorder-two" size={18} color={theme.colors.textSecondary} />
+              <AppIcon name="reorder-two" size={18} color={theme.text.secondary} />
             </View>
           )}
 
@@ -64,14 +64,14 @@ const TaskCard: React.FC<TaskCardProps> = React.memo(({
 
             {task.isOverdue && (
               <View style={styles.dueDateBadge}>
-                <AppIcon name="time" size={12} color={theme.colors.error} />
+                <AppIcon name="time" size={12} color={theme.accent.error} />
                 <Text style={[styles.dueDateText, styles.dueDateOverdue]}>Overdue</Text>
               </View>
             )}
 
             {!task.isOverdue && task.isDueSoon && (
               <View style={styles.dueDateBadge}>
-                <AppIcon name="time" size={12} color={theme.colors.warning} />
+                <AppIcon name="time" size={12} color={theme.accent.warning} />
                 <Text style={[styles.dueDateText, styles.dueDateSoon]}>Due Soon</Text>
               </View>
             )}
@@ -94,14 +94,14 @@ const TaskCard: React.FC<TaskCardProps> = React.memo(({
           <View style={styles.badges}>
             {task.isMeeting && (
               <View style={styles.typeBadge}>
-                <AppIcon name="videocam" size={12} color={theme.colors.primary} />
+                <AppIcon name="videocam" size={12} color={theme.accent.primary} />
                 <Text style={styles.typeBadgeText}>Meeting</Text>
               </View>
             )}
 
             {task.isMilestone && (
               <View style={styles.typeBadge}>
-                <AppIcon name="flag" size={12} color={theme.colors.success} />
+                <AppIcon name="flag" size={12} color={theme.accent.success} />
                 <Text style={styles.typeBadgeText}>Milestone</Text>
               </View>
             )}
@@ -113,8 +113,8 @@ const TaskCard: React.FC<TaskCardProps> = React.memo(({
             )}
           </View>
 
-          {task.id && (
-            <Text style={styles.taskId}>{task.id}</Text>
+          {task.slug && (
+            <Text style={styles.taskId}>{task.slug}</Text>
           )}
         </View>
       </View>
@@ -127,11 +127,11 @@ TaskCard.displayName = 'TaskCard';
 const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.background.elevated,
+    borderRadius: theme.radius.md,
     marginBottom: theme.spacing.sm,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: theme.border.primary,
     overflow: 'hidden',
   },
   cardLoading: {
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 14,
     fontWeight: '600',
-    color: theme.colors.text,
+    color: theme.text.primary,
     marginBottom: 4,
   },
   dueDateBadge: {
@@ -184,17 +184,17 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   dueDateOverdue: {
-    color: theme.colors.error,
+    color: theme.accent.error,
   },
   dueDateSoon: {
-    color: theme.colors.warning,
+    color: theme.accent.warning,
   },
   parentContainer: {
     marginBottom: theme.spacing.sm,
   },
   description: {
     fontSize: 13,
-    color: theme.colors.textSecondary,
+    color: theme.text.secondary,
     marginBottom: theme.spacing.sm,
     lineHeight: 18,
   },
@@ -214,19 +214,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: theme.spacing.xs,
     paddingVertical: 2,
-    borderRadius: theme.borderRadius.sm,
-    backgroundColor: theme.colors.surfaceVariant,
+    borderRadius: theme.radius.sm,
+    backgroundColor: theme.background.elevatedHigh,
   },
   typeBadgeText: {
     fontSize: 11,
     fontWeight: '500',
-    color: theme.colors.textSecondary,
+    color: theme.text.secondary,
     marginLeft: 4,
   },
   priorityBadge: {
     paddingHorizontal: theme.spacing.xs,
     paddingVertical: 2,
-    borderRadius: theme.borderRadius.sm,
+    borderRadius: theme.radius.sm,
   },
   priorityBadgeText: {
     fontSize: 11,
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
   },
   taskId: {
     fontSize: 11,
-    color: theme.colors.textTertiary,
+    color: theme.text.tertiary,
     fontFamily: 'monospace',
   },
 });

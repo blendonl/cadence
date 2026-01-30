@@ -16,7 +16,7 @@ import { BoardStackParamList } from '@/ui/navigation/TabNavigator';
 import { Board } from '@features/boards';
 import { Task } from '../domain/entities/Task';
 import { IssueType } from '@core/enums';
-import { TaskPriority } from '@mprojectmanager/shared-types';
+import { TaskPriority } from 'shared-types';
 import { getTaskService, getBoardService } from '@core/di/hooks';
 import ParentBadge from '@shared/components/ParentBadge';
 import theme from '@shared/theme/colors';
@@ -81,10 +81,10 @@ export default function TaskDetailScreen({ navigation, route }: Props) {
 
         setBoard(loadedBoard);
 
-        if (!isCreateMode && itemId) {
+        if (!isCreateMode && currentTaskId) {
           let foundTask: Task | null = null;
           for (const column of loadedBoard.columns) {
-            foundTask = column.tasks.find((t) => t.id === itemId) || null;
+            foundTask = column.tasks.find((t) => t.id === currentTaskId) || null;
             if (foundTask) break;
           }
 
@@ -110,7 +110,7 @@ export default function TaskDetailScreen({ navigation, route }: Props) {
     };
 
     loadData();
-  }, [boardId, itemId, isCreateMode, boardService, navigation]);
+  }, [boardId, currentTaskId, isCreateMode, boardService, navigation]);
 
   const targetColumn = board
     ? columnId
@@ -203,7 +203,6 @@ export default function TaskDetailScreen({ navigation, route }: Props) {
         try {
           await taskService.deleteTask(board, task.id);
 
-          alertService.showSuccess('Task deleted successfully');
           navigation.goBack();
         } catch (error) {
           alertService.showError('Failed to delete task');
@@ -319,6 +318,11 @@ export default function TaskDetailScreen({ navigation, route }: Props) {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.metaBarContent}
             >
+              {!isCreateMode && task?.slug && (
+                <View style={styles.metaChipStatic}>
+                  <Text style={[styles.metaChipText, styles.slugText]}>{task.slug}</Text>
+                </View>
+              )}
               <TouchableOpacity
                 style={[styles.metaChip, activeMetaPicker === 'priority' && styles.metaChipActive]}
                 onPress={() => setActiveMetaPicker(activeMetaPicker === 'priority' ? null : 'priority')}
@@ -582,6 +586,10 @@ const styles = StyleSheet.create({
     color: theme.text.secondary,
     fontSize: 13,
     fontWeight: '600',
+  },
+  slugText: {
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontWeight: '700',
   },
   metaPicker: {
     paddingHorizontal: spacing.lg,
