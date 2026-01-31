@@ -11,6 +11,7 @@ import { TaskDto, TaskPriority, TaskStatus, TaskType } from "shared-types";
 import ParentBadge from "@shared/components/ParentBadge";
 import theme from "@shared/theme";
 import AppIcon from "@shared/components/icons/AppIcon";
+import { getDueLabel, getCreatedAtLabel } from "../utils/taskCardHelpers";
 
 interface TaskCardProps {
   task: TaskDto;
@@ -36,36 +37,6 @@ const STATUS_COLORS: Record<TaskStatus, string> = {
   [TaskStatus.CANCELLED]: theme.text.tertiary,
 };
 
-const DUE_SOON_DAYS = 2;
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
-const isInactiveStatus = (status: TaskStatus) =>
-  status === TaskStatus.DONE || status === TaskStatus.CANCELLED;
-
-const parseDate = (value: string) => new Date(`${value}T00:00:00`);
-
-const getDueLabel = (dueDate: string | null, status: TaskStatus) => {
-  if (!dueDate || isInactiveStatus(status)) return null;
-
-  const today = new Date();
-  const todayStart = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate(),
-  );
-  const due = parseDate(dueDate);
-  const diffDays = Math.floor((due.getTime() - todayStart.getTime()) / MS_PER_DAY);
-
-  if (diffDays < 0) {
-    const daysLate = Math.abs(diffDays);
-    return daysLate === 1 ? "Overdue by 1 day" : `Overdue by ${daysLate} days`;
-  }
-
-  if (diffDays === 0) return "Due today";
-  if (diffDays <= DUE_SOON_DAYS) return `Due in ${diffDays} day${diffDays > 1 ? "s" : ""}`;
-  return `Due ${dueDate}`;
-};
-
 const TaskCard: React.FC<TaskCardProps> = React.memo(
   ({
     task,
@@ -76,12 +47,17 @@ const TaskCard: React.FC<TaskCardProps> = React.memo(
     showDragHandle = false,
   }) => {
     const priorityValue = (task.priority ?? TaskPriority.LOW) as TaskPriority;
-    const priorityColor = PRIORITY_COLORS[priorityValue] || PRIORITY_COLORS[TaskPriority.LOW];
+    const priorityColor =
+      PRIORITY_COLORS[priorityValue] || PRIORITY_COLORS[TaskPriority.LOW];
     const dueLabel = getDueLabel(task.dueDate, task.status as TaskStatus);
     const isOverdue = !!dueLabel && dueLabel.startsWith("Overdue");
     const isMeeting = task.taskType === TaskType.MEETING;
     const isSubtask = task.taskType === TaskType.SUBTASK;
-    const statusColor = STATUS_COLORS[task.status as TaskStatus] || theme.text.muted;
+    const statusColor =
+      STATUS_COLORS[task.status as TaskStatus] || theme.text.muted;
+    const createdAtLabel = task.createdAt
+      ? getCreatedAtLabel(task.createdAt)
+      : null;
 
     return (
       <TouchableOpacity
@@ -99,6 +75,18 @@ const TaskCard: React.FC<TaskCardProps> = React.memo(
 
         <View style={styles.content}>
           <View style={styles.header}>
+            {task.slug ? (
+              <View style={styles.slugPill}>
+                <Text style={styles.slugText}>{task.slug}</Text>
+              </View>
+            ) : (
+              <View
+                style={[styles.statusDot, { backgroundColor: statusColor }]}
+              />
+            )}
+          </View>
+
+          <View style={styles.header}>
             <View style={styles.titleRow}>
               {showDragHandle && (
                 <View style={styles.dragHandle}>
@@ -109,18 +97,20 @@ const TaskCard: React.FC<TaskCardProps> = React.memo(
                   />
                 </View>
               )}
+
+              <View style={styles.priorityChip}>
+                <View
+                  style={[
+                    styles.priorityDot,
+                    { backgroundColor: priorityColor },
+                  ]}
+                />
+              </View>
+
               <Text style={styles.title} numberOfLines={2}>
                 {task.title}
               </Text>
             </View>
-
-            {task.slug ? (
-              <View style={styles.slugPill}>
-                <Text style={styles.slugText}>{task.slug}</Text>
-              </View>
-            ) : (
-              <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-            )}
           </View>
 
           {parent && (
@@ -133,26 +123,8 @@ const TaskCard: React.FC<TaskCardProps> = React.memo(
             </View>
           )}
 
-          {task.description && (
-            <Text style={styles.description} numberOfLines={2}>
-              {task.description}
-            </Text>
-          )}
-
           <View style={styles.footer}>
             <View style={styles.badges}>
-              <View style={styles.priorityChip}>
-                <View
-                  style={[
-                    styles.priorityDot,
-                    { backgroundColor: priorityColor },
-                  ]}
-                />
-                <Text style={styles.priorityText}>
-                  {priorityValue.charAt(0) + priorityValue.slice(1).toLowerCase()}
-                </Text>
-              </View>
-
               {isMeeting && (
                 <View style={styles.metaChip}>
                   <AppIcon
@@ -180,7 +152,9 @@ const TaskCard: React.FC<TaskCardProps> = React.memo(
                   <AppIcon
                     name="time"
                     size={12}
-                    color={isOverdue ? theme.accent.error : theme.accent.warning}
+                    color={
+                      isOverdue ? theme.accent.error : theme.accent.warning
+                    }
                   />
                   <Text
                     style={[
@@ -190,6 +164,17 @@ const TaskCard: React.FC<TaskCardProps> = React.memo(
                   >
                     {dueLabel}
                   </Text>
+                </View>
+              )}
+
+              {createdAtLabel && (
+                <View style={styles.createdAtChip}>
+                  <AppIcon
+                    name="calendar"
+                    size={12}
+                    color={theme.text.tertiary}
+                  />
+                  <Text style={styles.createdAtText}>{createdAtLabel}</Text>
                 </View>
               )}
             </View>
@@ -253,6 +238,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   slugPill: {
+    width: "auto",
     paddingHorizontal: theme.spacing.xs,
     paddingVertical: 2,
     borderRadius: theme.radius.full,
@@ -297,14 +283,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.xs,
     paddingVertical: 4,
     borderRadius: theme.radius.full,
-    backgroundColor: theme.background.elevatedHigh,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: theme.border.secondary,
+    marginRight: theme.spacing.xs,
   },
   priorityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 10,
+    height: 10,
+    borderRadius: 8,
   },
   priorityText: {
     fontSize: 11,
@@ -329,6 +315,18 @@ const styles = StyleSheet.create({
   },
   metaChipTextOverdue: {
     color: theme.accent.error,
+  },
+  createdAtChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: theme.spacing.xs,
+    paddingVertical: 4,
+  },
+  createdAtText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: theme.text.tertiary,
   },
 });
 
