@@ -6,6 +6,7 @@ import { TaskUpdateData } from '../data/task.update.data';
 import { TaskListQueryData } from '../data/task.list.query.data';
 import { TaskListResultData } from '../data/task.list.result.data';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { TaskFindOneData } from '../data/task.find.one.data';
 
 @Injectable()
 export class TaskPrismaRepository implements TaskRepository {
@@ -26,9 +27,12 @@ export class TaskPrismaRepository implements TaskRepository {
       },
     });
   }
-  findById(id: string): Promise<Task | null> {
-    return this.prisma.task.findUnique({
+  async findById(id: string): Promise<TaskFindOneData | null> {
+    return await this.prisma.task.findUnique({
       where: { id },
+      include: {
+        column: true,
+      },
     });
   }
   update(id: string, data: TaskUpdateData): Promise<Task> {
@@ -67,8 +71,20 @@ export class TaskPrismaRepository implements TaskRepository {
         { title: { contains: query.search, mode: 'insensitive' } },
         { description: { contains: query.search, mode: 'insensitive' } },
         { column: { name: { contains: query.search, mode: 'insensitive' } } },
-        { column: { board: { name: { contains: query.search, mode: 'insensitive' } } } },
-        { column: { board: { project: { name: { contains: query.search, mode: 'insensitive' } } } } },
+        {
+          column: {
+            board: { name: { contains: query.search, mode: 'insensitive' } },
+          },
+        },
+        {
+          column: {
+            board: {
+              project: {
+                name: { contains: query.search, mode: 'insensitive' },
+              },
+            },
+          },
+        },
       ];
     }
 

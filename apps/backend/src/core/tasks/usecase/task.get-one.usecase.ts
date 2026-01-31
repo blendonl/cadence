@@ -4,6 +4,7 @@ import {
   TASK_REPOSITORY,
   type TaskRepository,
 } from '../repository/task.repository';
+import { TaskFindOneData } from '../data/task.find.one.data';
 
 @Injectable()
 export class TaskGetOneUseCase {
@@ -12,7 +13,7 @@ export class TaskGetOneUseCase {
     private readonly taskRepository: TaskRepository,
   ) {}
 
-  async execute(taskId: string): Promise<Task> {
+  async execute(taskId: string): Promise<TaskFindOneData> {
     const task = await this.taskRepository.findById(taskId);
     if (!task) {
       throw new Error('Task not found.');

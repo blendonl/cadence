@@ -5,12 +5,18 @@ import {
   Get,
   NotFoundException,
   Param,
+  Patch,
   Post,
   Put,
   Query,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { TaskDto, TaskLogDto, WorkDurationDto, PaginatedResponse } from 'shared-types';
+import {
+  TaskDto,
+  TaskLogDto,
+  WorkDurationDto,
+  PaginatedResponse,
+} from 'shared-types';
 import { TaskCreateRequest } from '../dto/task.create.request';
 import { TaskUpdateRequest } from '../dto/task.update.request';
 import { TaskListQueryRequest } from '../dto/task.list.query.request';
@@ -18,6 +24,7 @@ import { TasksCoreService } from 'src/core/tasks/service/tasks.core.service';
 import { TaskLogsCoreService } from 'src/core/task-logs/service/task-logs.core.service';
 import { TaskMapper } from '../task.mapper';
 import { TaskLogMapper } from '../task-log.mapper';
+import { TaskFindOneResponse } from '../dto/task.find.one.response';
 
 @ApiTags('tasks')
 @Controller('tasks')
@@ -49,7 +56,9 @@ export class TasksController {
 
   @Get()
   @ApiOperation({ summary: 'List tasks with pagination' })
-  async list(@Query() query: TaskListQueryRequest): Promise<PaginatedResponse<TaskDto>> {
+  async list(
+    @Query() query: TaskListQueryRequest,
+  ): Promise<PaginatedResponse<TaskDto>> {
     const result = await this.tasksService.getTasks({
       boardId: query.boardId,
       columnId: query.columnId,
@@ -68,16 +77,13 @@ export class TasksController {
 
   @Get(':taskId')
   @ApiOperation({ summary: 'Get task by ID' })
-  async getOne(@Param('taskId') taskId: string): Promise<TaskDto> {
+  async getOne(@Param('taskId') taskId: string): Promise<TaskFindOneResponse> {
     const task = await this.tasksService.getTask(taskId);
-    if (!task) {
-      throw new NotFoundException('Task not found');
-    }
 
-    return TaskMapper.toResponse(task);
+    return TaskFindOneResponse.fromDomain(task);
   }
 
-  @Put(':taskId')
+  @Patch(':taskId')
   @ApiOperation({ summary: 'Update task' })
   async update(
     @Param('taskId') taskId: string,
