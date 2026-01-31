@@ -1,7 +1,7 @@
 import { injectable, inject } from "tsyringe";
 import { TaskId, ParentId } from "@core/types";
 import { ValidationError } from "@core/exceptions";
-import { TaskDto, TaskDetailDto, TaskCreateRequestDto, TaskUpdateRequestDto, TaskPriorityType } from "shared-types";
+import { TaskDto, TaskDetailDto, TaskCreateRequestDto, TaskUpdateRequestDto, TaskPriorityType, PaginatedResponse } from "shared-types";
 import { BACKEND_API_CLIENT } from "@core/di/tokens";
 import { BackendApiClient } from "@infrastructure/api/BackendApiClient";
 
@@ -18,6 +18,28 @@ export class TaskService {
 
     const queryString = params.toString();
     return await this.apiClient.request<TaskDto[]>(`/tasks${queryString ? `?${queryString}` : ""}`);
+  }
+
+  async getTasks(query: {
+    projectId?: string;
+    boardId?: string;
+    columnId?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  } = {}): Promise<PaginatedResponse<TaskDto>> {
+    const params = new URLSearchParams();
+    if (query.projectId) params.append("projectId", query.projectId);
+    if (query.boardId) params.append("boardId", query.boardId);
+    if (query.columnId) params.append("columnId", query.columnId);
+    if (query.search) params.append("search", query.search);
+    if (query.page) params.append("page", query.page.toString());
+    if (query.limit) params.append("limit", query.limit.toString());
+
+    const queryString = params.toString();
+    return await this.apiClient.request<PaginatedResponse<TaskDto>>(
+      `/tasks${queryString ? `?${queryString}` : ""}`
+    );
   }
 
   async createTask(params: TaskCreateRequestDto): Promise<TaskDto> {
