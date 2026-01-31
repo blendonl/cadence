@@ -29,6 +29,12 @@ const ColumnHeader: React.FC<ColumnHeaderProps> = React.memo(
           <Text style={styles.title} numberOfLines={1}>
             {column.name}
           </Text>
+
+          {!column.wipLimit && taskCount > 0 && (
+            <View style={styles.taskCountBadge}>
+              <Text style={styles.taskCountText}>{taskCount}</Text>
+            </View>
+          )}
         </TouchableOpacity>
 
         <View style={styles.rightSection}>
@@ -55,12 +61,6 @@ const ColumnHeader: React.FC<ColumnHeaderProps> = React.memo(
             </View>
           )}
 
-          {!column.wipLimit && taskCount > 0 && (
-            <View style={styles.taskCountBadge}>
-              <Text style={styles.taskCountText}>{taskCount}</Text>
-            </View>
-          )}
-
           <TouchableOpacity
             style={styles.addButton}
             onPress={onAddTask}
@@ -83,9 +83,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
-    borderBottomWidth: 1,
+    borderBottomWidth: 0,
     borderBottomColor: theme.border.primary,
-    backgroundColor: theme.background.elevated,
   },
   leftSection: {
     flexDirection: "row",
@@ -94,9 +93,9 @@ const styles = StyleSheet.create({
     marginRight: theme.spacing.sm,
   },
   colorIndicator: {
-    width: 4,
+    width: 10,
     height: 20,
-    borderRadius: 2,
+    borderRadius: 8,
     marginRight: theme.spacing.sm,
     backgroundColor: theme.accent.primary,
   },
@@ -104,7 +103,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: theme.text.primary,
-    flex: 1,
+    paddingRight: theme.spacing.sm,
   },
   rightSection: {
     flexDirection: "row",

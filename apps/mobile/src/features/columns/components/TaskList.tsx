@@ -5,6 +5,8 @@ import {
   ListRenderItem,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  ActivityIndicator,
+  View,
 } from 'react-native';
 import { TaskDto } from 'shared-types';
 import { Parent } from '@domain/entities/Parent';
@@ -20,6 +22,9 @@ interface TaskListProps {
   onContentSizeChange?: (width: number, height: number) => void;
   onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
   scrollEventThrottle?: number;
+  onEndReached?: () => void;
+  onEndReachedThreshold?: number;
+  isLoadingMore?: boolean;
 }
 
 const TaskList = React.memo(forwardRef<FlatList, TaskListProps>(({
@@ -31,6 +36,9 @@ const TaskList = React.memo(forwardRef<FlatList, TaskListProps>(({
   onContentSizeChange,
   onScroll,
   scrollEventThrottle,
+  onEndReached,
+  onEndReachedThreshold = 0.5,
+  isLoadingMore = false,
 }, ref) => {
   const getTaskParent = useCallback((task: TaskDto): Parent | undefined => {
     if (!task.parentId) return undefined;
@@ -61,6 +69,15 @@ const TaskList = React.memo(forwardRef<FlatList, TaskListProps>(({
     []
   );
 
+  const renderFooter = useCallback(() => {
+    if (!isLoadingMore) return null;
+    return (
+      <View style={styles.loadingFooter}>
+        <ActivityIndicator size="small" color={theme.accent.primary} />
+      </View>
+    );
+  }, [isLoadingMore]);
+
   return (
     <FlatList
       ref={ref}
@@ -78,6 +95,9 @@ const TaskList = React.memo(forwardRef<FlatList, TaskListProps>(({
       onContentSizeChange={onContentSizeChange}
       onScroll={onScroll}
       scrollEventThrottle={scrollEventThrottle}
+      onEndReached={onEndReached}
+      onEndReachedThreshold={onEndReachedThreshold}
+      ListFooterComponent={renderFooter}
     />
   );
 }));
@@ -87,6 +107,11 @@ TaskList.displayName = 'TaskList';
 const styles = StyleSheet.create({
   container: {
     padding: theme.spacing.sm,
+  },
+  loadingFooter: {
+    paddingVertical: theme.spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

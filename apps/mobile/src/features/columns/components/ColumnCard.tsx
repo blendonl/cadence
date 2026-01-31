@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback, useState } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { View, StyleSheet, FlatList } from "react-native";
 import { BoardColumnDto, TaskDto } from "shared-types";
 import { Parent } from "@domain/entities/Parent";
@@ -10,6 +10,7 @@ import theme from "@shared/theme";
 
 interface ColumnCardProps {
   column: BoardColumnDto;
+  tasks: TaskDto[];
   parents?: Parent[];
   showParentGroups?: boolean;
   onTaskPress: (task: TaskDto) => void;
@@ -18,6 +19,9 @@ interface ColumnCardProps {
   onDragEnd?: (taskId: string, targetColumnId: string | null) => void;
   onAddTask: () => void;
   onColumnMenu?: () => void;
+  onLoadMore?: () => void;
+  isLoadingMore?: boolean;
+  hasMore?: boolean;
   registerVerticalScroll?: (
     columnId: string,
     ref: React.RefObject<FlatList | null>,
@@ -31,6 +35,7 @@ interface ColumnCardProps {
 const ColumnCard: React.FC<ColumnCardProps> = React.memo(
   ({
     column,
+    tasks,
     parents = [],
     showParentGroups = false,
     onTaskPress,
@@ -39,6 +44,9 @@ const ColumnCard: React.FC<ColumnCardProps> = React.memo(
     onDragEnd,
     onAddTask,
     onColumnMenu,
+    onLoadMore,
+    isLoadingMore = false,
+    hasMore = false,
     registerVerticalScroll,
     handleVerticalScroll,
     unregisterVerticalScroll,
@@ -48,7 +56,7 @@ const ColumnCard: React.FC<ColumnCardProps> = React.memo(
     const [viewportHeight, setViewportHeight] = useState(0);
 
     const { groupedTasks, totalTaskCount } = useColumnGrouping({
-      tasks: column.tasks,
+      tasks,
       parents,
       showParentGroups,
       sortByPriority: false,
@@ -101,7 +109,7 @@ const ColumnCard: React.FC<ColumnCardProps> = React.memo(
           ) : (
             <TaskList
               ref={taskListRef}
-              tasks={column.tasks}
+              tasks={tasks}
               parents={parents}
               onTaskPress={onTaskPress}
               onDragStart={onDragStart}
@@ -118,6 +126,9 @@ const ColumnCard: React.FC<ColumnCardProps> = React.memo(
                 }
               }}
               scrollEventThrottle={16}
+              onEndReached={hasMore ? onLoadMore : undefined}
+              onEndReachedThreshold={0.5}
+              isLoadingMore={isLoadingMore}
             />
           )}
         </View>
@@ -130,7 +141,7 @@ const ColumnCard: React.FC<ColumnCardProps> = React.memo(
       prevProps.column.name === nextProps.column.name &&
       prevProps.column.color === nextProps.column.color &&
       prevProps.column.wipLimit === nextProps.column.wipLimit &&
-      prevProps.column.tasks.length === nextProps.column.tasks.length &&
+      prevProps.tasks?.length === nextProps.tasks?.length &&
       prevProps.showParentGroups === nextProps.showParentGroups &&
       prevProps.parents?.length === nextProps.parents?.length
     );
@@ -142,7 +153,6 @@ ColumnCard.displayName = "ColumnCard";
 const styles = StyleSheet.create({
   container: {
     width: 320,
-    backgroundColor: theme.background.elevated,
     borderRadius: theme.radius.lg,
     borderWidth: 1,
     borderColor: theme.border.primary,
