@@ -33,6 +33,7 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
 
   const opacity = useSharedValue(1);
   const isDraggingThis = useSharedValue(false);
+  const isPanActive = useSharedValue(false);
 
   const taskIdRef = useRef(task.id);
   const taskRef = useRef(task);
@@ -67,8 +68,27 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
     }
   }, []);
 
+  const endDrag = useCallback((targetId: string | null) => {
+    "worklet";
+    if (!isDraggingThis.value) {
+      return;
+    }
+
+    isDraggingThis.value = false;
+    opacity.value = 1;
+
+    dragContext.isDragging.value = false;
+
+    runOnJS(handleDragEndCallback)(targetId);
+
+    dragContext.draggedTaskId.value = null;
+    dragContext.targetColumnId.value = null;
+    dragContext.targetIndex.value = -1;
+  }, [dragContext, handleDragEndCallback, isDraggingThis, opacity]);
+
   const longPressGesture = Gesture.LongPress()
     .minDuration(LONG_PRESS_DURATION)
+    .maxDistance(9999)
     .onStart((event) => {
       "worklet";
       isDraggingThis.value = true;
@@ -82,9 +102,26 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
       dragContext.targetIndex.value = -1;
       opacity.value = 0;
       runOnJS(handleDragStartCallback)();
+    })
+    .onFinalize(() => {
+      "worklet";
+      if (!isPanActive.value) {
+        endDrag(dragContext.targetColumnId.value);
+      }
     });
 
   const panGesture = Gesture.Pan()
+    .manualActivation(true)
+    .onTouchesMove((_event, state) => {
+      "worklet";
+      if (isDraggingThis.value) {
+        state.activate();
+      }
+    })
+    .onStart(() => {
+      "worklet";
+      isPanActive.value = true;
+    })
     .onUpdate((event) => {
       "worklet";
       if (isDraggingThis.value) {
@@ -97,27 +134,22 @@ export const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({
     .onEnd(() => {
       "worklet";
       console.log("[DraggableTaskCard] pan onEnd");
-      if (isDraggingThis.value) {
-        isDraggingThis.value = false;
-        opacity.value = 1;
-
-        dragContext.isDragging.value = false;
-
-        const targetId = dragContext.targetColumnId.value;
-        runOnJS(handleDragEndCallback)(targetId);
-
-        dragContext.draggedTaskId.value = null;
-        dragContext.targetColumnId.value = null;
-        dragContext.targetIndex.value = -1;
-      }
+      endDrag(dragContext.targetColumnId.value);
+    })
+    .onFinalize(() => {
+      "worklet";
+      endDrag(dragContext.targetColumnId.value);
+      isPanActive.value = false;
     });
 
   const composedGesture = Gesture.Race(
     Gesture.Simultaneous(longPressGesture, panGesture),
-    Gesture.Tap().onStart(() => {
-      "worklet";
-      runOnJS(onPress)();
-    }),
+    Gesture.Tap()
+      .maxDistance(8)
+      .onEnd(() => {
+        "worklet";
+        runOnJS(onPress)();
+      }),
   );
 
   const animatedStyle = useAnimatedStyle(() => {
