@@ -1,4 +1,5 @@
 import { EntityTimestamps } from '../../types/common.types';
+import { TaskDto } from '../tasks/task.dto';
 
 /**
  * Board DTO
@@ -14,21 +15,24 @@ export interface BoardDto extends EntityTimestamps {
 }
 
 /**
- * Board with columns
+ * Column with tasks for board detail
  */
-export interface BoardDetailDto extends BoardDto {
-  columns: ColumnSummaryDto[];
-  projectName: string;
-}
-
-/**
- * Column summary for nested responses
- */
-export interface ColumnSummaryDto {
+export interface BoardColumnDto {
   id: string;
   name: string;
   position: number;
+  color: string;
+  wipLimit: number | null;
+  tasks: TaskDto[];
   taskCount: number;
+}
+
+/**
+ * Board with columns and tasks (GET /boards/:id)
+ */
+export interface BoardDetailDto extends BoardDto {
+  columns: BoardColumnDto[];
+  projectName: string;
 }
 
 /**
@@ -48,4 +52,14 @@ export interface BoardUpdateRequestDto {
   name?: string;
   description?: string;
   color?: string;
+}
+
+/**
+ * Board list response (GET /boards)
+ */
+export interface BoardListResponseDto {
+  items: BoardDto[];
+  total: number;
+  page: number;
+  limit: number;
 }

@@ -1,7 +1,8 @@
-import { TaskStatusType } from '../../enums/task-status.enum';
-import { TaskPriorityType } from '../../enums/task-priority.enum';
-import { TaskType } from '../../enums/task-type.enum';
-import { EntityTimestamps } from '../../types/common.types';
+import { TaskStatusType } from "../../enums/task-status.enum";
+import { TaskPriorityType } from "../../enums/task-priority.enum";
+import { TaskType } from "../../enums/task-type.enum";
+import { EntityTimestamps } from "../../types/common.types";
+import { ColumnDto } from "../boards";
 
 /**
  * Task DTO
@@ -15,11 +16,12 @@ export interface TaskDto extends EntityTimestamps {
   status: TaskStatusType;
   priority: TaskPriorityType | null;
   columnId: string;
+  column: ColumnDto;
   boardId: string;
   projectId: string;
   goalId: string | null;
   position: number;
-  dueDate: string | null;  // YYYY-MM-DD
+  dueDate: string | null; // YYYY-MM-DD
   estimatedMinutes: number | null;
   actualMinutes: number | null;
   filePath: string | null;
