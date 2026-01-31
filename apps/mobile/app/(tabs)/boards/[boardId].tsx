@@ -9,7 +9,7 @@ import { useLocalSearchParams } from "expo-router";
 import { useBoardScreen } from "@/features/boards/hooks";
 import { useBoardDragDrop } from "@/features/boards/hooks/useBoardDragDrop";
 import { BoardDragProvider } from "@/features/boards/components/drag-drop";
-import { Task } from "@/features/tasks/domain/entities/Task";
+import { TaskDto } from "shared-types";
 import EmptyState from "@/shared/components/EmptyState";
 import BoardHeader from "./components/BoardHeader";
 import BoardColumns from "./components/BoardColumns";
@@ -19,7 +19,7 @@ import uiConstants from "@/shared/theme/uiConstants";
 function BoardScreenContent() {
   const { boardId } = useLocalSearchParams<{ boardId: string }>();
   const insets = useSafeAreaInsets();
-  const [draggedTask, setDraggedTask] = useState<Task | null>(null);
+  const [draggedTask, setDraggedTask] = useState<TaskDto | null>(null);
 
   const {
     board,
@@ -29,30 +29,11 @@ function BoardScreenContent() {
   } = useBoardScreen(boardId);
 
   const { handleDragStart, handleDragEnd } = useBoardDragDrop({
-    board,
     onMoveTask: taskActions.handleMoveTask,
-    onValidateMove: async (board, taskId, targetColumnId) => {
-      const targetColumn = board.getColumnById(targetColumnId);
-      const task = board.getTaskById(taskId);
-
-      if (!targetColumn || !task) {
-        return { valid: false, reason: 'Column or task not found' };
-      }
-
-      if (task.columnId === targetColumnId) {
-        return { valid: false, reason: 'Task is already in this column' };
-      }
-
-      if (targetColumn.limit !== null && targetColumn.tasks.length >= targetColumn.limit) {
-        return { valid: false, reason: `Column "${targetColumn.name}" is at WIP limit (${targetColumn.limit})` };
-      }
-
-      return { valid: true };
-    },
   });
 
   const handleTaskDragStart = useCallback(
-    (task: Task) => {
+    (task: TaskDto) => {
       setDraggedTask(task);
       handleDragStart(task);
     },

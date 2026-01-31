@@ -2,9 +2,9 @@ import { injectable, inject } from 'tsyringe';
 import { CalendarEvent, SyncStatus } from '../domain/entities/CalendarEvent';
 import { CalendarRepository } from '../domain/repositories/CalendarRepository';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { CALENDAR_REPOSITORY, BOARD_REPOSITORY } from '@core/di/tokens';
-import { BoardRepository } from '@features/boards/domain/repositories/BoardRepository';
-import { Task } from '@features/tasks/domain/entities/Task';
+import { CALENDAR_REPOSITORY, BOARD_SERVICE } from '@core/di/tokens';
+import { BoardService } from '@features/boards/services/BoardService';
+import { TaskDto } from 'shared-types';
 
 const STORAGE_KEYS = {
   LAST_SYNC: 'calendar_last_sync',
@@ -39,7 +39,7 @@ export class CalendarSyncService {
 
   constructor(
     @inject(CALENDAR_REPOSITORY) private calendarRepository: CalendarRepository,
-    @inject(BOARD_REPOSITORY) private boardRepository: BoardRepository
+    @inject(BOARD_SERVICE) private boardService: BoardService
   ) {}
 
   async isAuthenticated(): Promise<boolean> {
@@ -163,7 +163,7 @@ export class CalendarSyncService {
     this.syncListeners.forEach(listener => listener(status));
   }
 
-  async deleteTaskEvent(task: Task): Promise<boolean> {
+  async deleteTaskEvent(task: TaskDto): Promise<boolean> {
     return true;
   }
 }

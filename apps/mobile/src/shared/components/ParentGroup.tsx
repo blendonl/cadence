@@ -1,16 +1,16 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Parent } from "@domain/entities/Parent";
-import { Task } from "@features/tasks/domain/entities/Task";
+import { TaskDto } from "shared-types";
 import theme from "@shared/theme";
 import { DraggableTaskCard } from "@features/boards/components/drag-drop";
 import ParentBadge from "./ParentBadge";
 
 interface ParentGroupProps {
   parent: Parent | null;
-  tasks: Task[];
-  onTaskPress: (task: Task) => void;
-  onDragStart?: (task: Task) => void;
+  tasks: TaskDto[];
+  onTaskPress: (task: TaskDto) => void;
+  onDragStart?: (task: TaskDto) => void;
   onDragEnd?: (taskId: string, targetColumnId: string | null) => void;
 }
 

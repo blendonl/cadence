@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Screen } from "@shared/components/Screen";
 import { useRouter } from "expo-router";
-import { Board } from "@features/boards/domain/entities/Board";
+import { BoardDto } from "shared-types";
 import { getBoardService } from "@core/di/hooks";
 import { useCurrentProject } from "@core/ProjectContext";
 import EmptyState from "@shared/components/EmptyState";
@@ -21,7 +21,7 @@ import AppIcon from "@shared/components/icons/AppIcon";
 
 export default function BoardListScreen() {
   const router = useRouter();
-  const [boards, setBoards] = useState<Board[]>([]);
+  const [boards, setBoards] = useState<BoardDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);

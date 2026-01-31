@@ -12,7 +12,11 @@ export interface ProjectCardProps {
 }
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, onPress }) => {
-  const statusColor = getProjectStatusColor(project.status);
+  if (!project) {
+    return null;
+  }
+
+  const statusColor = getProjectStatusColor(project?.status || 'active');
 
   return (
     <TouchableOpacity activeOpacity={0.7} onPress={() => onPress(project)}>

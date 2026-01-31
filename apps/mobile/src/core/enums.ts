@@ -1,8 +1,3 @@
-/**
- * Enum definitions for MKanban mobile app
- * Ported from Python: src/core/types/enums.py
- */
-
 export enum ParentColor {
   BLUE = "blue",
   RED = "red",
@@ -11,12 +6,4 @@ export enum ParentColor {
   PURPLE = "purple",
   CYAN = "cyan",
   ORANGE = "orange",
-}
-
-export enum IssueType {
-  TASK = "Task",
-  STORY = "Story",
-  BUG = "Bug",
-  EPIC = "Epic",
-  SUBTASK = "Subtask",
 }
