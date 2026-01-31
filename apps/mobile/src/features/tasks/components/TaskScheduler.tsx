@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { Alert } from "react-native";
-import { Task } from "../domain/entities/Task";
+import { TaskDto } from "shared-types";
 import { TaskScheduleModal, TaskScheduleData } from "@/features/agenda/components/TaskScheduleModal";
 import { getAgendaService } from "@core/di/hooks";
 
 interface TaskSchedulerProps {
-  task: Task | null;
+  task: TaskDto | null;
   visible: boolean;
   onClose: () => void;
   onScheduled?: () => void;

@@ -1,10 +1,10 @@
 import { AgendaItem, AgendaTaskType, MeetingData } from '../entities/AgendaItem';
-import { Task } from '@features/tasks';
+import { AgendaTask } from '../../types/agendaTask';
 import { TaskId, BoardId, ProjectId } from '@core/types';
 
 export interface ScheduledAgendaItem {
   agendaItem: AgendaItem;
-  task: Task | null;
+  task: AgendaTask | null;
   boardId: BoardId;
   boardName: string;
   projectName: string;
@@ -13,7 +13,7 @@ export interface ScheduledAgendaItem {
 }
 
 export interface ScheduledTask {
-  task: Task;
+  task: AgendaTask;
   boardId: string;
   boardName: string;
   projectName: string;

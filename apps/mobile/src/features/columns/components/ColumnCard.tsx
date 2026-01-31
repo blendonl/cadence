@@ -1,13 +1,12 @@
-import React, { useRef, useEffect, useCallback, useState } from 'react';
-import { View, StyleSheet, FlatList } from 'react-native';
-import { BoardColumnDto, TaskDto } from 'shared-types';
-import { Parent } from '@domain/entities/Parent';
-import { useColumnGrouping } from '../hooks/useColumnGrouping';
-import ColumnHeader from './ColumnHeader';
-import TaskList from './TaskList';
-import GroupedTaskList from './GroupedTaskList';
-import AddTaskButton from './AddTaskButton';
-import theme from '@shared/theme';
+import React, { useRef, useEffect, useCallback, useState } from "react";
+import { View, StyleSheet, FlatList } from "react-native";
+import { BoardColumnDto, TaskDto } from "shared-types";
+import { Parent } from "@domain/entities/Parent";
+import { useColumnGrouping } from "../hooks/useColumnGrouping";
+import ColumnHeader from "./ColumnHeader";
+import TaskList from "./TaskList";
+import GroupedTaskList from "./GroupedTaskList";
+import theme from "@shared/theme";
 
 interface ColumnCardProps {
   column: BoardColumnDto;
@@ -23,8 +22,9 @@ interface ColumnCardProps {
     columnId: string,
     ref: React.RefObject<FlatList | null>,
     contentHeight: number,
-    viewportHeight: number
+    viewportHeight: number,
   ) => void;
+  handleVerticalScroll?: (columnId: string, offset: number) => void;
   unregisterVerticalScroll?: (columnId: string) => void;
 }
 
@@ -40,6 +40,7 @@ const ColumnCard: React.FC<ColumnCardProps> = React.memo(
     onAddTask,
     onColumnMenu,
     registerVerticalScroll,
+    handleVerticalScroll,
     unregisterVerticalScroll,
   }) => {
     const taskListRef = useRef<FlatList>(null);
@@ -59,7 +60,7 @@ const ColumnCard: React.FC<ColumnCardProps> = React.memo(
           column.id,
           taskListRef,
           contentSize.height,
-          viewportHeight
+          viewportHeight,
         );
       }
 
@@ -83,6 +84,7 @@ const ColumnCard: React.FC<ColumnCardProps> = React.memo(
           column={column}
           taskCount={totalTaskCount}
           onMenuPress={onColumnMenu || (() => {})}
+          onAddTask={onAddTask}
         />
 
         <View
@@ -107,11 +109,18 @@ const ColumnCard: React.FC<ColumnCardProps> = React.memo(
               onContentSizeChange={(width, height) =>
                 setContentSize({ width, height })
               }
+              onScroll={(event) => {
+                if (handleVerticalScroll) {
+                  handleVerticalScroll(
+                    column.id,
+                    event.nativeEvent.contentOffset.y,
+                  );
+                }
+              }}
+              scrollEventThrottle={16}
             />
           )}
         </View>
-
-        <AddTaskButton onPress={onAddTask} />
       </View>
     );
   },
@@ -120,15 +129,15 @@ const ColumnCard: React.FC<ColumnCardProps> = React.memo(
       prevProps.column.id === nextProps.column.id &&
       prevProps.column.name === nextProps.column.name &&
       prevProps.column.color === nextProps.column.color &&
-      prevProps.column.limit === nextProps.column.limit &&
+      prevProps.column.wipLimit === nextProps.column.wipLimit &&
       prevProps.column.tasks.length === nextProps.column.tasks.length &&
       prevProps.showParentGroups === nextProps.showParentGroups &&
       prevProps.parents?.length === nextProps.parents?.length
     );
-  }
+  },
 );
 
-ColumnCard.displayName = 'ColumnCard';
+ColumnCard.displayName = "ColumnCard";
 
 const styles = StyleSheet.create({
   container: {
@@ -137,7 +146,7 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.lg,
     borderWidth: 1,
     borderColor: theme.border.primary,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginRight: theme.spacing.md,
     flex: 1,
   },

@@ -16,7 +16,7 @@ import { ScheduledAgendaItem } from '@features/agenda/services/AgendaService';
 import { OrphanedItemBadge } from '@shared/components/OrphanedItemBadge';
 import { theme } from '@shared/theme/colors';
 import AppIcon from '@shared/components/icons/AppIcon';
-import { Task } from '@features/tasks';
+import { TaskDto, TaskPriority, TaskStatus, TaskType } from 'shared-types';
 
 import { Screen } from '@shared/components/Screen';
 
@@ -46,17 +46,37 @@ export const AgendaItemDetailScreen: React.FC<Props> = ({ route, navigation }) =
       }
 
       const task = item.task_id
-        ? new Task({
+        ? ({
             id: item.task_id,
+            slug: item.task_id,
             title: item.task_title || item.task_id,
-            column_id: item.column_id || '',
-            description: item.task_description || '',
-            project_id: item.project_id,
-            task_type: item.task_type,
-            priority: item.task_priority || 'none',
-            goal_id: item.task_goal_id || null,
-            meeting_data: item.meeting_data,
-          })
+            description: item.task_description || null,
+            taskType: normalizeTaskType(item.task_type),
+            status: TaskStatus.TODO,
+            priority: normalizePriority(item.task_priority),
+            columnId: item.column_id || '',
+            column: {
+              id: item.column_id || '',
+              name: item.column_name || '',
+              position: 0,
+              color: '',
+              wipLimit: null,
+              tasks: [],
+              taskCount: 0,
+            },
+            boardId: item.board_id,
+            projectId: item.project_id,
+            goalId: item.task_goal_id || null,
+            position: 0,
+            dueDate: null,
+            estimatedMinutes: null,
+            actualMinutes: null,
+            filePath: null,
+            completedAt: null,
+            parentId: null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          } as TaskDto)
         : null;
 
       const scheduled: ScheduledAgendaItem = {
@@ -190,6 +210,26 @@ export const AgendaItemDetailScreen: React.FC<Props> = ({ route, navigation }) =
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return mins > 0 ? `${hours}h ${mins}m` : `${hours} hour${hours > 1 ? 's' : ''}`;
+  };
+
+  const normalizePriority = (value?: string | null): TaskPriority | null => {
+    if (!value) return null;
+    const upper = value.toUpperCase();
+    return Object.values(TaskPriority).includes(upper as TaskPriority)
+      ? (upper as TaskPriority)
+      : null;
+  };
+
+  const normalizeTaskType = (value?: string | null): TaskType => {
+    const upper = value?.toUpperCase();
+    switch (upper) {
+      case TaskType.MEETING:
+        return TaskType.MEETING;
+      case TaskType.SUBTASK:
+        return TaskType.SUBTASK;
+      default:
+        return TaskType.TASK;
+    }
   };
 
   if (loading) {

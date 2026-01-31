@@ -32,6 +32,7 @@ export default function BoardColumns({
     handleHorizontalContentSize,
     handleHorizontalLayout,
     registerVerticalScroll,
+    handleVerticalScroll,
     unregisterVerticalScroll,
   } = useAutoScroll({
     dragPosition: dragContext.dragPosition,
@@ -56,6 +57,7 @@ export default function BoardColumns({
             onDragEnd={onDragEnd}
             onAddTask={() => onAddTask(column.id)}
             registerVerticalScroll={registerVerticalScroll}
+            handleVerticalScroll={handleVerticalScroll}
             unregisterVerticalScroll={unregisterVerticalScroll}
           />
         )}

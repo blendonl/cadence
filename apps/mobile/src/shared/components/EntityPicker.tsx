@@ -16,7 +16,7 @@ import { ProjectId, BoardId, TaskId } from '../../core/types';
 import { getProjectService, getBoardService } from '../../core/di/hooks';
 import { Project } from '../../domain/entities/Project';
 import { Board } from '../../domain/entities/Board';
-import { Task } from '../../domain/entities/Task';
+import { TaskDto } from 'shared-types';
 import AppIcon, { AppIconName } from './icons/AppIcon';
 
 type Tab = 'projects' | 'boards' | 'tasks';
@@ -55,7 +55,7 @@ export default function EntityPicker({
   const [projectsHasMore, setProjectsHasMore] = useState(true);
   const [projectsLoading, setProjectsLoading] = useState(false);
   const [boards, setBoards] = useState<Board[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<TaskDto[]>([]);
   const [localSelectedProjects, setLocalSelectedProjects] = useState<ProjectId[]>([]);
   const [localSelectedBoards, setLocalSelectedBoards] = useState<BoardId[]>([]);
   const [localSelectedTasks, setLocalSelectedTasks] = useState<TaskId[]>([]);
@@ -71,8 +71,8 @@ export default function EntityPicker({
     }
   }, [visible]);
 
-  const collectTasksFromBoards = (loadedBoards: Board[]): Task[] => {
-    const allTasks: Task[] = [];
+  const collectTasksFromBoards = (loadedBoards: Board[]): TaskDto[] => {
+    const allTasks: TaskDto[] = [];
     loadedBoards.forEach((board) => {
       board.columns.forEach((column) => {
         allTasks.push(...column.tasks);

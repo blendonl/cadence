@@ -9,9 +9,9 @@ import {
 } from 'react-native';
 import { Project } from '@features/projects/domain/entities/Project';
 import { Board } from '@features/boards';
-import { Task } from '@features/tasks';
+import { TaskDto } from 'shared-types';
+import { AgendaTaskType } from '../domain/entities/AgendaItem';
 import { ProjectId, BoardId, TaskId } from '@core/types';
-import { TaskType } from 'shared-types';
 import BaseModal from '@shared/components/BaseModal';
 import theme from '@shared/theme';
 import AppIcon from '@shared/components/icons/AppIcon';
@@ -38,7 +38,7 @@ export interface AgendaFormData {
   date: string;
   time?: string;
   durationMinutes?: number;
-  taskType: TaskType;
+  taskType: AgendaTaskType;
   location?: string;
   attendees?: string[];
   isAllDay?: boolean;
@@ -62,14 +62,14 @@ export const AgendaItemFormModal: React.FC<AgendaItemFormModalProps> = ({
   const [step, setStep] = useState<'project' | 'board' | 'task' | 'details'>('project');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [selectedBoard, setSelectedBoard] = useState<Board | null>(null);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedTask, setSelectedTask] = useState<TaskDto | null>(null);
   const [boards, setBoards] = useState<Board[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [date, setDate] = useState(prefilledDate || new Date().toISOString().split('T')[0]);
   const [time, setTime] = useState('09:00');
   const [duration, setDuration] = useState<number | undefined>(60);
-  const [taskType, setTaskType] = useState<TaskType>('regular');
+  const [taskType, setTaskType] = useState<AgendaTaskType>('regular');
   const [location, setLocation] = useState('');
   const [attendees, setAttendees] = useState('');
   const [isAllDay, setIsAllDay] = useState(false);
@@ -403,7 +403,7 @@ export const AgendaItemFormModal: React.FC<AgendaItemFormModalProps> = ({
       <View style={styles.formSection}>
         <Text style={styles.label}>Task Type</Text>
         <View style={styles.taskTypeRow}>
-          {(['regular', 'meeting', 'milestone'] as TaskType[]).map(type => (
+          {(['regular', 'meeting', 'milestone'] as AgendaTaskType[]).map(type => (
             <TouchableOpacity
               key={type}
               style={[

@@ -16,7 +16,9 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
 import { getAgendaService, getBoardService } from '@core/di/hooks';
-import { Task, TaskType, RecurrenceRule } from '@features/tasks';
+import { RecurrenceRule } from '@shared/types/recurrence';
+import { AgendaTaskType } from '../domain/entities/AgendaItem';
+import { TaskWithSchedule } from '@features/tasks/types/taskSchedule';
 import { AgendaStackParamList } from '@shared/types/navigation';
 import AppIcon, { AppIconName } from '@shared/components/icons/AppIcon';
 import BaseModal from '@shared/components/BaseModal';
@@ -24,7 +26,7 @@ import BaseModal from '@shared/components/BaseModal';
 type TaskScheduleRouteProp = RouteProp<AgendaStackParamList, 'TaskSchedule'>;
 type TaskScheduleNavProp = StackNavigationProp<AgendaStackParamList, 'TaskSchedule'>;
 
-const TASK_TYPES: { value: TaskType; label: string; icon: AppIconName }[] = [
+const TASK_TYPES: { value: AgendaTaskType; label: string; icon: AppIconName }[] = [
   { value: 'regular', label: 'Task', icon: 'task' },
   { value: 'meeting', label: 'Meeting', icon: 'users' },
   { value: 'milestone', label: 'Milestone', icon: 'milestone' },
@@ -55,7 +57,7 @@ export default function TaskScheduleScreen() {
   const { taskId, boardId, taskData } = route.params;
   const allowTypeEdit = route.params?.allowTypeEdit ?? false;
 
-  const [task, setTask] = useState<Task | null>(null);
+  const [task, setTask] = useState<TaskWithSchedule | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -65,7 +67,7 @@ export default function TaskScheduleScreen() {
   const [selectedDuration, setSelectedDuration] = useState<number | null>(null);
   const [durationMode, setDurationMode] = useState<'none' | 'tbd' | 'preset' | 'custom'>('none');
   const [customDuration, setCustomDuration] = useState<string>('');
-  const [selectedType, setSelectedType] = useState<TaskType>('regular');
+  const [selectedType, setSelectedType] = useState<AgendaTaskType>('regular');
   const [meetingLocation, setMeetingLocation] = useState<string>('');
   const [meetingAttendees, setMeetingAttendees] = useState<string>('');
   const [repeatFrequency, setRepeatFrequency] = useState<'none' | 'daily' | 'weekly' | 'monthly'>('none');
@@ -127,18 +129,24 @@ export default function TaskScheduleScreen() {
   const loadTask = useCallback(async () => {
     try {
       if (taskData) {
-        const taskInstance = Task.fromDict(taskData);
+        const taskInstance = taskData as TaskWithSchedule;
         setTask(taskInstance);
         const nextDate = taskInstance.scheduled_date || getTodayString();
         setSelectedDate(nextDate);
         setSelectedTime(taskInstance.scheduled_time || '');
-        setSelectedDuration(taskInstance.time_block_minutes);
-        initializeDurationState(taskInstance.time_block_minutes);
-        setSelectedType(taskInstance.task_type);
+        setSelectedDuration(taskInstance.time_block_minutes || null);
+        initializeDurationState(taskInstance.time_block_minutes || null);
+        setSelectedType((taskInstance.task_type || 'regular') as AgendaTaskType);
         setMeetingLocation(taskInstance.meeting_data?.location || '');
         setMeetingAttendees(taskInstance.meeting_data?.attendees?.join(', ') || '');
-        applyRecurrenceToState(taskInstance.recurrence, taskInstance.scheduled_date, taskInstance.scheduled_time || '');
-        setMeetingExpanded(!!(taskInstance.meeting_data?.location || taskInstance.meeting_data?.attendees?.length));
+        applyRecurrenceToState(
+          taskInstance.recurrence,
+          taskInstance.scheduled_date,
+          taskInstance.scheduled_time || '',
+        );
+        setMeetingExpanded(
+          !!(taskInstance.meeting_data?.location || taskInstance.meeting_data?.attendees?.length),
+        );
         setViewMonth(getMonthStart(getDatePickerValue(nextDate)));
         setLoading(false);
         return;
@@ -148,19 +156,25 @@ export default function TaskScheduleScreen() {
       const board = await boardService.getBoardById(boardId);
 
       for (const column of board.columns) {
-        const foundTask = column.tasks.find(t => t.id === taskId);
+        const foundTask = column.tasks.find(t => t.id === taskId) as TaskWithSchedule | undefined;
         if (foundTask) {
           setTask(foundTask);
           const nextDate = foundTask.scheduled_date || getTodayString();
           setSelectedDate(nextDate);
           setSelectedTime(foundTask.scheduled_time || '');
-          setSelectedDuration(foundTask.time_block_minutes);
-          initializeDurationState(foundTask.time_block_minutes);
-          setSelectedType(foundTask.task_type);
+          setSelectedDuration(foundTask.time_block_minutes || null);
+          initializeDurationState(foundTask.time_block_minutes || null);
+          setSelectedType((foundTask.task_type || 'regular') as AgendaTaskType);
           setMeetingLocation(foundTask.meeting_data?.location || '');
           setMeetingAttendees(foundTask.meeting_data?.attendees?.join(', ') || '');
-          applyRecurrenceToState(foundTask.recurrence, foundTask.scheduled_date, foundTask.scheduled_time || '');
-          setMeetingExpanded(!!(foundTask.meeting_data?.location || foundTask.meeting_data?.attendees?.length));
+          applyRecurrenceToState(
+            foundTask.recurrence,
+            foundTask.scheduled_date,
+            foundTask.scheduled_time || '',
+          );
+          setMeetingExpanded(
+            !!(foundTask.meeting_data?.location || foundTask.meeting_data?.attendees?.length),
+          );
           setViewMonth(getMonthStart(getDatePickerValue(nextDate)));
           break;
         }
@@ -213,11 +227,11 @@ export default function TaskScheduleScreen() {
         recurrenceRule
       );
 
-      if (allowTypeEdit && selectedType !== task.task_type) {
+      if (allowTypeEdit && selectedType !== (task.task_type || 'regular')) {
         await agendaService.setTaskType(boardId, taskId, selectedType);
       }
 
-      const effectiveType = allowTypeEdit ? selectedType : task.task_type;
+      const effectiveType = allowTypeEdit ? selectedType : (task.task_type || 'regular');
       if (effectiveType === 'meeting' && (meetingLocation || meetingAttendees)) {
         const attendeesList = meetingAttendees
           .split(',')
@@ -357,7 +371,7 @@ export default function TaskScheduleScreen() {
     );
   }
 
-  const showMeetingFields = (allowTypeEdit ? selectedType : task.task_type) === 'meeting';
+  const showMeetingFields = (allowTypeEdit ? selectedType : (task?.task_type || 'regular')) === 'meeting';
   const selectedDateLabel = formatDateDisplay(selectedDate);
   const selectedTimeLabel = selectedTime ? formatTimeDisplay(selectedTime) : 'All day';
   const durationSummary = getDurationSummary(durationMode, resolveDurationMinutes());
@@ -803,7 +817,7 @@ export default function TaskScheduleScreen() {
           </Text>
         </TouchableOpacity>
 
-        {task.isScheduled && (
+        {task?.scheduled_date && (
           <TouchableOpacity
             style={styles.unscheduleButton}
             onPress={handleUnschedule}

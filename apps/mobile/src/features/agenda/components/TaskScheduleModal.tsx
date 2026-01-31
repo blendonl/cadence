@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { TaskType } from 'shared-types';
 import BaseModal from '@shared/components/BaseModal';
 import theme from '@shared/theme';
-import { Task } from '@features/tasks';
+import { TaskDto } from 'shared-types';
 import { useTaskScheduleForm } from '../hooks/useTaskScheduleForm';
 import { TaskTypePicker } from './TaskTypePicker';
 import { FormField, ToggleField } from './ScheduleFormFields';
@@ -21,7 +21,7 @@ export interface TaskScheduleData {
 
 interface TaskScheduleModalProps {
   visible: boolean;
-  task: Task | null;
+  task: TaskDto | null;
   prefilledDate?: string;
   onClose: () => void;
   onSubmit: (data: TaskScheduleData) => Promise<void>;
@@ -149,7 +149,7 @@ export const TaskScheduleModal: React.FC<TaskScheduleModalProps> = ({
   );
 };
 
-const TaskInfoCard: React.FC<{ task: Task }> = ({ task }) => (
+const TaskInfoCard: React.FC<{ task: TaskDto }> = ({ task }) => (
   <View style={styles.taskInfo}>
     <Text style={styles.taskTitle}>{task.title}</Text>
     {task.slug && <Text style={styles.taskProject}>{task.slug}</Text>}

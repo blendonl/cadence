@@ -1,4 +1,4 @@
-import { RecurrenceRule } from "../domain/entities/Task";
+import { RecurrenceRule } from "@shared/types/recurrence";
 
 export interface Occurrence {
   date: string;

@@ -1,11 +1,11 @@
 import { useCallback } from 'react';
 import { useRouter } from 'expo-router';
-import { Task } from '@/features/tasks/domain/entities/Task';
+import { TaskDto } from 'shared-types';
 import { getTaskService } from '@core/di/hooks';
 import alertService from '@services/AlertService';
 
 interface UseTaskDetailActionsProps {
-  task: Task | null;
+  task: TaskDto | null;
 }
 
 interface UseTaskDetailActionsReturn {

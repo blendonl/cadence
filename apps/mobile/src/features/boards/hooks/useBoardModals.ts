@@ -1,11 +1,11 @@
 import { useState, useCallback } from 'react';
-import { Task } from '../domain/entities/Task';
+import { TaskDto } from 'shared-types';
 import { Column } from '../domain/entities/Column';
 
 export function useBoardModals() {
   // Task Move Modal
   const [showMoveModal, setShowMoveModal] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedTask, setSelectedTask] = useState<TaskDto | null>(null);
 
   // Column Form Modal
   const [showColumnForm, setShowColumnForm] = useState(false);
@@ -16,7 +16,7 @@ export function useBoardModals() {
   const [selectedColumn, setSelectedColumn] = useState<Column | null>(null);
 
   // Task Move Modal handlers
-  const openMoveModal = useCallback((task: Task) => {
+  const openMoveModal = useCallback((task: TaskDto) => {
     setSelectedTask(task);
     setShowMoveModal(true);
   }, []);

@@ -1,12 +1,12 @@
 import { useState, useCallback } from 'react';
-import { Task } from '@features/tasks';
+import { TaskDto } from 'shared-types';
 
 export function useAgendaModals() {
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showTaskSelector, setShowTaskSelector] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedTask, setSelectedTask] = useState<TaskDto | null>(null);
 
-  const openScheduleModal = useCallback((task: Task) => {
+  const openScheduleModal = useCallback((task: TaskDto) => {
     setSelectedTask(task);
     setShowScheduleModal(true);
   }, []);
@@ -20,7 +20,7 @@ export function useAgendaModals() {
 
   const closeTaskSelector = useCallback(() => setShowTaskSelector(false), []);
 
-  const openTaskSelectorThenSchedule = useCallback((task: Task) => {
+  const openTaskSelectorThenSchedule = useCallback((task: TaskDto) => {
     closeTaskSelector();
     openScheduleModal(task);
   }, [closeTaskSelector, openScheduleModal]);

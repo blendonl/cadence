@@ -1,12 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Task } from '../domain/entities/Task';
+import { TaskDto } from 'shared-types';
 import AppIcon from '@shared/components/icons/AppIcon';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
 
 interface TaskParentPickerItemProps {
-  task: Task;
+  task: TaskDto;
   isSelected: boolean;
   onSelect: () => void;
 }

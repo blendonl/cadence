@@ -12,12 +12,12 @@ import BaseModal from '@shared/components/BaseModal';
 import theme from '@shared/theme';
 import AppIcon from '@shared/components/icons/AppIcon';
 import { getAgendaService } from '@core/di/hooks';
-import { Task } from '@features/tasks';
+import { TaskDto, TaskPriority } from 'shared-types';
 
 interface TaskSelectorModalProps {
   visible: boolean;
   onClose: () => void;
-  onTaskSelected: (task: Task) => void;
+  onTaskSelected: (task: TaskDto) => void;
 }
 
 type FilterType = 'all' | 'priority';
@@ -27,13 +27,13 @@ export default function TaskSelectorModal({
   onClose,
   onTaskSelected,
 }: TaskSelectorModalProps) {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<TaskDto[]>([]);
+  const [filteredTasks, setFilteredTasks] = useState<TaskDto[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
 
   const [selectedFilter, setSelectedFilter] = useState<FilterType>('all');
-  const [selectedPriority, setSelectedPriority] = useState<string | null>(null);
+  const [selectedPriority, setSelectedPriority] = useState<TaskPriority | null>(null);
 
   useEffect(() => {
     if (visible) {
@@ -68,39 +68,56 @@ export default function TaskSelectorModal({
     setFilteredTasks(filtered);
   };
 
-  const handleTaskPress = (task: Task) => {
+  const handleTaskPress = (task: TaskDto) => {
     onTaskSelected(task);
     onClose();
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityColor = (priority: TaskPriority | null) => {
     switch (priority) {
-      case 'high': return theme.status.error;
-      case 'medium': return theme.status.warning;
-      case 'low': return theme.status.info;
-      default: return theme.text.secondary;
+      case TaskPriority.HIGH:
+        return theme.status.error;
+      case TaskPriority.MEDIUM:
+        return theme.status.warning;
+      case TaskPriority.LOW:
+        return theme.status.info;
+      case TaskPriority.URGENT:
+        return theme.status.error;
+      default:
+        return theme.text.secondary;
     }
   };
 
-  const getPriorityIcon = (priority: string) => {
+  const getPriorityIcon = (priority: TaskPriority | null) => {
     switch (priority) {
-      case 'high': return 'alert-circle';
-      case 'medium': return 'alert-triangle';
-      case 'low': return 'info';
-      default: return 'minus';
+      case TaskPriority.HIGH:
+      case TaskPriority.URGENT:
+        return 'alert-circle';
+      case TaskPriority.MEDIUM:
+        return 'alert-triangle';
+      case TaskPriority.LOW:
+        return 'info';
+      default:
+        return 'minus';
     }
   };
 
-  const getPriorityLabel = (priority: string) => {
+  const getPriorityLabel = (priority: TaskPriority | null) => {
     switch (priority) {
-      case 'high': return 'High';
-      case 'medium': return 'Medium';
-      case 'low': return 'Low';
-      default: return 'None';
+      case TaskPriority.URGENT:
+        return 'Urgent';
+      case TaskPriority.HIGH:
+        return 'High';
+      case TaskPriority.MEDIUM:
+        return 'Medium';
+      case TaskPriority.LOW:
+        return 'Low';
+      default:
+        return 'None';
     }
   };
 
-  const renderTask = ({ item }: { item: Task }) => {
+  const renderTask = ({ item }: { item: TaskDto }) => {
     const priorityColor = getPriorityColor(item.priority);
     return (
       <TouchableOpacity
@@ -176,14 +193,22 @@ export default function TaskSelectorModal({
     if (selectedFilter === 'priority') {
       return (
         <View style={styles.filterOptionsContainer}>
-          {['high', 'medium', 'low', 'none'].map(priority => (
+          {[
+            TaskPriority.URGENT,
+            TaskPriority.HIGH,
+            TaskPriority.MEDIUM,
+            TaskPriority.LOW,
+            null,
+          ].map((priority) => (
             <TouchableOpacity
-              key={priority}
+              key={priority ?? 'none'}
               style={[
                 styles.filterOption,
                 selectedPriority === priority && styles.filterOptionActive,
               ]}
-              onPress={() => setSelectedPriority(selectedPriority === priority ? null : priority)}
+              onPress={() =>
+                setSelectedPriority(selectedPriority === priority ? null : priority)
+              }
             >
               <AppIcon
                 name={getPriorityIcon(priority)}
@@ -191,7 +216,7 @@ export default function TaskSelectorModal({
                 color={getPriorityColor(priority)}
               />
               <Text style={styles.filterOptionText}>
-                {priority.charAt(0).toUpperCase() + priority.slice(1)}
+                {getPriorityLabel(priority)}
               </Text>
             </TouchableOpacity>
           ))}

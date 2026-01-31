@@ -23,6 +23,7 @@ interface DroppableColumnProps {
     contentHeight: number,
     viewportHeight: number
   ) => void;
+  handleVerticalScroll?: (columnId: string, offset: number) => void;
   unregisterVerticalScroll?: (columnId: string) => void;
 }
 
@@ -37,6 +38,7 @@ export const DroppableColumn: React.FC<DroppableColumnProps> = ({
   onDragEnd,
   onValidateDrop,
   registerVerticalScroll,
+  handleVerticalScroll,
   unregisterVerticalScroll,
 }) => {
   const { isDragging, dragPosition, draggedTaskId, updateTarget, activeColumnId } = useBoardDrag();
@@ -132,6 +134,7 @@ export const DroppableColumn: React.FC<DroppableColumnProps> = ({
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
         registerVerticalScroll={registerVerticalScroll}
+        handleVerticalScroll={handleVerticalScroll}
         unregisterVerticalScroll={unregisterVerticalScroll}
       />
     </View>

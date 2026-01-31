@@ -1,6 +1,7 @@
 import { injectable, inject, container } from "tsyringe";
 import { AgendaItem } from "../domain/entities/AgendaItem";
-import { Task } from "@features/tasks";
+import { BoardColumnDto, TaskPriority, TaskStatus, TaskType } from "shared-types";
+import { AgendaTask } from "../types/agendaTask";
 import { AgendaRepository } from "../domain/repositories/AgendaRepository";
 import { NotificationService } from "@services/NotificationService";
 import { logger } from "@utils/logger";
@@ -53,7 +54,7 @@ export class AgendaService {
   }
 
   private mapToScheduledAgendaItem(item: AgendaItem): ScheduledAgendaItem {
-    const task = this.buildTaskFromAgendaItem(item);
+    const task = this.buildTaskDtoFromAgendaItem(item);
 
     return {
       agendaItem: item,
@@ -67,22 +68,56 @@ export class AgendaService {
     };
   }
 
-  private buildTaskFromAgendaItem(item: AgendaItem): Task | null {
+  private buildTaskDtoFromAgendaItem(item: AgendaItem): AgendaTask | null {
     if (!item.task_id) {
       return null;
     }
 
-    return new Task({
+    const column: BoardColumnDto = {
+      id: item.column_id || "",
+      name: item.column_name || "",
+      position: 0,
+      color: "",
+      wipLimit: null,
+      tasks: [],
+      taskCount: 0,
+    };
+
+    const priority = this.normalizePriority(item.task_priority);
+    const taskType = this.normalizeTaskType(item.task_type);
+
+    const scheduledDate = (item as any).scheduled_date ?? item.scheduledDate ?? null;
+    const scheduledTime = (item as any).scheduled_time ?? item.scheduledTime ?? null;
+    const taskTypeRaw = (item as any).task_type ?? item.taskType ?? "regular";
+    const meetingData = (item as any).meeting_data ?? item.meetingData ?? null;
+
+    return {
       id: item.task_id,
+      slug: item.task_id,
       title: item.task_title || item.task_id,
-      column_id: item.column_id || "",
-      description: item.task_description || "",
-      project_id: item.project_id,
-      task_type: item.task_type,
-      priority: item.task_priority || "none",
-      goal_id: item.task_goal_id || null,
-      meeting_data: item.meeting_data,
-    });
+      description: item.task_description || null,
+      taskType,
+      status: TaskStatus.TODO,
+      priority,
+      columnId: item.column_id || "",
+      column,
+      boardId: item.board_id,
+      projectId: item.project_id,
+      goalId: item.task_goal_id || null,
+      position: 0,
+      dueDate: null,
+      estimatedMinutes: null,
+      actualMinutes: null,
+      filePath: null,
+      completedAt: null,
+      parentId: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      scheduled_date: scheduledDate,
+      scheduled_time: scheduledTime,
+      task_type: taskTypeRaw,
+      meeting_data: meetingData,
+    };
   }
 
   async getAgendaForWeek(
@@ -233,7 +268,7 @@ export class AgendaService {
     return scheduled.filter((si) => {
       if (si.isOrphaned) return false;
       if (!si.task) return false;
-      const normalizedColumnId = si.task.column_id.replace(/_/g, "-");
+      const normalizedColumnId = si.task.columnId.replace(/_/g, "-");
       return normalizedColumnId !== "done";
     });
   }
@@ -285,7 +320,7 @@ export class AgendaService {
   async getTaskFromBoard(
     boardId: BoardId,
     taskId: TaskId,
-  ): Promise<{ task: Task | null; projectId: ProjectId | null }> {
+  ): Promise<{ task: AgendaTask | null; projectId: ProjectId | null }> {
     const board = await this.boardService.getBoardById(boardId);
     if (!board) {
       return { task: null, projectId: null };
@@ -294,7 +329,7 @@ export class AgendaService {
     for (const column of board.columns) {
       const task = column.tasks.find((t) => t.id === taskId);
       if (task) {
-        return { task, projectId: board.project_id };
+        return { task, projectId: board.projectId };
       }
     }
 
@@ -315,11 +350,11 @@ export class AgendaService {
       items.filter((item) => {
         if (
           filters?.projectId &&
-          item.agendaItem.project_id !== filters.projectId
+          item.agendaItem.projectId !== filters.projectId
         ) {
           return false;
         }
-        if (filters?.goalId && item.task?.goal_id !== filters.goalId) {
+        if (filters?.goalId && item.task?.goalId !== filters.goalId) {
           return false;
         }
         return true;
@@ -382,9 +417,29 @@ export class AgendaService {
     await this.agendaRepository.saveAgendaItem(item);
   }
 
-  async getAllSchedulableTasks(search?: string): Promise<Task[]> {
+  async getAllSchedulableTasks(search?: string): Promise<AgendaTask[]> {
     const taskService = container.resolve(TaskService);
     return await taskService.getAllTasks({ search });
+  }
+
+  private normalizePriority(value: string | null): TaskPriority | null {
+    if (!value) return null;
+    const upper = value.toUpperCase();
+    return Object.values(TaskPriority).includes(upper as TaskPriority)
+      ? (upper as TaskPriority)
+      : null;
+  }
+
+  private normalizeTaskType(value?: string | null): TaskType {
+    const upper = value?.toUpperCase();
+    switch (upper) {
+      case TaskType.MEETING:
+        return TaskType.MEETING;
+      case TaskType.SUBTASK:
+        return TaskType.SUBTASK;
+      default:
+        return TaskType.TASK;
+    }
   }
 
   private getMonday(date: Date): Date {

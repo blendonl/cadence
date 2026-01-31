@@ -1,5 +1,11 @@
 import React, { useCallback, forwardRef } from 'react';
-import { FlatList, StyleSheet, ListRenderItem } from 'react-native';
+import {
+  FlatList,
+  StyleSheet,
+  ListRenderItem,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
+} from 'react-native';
 import { TaskDto } from 'shared-types';
 import { Parent } from '@domain/entities/Parent';
 import { DraggableTaskCard } from '@features/boards/components/drag-drop';
@@ -12,6 +18,8 @@ interface TaskListProps {
   onDragStart?: (task: TaskDto) => void;
   onDragEnd?: (taskId: string, targetColumnId: string | null) => void;
   onContentSizeChange?: (width: number, height: number) => void;
+  onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  scrollEventThrottle?: number;
 }
 
 const TaskList = React.memo(forwardRef<FlatList, TaskListProps>(({
@@ -21,6 +29,8 @@ const TaskList = React.memo(forwardRef<FlatList, TaskListProps>(({
   onDragStart,
   onDragEnd,
   onContentSizeChange,
+  onScroll,
+  scrollEventThrottle,
 }, ref) => {
   const getTaskParent = useCallback((task: TaskDto): Parent | undefined => {
     if (!task.parentId) return undefined;
@@ -40,7 +50,7 @@ const TaskList = React.memo(forwardRef<FlatList, TaskListProps>(({
     [onTaskPress, onDragStart, onDragEnd, getTaskParent]
   );
 
-  const keyExtractor = useCallback((task: Task) => task.id, []);
+  const keyExtractor = useCallback((task: TaskDto) => task.id, []);
 
   const getItemLayout = useCallback(
     (_: any, index: number) => ({
@@ -66,6 +76,8 @@ const TaskList = React.memo(forwardRef<FlatList, TaskListProps>(({
       scrollEnabled={true}
       nestedScrollEnabled={true}
       onContentSizeChange={onContentSizeChange}
+      onScroll={onScroll}
+      scrollEventThrottle={scrollEventThrottle}
     />
   );
 }));

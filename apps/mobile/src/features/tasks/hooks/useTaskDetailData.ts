@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
-import { Task } from '@/features/tasks/domain/entities/Task';
+import { TaskDto } from 'shared-types';
 import { getTaskService } from '@core/di/hooks';
 import alertService from '@services/AlertService';
 
@@ -10,8 +10,8 @@ interface UseTaskDetailDataProps {
 }
 
 interface UseTaskDetailDataReturn {
-  task: Task | null;
-  allTasks: Task[];
+  task: TaskDto | null;
+  allTasks: TaskDto[];
   loading: boolean;
 }
 
@@ -19,8 +19,8 @@ export function useTaskDetailData({
   boardId,
   taskId,
 }: UseTaskDetailDataProps): UseTaskDetailDataReturn {
-  const [task, setTask] = useState<Task | null>(null);
-  const [allTasks, setAllTasks] = useState<Task[]>([]);
+  const [task, setTask] = useState<TaskDto | null>(null);
+  const [allTasks, setAllTasks] = useState<TaskDto[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const taskService = getTaskService();

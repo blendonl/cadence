@@ -22,6 +22,7 @@ interface VerticalScrollInfo {
   ref: React.RefObject<FlatList | null>;
   contentHeight: number;
   viewportHeight: number;
+  scrollOffset: number;
 }
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
@@ -44,13 +45,14 @@ export function useAutoScroll({
   const horizontalScrollOffset = useSharedValue(0);
   const horizontalContentWidth = useSharedValue(0);
   const horizontalViewportWidth = useSharedValue(SCREEN_WIDTH);
-  const lastScrollTime = useRef(0);
+  const lastHorizontalScrollTime = useRef(0);
+  const lastVerticalScrollTime = useRef(0);
 
   const scrollHorizontal = useCallback(
     (amount: number) => {
       const now = Date.now();
-      if (now - lastScrollTime.current < SCROLL_INTERVAL) return;
-      lastScrollTime.current = now;
+      if (now - lastHorizontalScrollTime.current < SCROLL_INTERVAL) return;
+      lastHorizontalScrollTime.current = now;
 
       if (!horizontalScrollRef?.current) return;
 
@@ -71,7 +73,7 @@ export function useAutoScroll({
 
       horizontalScrollRef.current.scrollToOffset({
         offset: newOffset,
-        animated: true,
+        animated: false,
       });
       horizontalScrollOffset.value = newOffset;
     },
@@ -80,8 +82,8 @@ export function useAutoScroll({
 
   const scrollVertical = useCallback((columnId: string, amount: number) => {
     const now = Date.now();
-    if (now - lastScrollTime.current < SCROLL_INTERVAL) return;
-    lastScrollTime.current = now;
+    if (now - lastVerticalScrollTime.current < SCROLL_INTERVAL) return;
+    lastVerticalScrollTime.current = now;
 
     const scrollInfo = verticalScrollRefs.current.get(columnId);
     if (!scrollInfo?.ref.current) return;
@@ -89,10 +91,18 @@ export function useAutoScroll({
     const { contentHeight, viewportHeight } = scrollInfo;
     if (contentHeight <= viewportHeight) return;
 
+    const maxOffset = Math.max(0, contentHeight - viewportHeight);
+    const newOffset = Math.min(
+      maxOffset,
+      Math.max(0, scrollInfo.scrollOffset + amount),
+    );
+    if (newOffset === scrollInfo.scrollOffset) return;
+
     scrollInfo.ref.current.scrollToOffset({
-      offset: amount,
-      animated: true,
+      offset: newOffset,
+      animated: false,
     });
+    scrollInfo.scrollOffset = newOffset;
   }, []);
 
   const handleVerticalAutoScroll = useCallback(
@@ -216,10 +226,17 @@ export function useAutoScroll({
         ref,
         contentHeight,
         viewportHeight,
+        scrollOffset: 0,
       });
     },
     [],
   );
+
+  const handleVerticalScroll = useCallback((columnId: string, offset: number) => {
+    const scrollInfo = verticalScrollRefs.current.get(columnId);
+    if (!scrollInfo) return;
+    scrollInfo.scrollOffset = offset;
+  }, []);
 
   const unregisterVerticalScroll = useCallback((columnId: string) => {
     verticalScrollRefs.current.delete(columnId);
@@ -230,6 +247,7 @@ export function useAutoScroll({
     handleHorizontalContentSize,
     handleHorizontalLayout,
     registerVerticalScroll,
+    handleVerticalScroll,
     unregisterVerticalScroll,
   };
 }

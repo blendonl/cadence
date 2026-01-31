@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import { Task } from '../domain/entities/Task';
+import { TaskDto } from 'shared-types';
 import { Screen } from '@shared/components/Screen';
 import { TaskParentPickerHeader } from './TaskParentPickerHeader';
 import { TaskParentPickerLoading } from './TaskParentPickerLoading';
@@ -10,7 +10,7 @@ import { TaskParentPickerItem } from './TaskParentPickerItem';
 import theme from '@shared/theme/colors';
 
 interface TaskParentPickerProps {
-  tasks: Task[];
+  tasks: TaskDto[];
   loading: boolean;
   selectedParentId: string | null;
   onSelect: (parentId: string | null) => void;

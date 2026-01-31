@@ -40,7 +40,8 @@ export type AppIconName =
   | 'edit'
   | 'eye'
   | 'check'
-  | 'more';
+  | 'more'
+  | 'add';
 
 interface AppIconProps {
   name: AppIconName;
@@ -379,6 +380,13 @@ export default function AppIcon({ name, size = 20, color, strokeWidth = 1.8 }: A
           <Circle cx="12" cy="5" r="1.5" {...common} />
           <Circle cx="12" cy="12" r="1.5" {...common} />
           <Circle cx="12" cy="19" r="1.5" {...common} />
+        </Svg>
+      );
+    case 'add':
+      return (
+        <Svg width={size} height={size} viewBox={viewBox}>
+          <Path d="M12 5V19" {...common} />
+          <Path d="M5 12H19" {...common} />
         </Svg>
       );
     default:

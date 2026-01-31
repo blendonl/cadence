@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Task } from '../domain/entities/Task';
+import { TaskDto } from 'shared-types';
 import { useTaskService } from '@/core/di/hooks';
 import alertService from '@/services/AlertService';
 import logger from '@/utils/logger';
@@ -12,8 +12,8 @@ interface UseTaskActionsOptions {
 }
 
 interface UseTaskActionsReturn {
-  handleTaskPress: (task: Task) => void;
-  handleTaskLongPress: (task: Task) => Promise<void>;
+  handleTaskPress: (task: TaskDto) => void;
+  handleTaskLongPress: (task: TaskDto) => Promise<void>;
   handleMoveTask: (taskId: string, targetColumnId: string) => Promise<boolean>;
   handleBatchMoveTasks: (taskIds: string[], targetColumnId: string) => Promise<boolean>;
   handleQuickComplete: (taskId: string) => Promise<boolean>;
@@ -27,7 +27,7 @@ export function useTaskActions(options: UseTaskActionsOptions): UseTaskActionsRe
   const taskService = useTaskService();
 
   const handleTaskPress = useCallback(
-    (task: Task) => {
+    (task: TaskDto) => {
       router.push({
         pathname: '/tasks/[taskId]' as const,
         params: { taskId: task.id },
@@ -36,7 +36,7 @@ export function useTaskActions(options: UseTaskActionsOptions): UseTaskActionsRe
     [router]
   );
 
-  const handleTaskLongPress = useCallback(async (task: Task) => {
+  const handleTaskLongPress = useCallback(async (task: TaskDto) => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   }, []);
 

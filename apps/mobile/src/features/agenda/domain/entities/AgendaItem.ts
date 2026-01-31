@@ -6,6 +6,12 @@ export type AgendaItemStatus =
   | "CANCELLED"
   | "UNFINISHED";
 export type AgendaItemType = "TASK" | "MEETING" | "SUBTASK";
+export type AgendaTaskType = "regular" | "meeting" | "milestone";
+
+export interface MeetingData {
+  location?: string;
+  attendees?: string[];
+}
 
 export interface AgendaItemProps {
   id?: string;

@@ -6,7 +6,8 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
-import { Task } from "../domain/entities/Task";
+import { TaskDto } from "shared-types";
+import { TaskScheduleFields } from "../types/taskSchedule";
 import AppIcon from "@shared/components/icons/AppIcon";
 import theme from "@shared/theme/colors";
 import { spacing } from "@shared/theme/spacing";
@@ -19,14 +20,14 @@ import { TaskPriority } from "shared-types";
 interface TaskDetailMetaBarProps {
   priority: TaskPriority;
   issueType: string;
-  selectedParent: Task | null;
+  selectedParent: TaskDto | null;
   columnName?: string;
   activeMetaPicker: MetaPickerType;
   onPriorityPress: () => void;
   onIssueTypePress: () => void;
   onParentPress: () => void;
   isCreateMode: boolean;
-  task?: Task | null;
+  task?: (TaskDto & TaskScheduleFields) | null;
   boardId?: string;
   onSchedulePress?: () => void;
 }
@@ -114,8 +115,8 @@ export const TaskDetailMetaBar: React.FC<TaskDetailMetaBarProps> = ({
 
         {!isCreateMode && task && onSchedulePress && (
           <TaskScheduleChip
-            scheduledDate={(task as any).scheduled_date}
-            scheduledTime={(task as any).scheduled_time}
+            scheduledDate={task.scheduled_date || undefined}
+            scheduledTime={task.scheduled_time || undefined}
             onPress={onSchedulePress}
           />
         )}

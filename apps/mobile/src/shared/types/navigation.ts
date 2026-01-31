@@ -1,4 +1,6 @@
 import { BoardId, ProjectId, TaskId, NoteId, GoalId, TimeLogId } from "@core/types";
+import { TaskDto } from "shared-types";
+import { TaskScheduleFields } from "@features/tasks/types/taskSchedule";
 
 export type RootStackParamList = {
   ProjectList: undefined;
@@ -16,4 +18,16 @@ export type RootStackParamList = {
   TimeOverview: undefined;
   TimeLogDetail: { logId: TimeLogId };
   Settings: undefined;
+};
+
+export type AgendaStackParamList = {
+  AgendaMain: undefined;
+  AgendaDay: { date: string };
+  AgendaItemDetail: { itemId: string };
+  TaskSchedule: {
+    taskId: TaskId;
+    boardId: BoardId;
+    taskData?: TaskDto & TaskScheduleFields;
+    allowTypeEdit?: boolean;
+  };
 };

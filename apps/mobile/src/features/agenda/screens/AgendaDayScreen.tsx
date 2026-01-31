@@ -119,9 +119,9 @@ export default function AgendaDayScreen() {
       const agendaService = getAgendaService();
       await agendaService.updateActualValue(selectedMeasurableTask.agendaItem.id, value);
 
-      if (selectedMeasurableTask.task?.goal_id) {
+      if (selectedMeasurableTask.task?.goalId) {
         const goalService = getGoalService();
-        await goalService.updateGoalProgress(selectedMeasurableTask.task.goal_id, value);
+        await goalService.updateGoalProgress(selectedMeasurableTask.task.goalId, value);
       }
 
       await loadDayData();
@@ -269,7 +269,7 @@ export default function AgendaDayScreen() {
             </View>
             {duration && (
               <TimeBlockBar
-                taskType={agendaItem.task_type}
+                taskType={agendaItem.taskType}
                 durationMinutes={duration}
                 maxDurationMinutes={120}
               />

@@ -1,17 +1,17 @@
 import { useState, useCallback } from 'react';
-import { Task } from '../domain/entities/Task';
+import { TaskDto } from 'shared-types';
 import { getTaskService } from '@core/di/hooks';
 import alertService from '@services/AlertService';
 import logger from '@utils/logger';
 
 interface UseTaskParentPickerReturn {
-  tasks: Task[];
+  tasks: TaskDto[];
   loading: boolean;
   fetchTasks: () => Promise<void>;
 }
 
 export function useTaskParentPicker(boardId: string): UseTaskParentPickerReturn {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<TaskDto[]>([]);
   const [loading, setLoading] = useState(false);
   const taskService = getTaskService();
 

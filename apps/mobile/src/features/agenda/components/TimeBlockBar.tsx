@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { TaskType } from '@features/tasks';
+import { AgendaTaskType } from '../domain/entities/AgendaItem';
 import { theme } from '@shared/theme/colors';
 
 interface TimeBlockBarProps {
-  taskType: TaskType;
+  taskType: AgendaTaskType;
   durationMinutes?: number | null;
   maxDurationMinutes?: number;
 }

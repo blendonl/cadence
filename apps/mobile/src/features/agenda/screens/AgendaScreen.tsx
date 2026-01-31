@@ -24,7 +24,7 @@ import { useAutoRefresh } from '@shared/hooks/useAutoRefresh';
 import TaskSelectorModal from '../components/TaskSelectorModal';
 import { TaskScheduleModal, TaskScheduleData } from '../components/TaskScheduleModal';
 import { useDebounce } from '@shared/hooks/useDebounce';
-import { Task } from '@features/tasks';
+import { TaskDto } from 'shared-types';
 
 type AgendaScreenNavProp = StackNavigationProp<AgendaStackParamList, 'AgendaMain'>;
 
@@ -47,7 +47,7 @@ export default function AgendaScreen() {
   const [monthLoading, setMonthLoading] = useState(false);
   const [showTaskSelector, setShowTaskSelector] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedTask, setSelectedTask] = useState<TaskDto | null>(null);
   const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
   const [lastRefreshTime, setLastRefreshTime] = useState(0);
   const [unfinishedItems, setUnfinishedItems] = useState<ScheduledAgendaItem[]>([]);
