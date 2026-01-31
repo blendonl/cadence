@@ -1,6 +1,3 @@
-export const BOARD_REPOSITORY = "BoardRepository";
-export const COLUMN_REPOSITORY = "ColumnRepository";
-export const TASK_REPOSITORY = "TaskRepository";
 export const PROJECT_REPOSITORY = "ProjectRepository";
 export const AGENDA_REPOSITORY = "AgendaRepository";
 export const NOTE_REPOSITORY = "NoteRepository";

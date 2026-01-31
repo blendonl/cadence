@@ -2,9 +2,6 @@ import "reflect-metadata";
 import { container } from "tsyringe";
 
 import {
-  BOARD_REPOSITORY,
-  COLUMN_REPOSITORY,
-  TASK_REPOSITORY,
   PROJECT_REPOSITORY,
   AGENDA_REPOSITORY,
   NOTE_REPOSITORY,
@@ -34,9 +31,6 @@ import { StorageConfig } from "@core/StorageConfig";
 import { ActionsConfig } from "@core/ActionsConfig";
 import { BackendApiClient } from "@infrastructure/api/BackendApiClient";
 
-import { BackendBoardRepository } from "@features/boards";
-import { BackendColumnRepository } from "@features/columns";
-import { BackendTaskRepository } from "@features/tasks";
 import { BackendProjectRepository } from "@features/projects/infrastructure/BackendProjectRepository";
 import { BackendAgendaRepository } from "@features/agenda/infrastructure/BackendAgendaRepository";
 import { BackendNoteRepository } from "@features/notes/infrastructure/BackendNoteRepository";
@@ -109,9 +103,6 @@ export async function initializeContainer(
   console.log("[DI Container] Actions config loaded");
 
   progressCallback?.("Registering repositories...");
-  container.registerSingleton(BOARD_REPOSITORY, BackendBoardRepository);
-  container.registerSingleton(COLUMN_REPOSITORY, BackendColumnRepository);
-  container.registerSingleton(TASK_REPOSITORY, BackendTaskRepository);
   container.registerSingleton(PROJECT_REPOSITORY, BackendProjectRepository);
   container.registerSingleton(AGENDA_REPOSITORY, BackendAgendaRepository);
   container.registerSingleton(NOTE_REPOSITORY, BackendNoteRepository);
