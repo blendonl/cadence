@@ -12,11 +12,10 @@ import { Screen } from '@shared/components/Screen';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
-import { getNoteService } from '@core/di/hooks';
-import { Note, NoteType } from '@features/notes/domain/entities/Note';
+import { noteApi } from '../api/noteApi';
+import { NoteDetailDto } from 'shared-types';
 import AutoSaveIndicator from '@shared/components/AutoSaveIndicator';
 import EntityPicker from '@shared/components/EntityPicker';
-import { ProjectId, BoardId, TaskId } from '@core/types';
 import { useEntityNames, useNoteAutoSave } from '@features/notes/hooks';
 import {
   NoteTypeSelector,
@@ -46,14 +45,14 @@ export default function NoteEditorScreen() {
   const initialBoardIds = normalizeIds(boardIds);
   const initialTaskIds = normalizeIds(taskIds);
 
-  const [note, setNote] = useState<Note | null>(null);
+  const [note, setNote] = useState<NoteDetailDto | null>(null);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [noteType, setNoteType] = useState<NoteType>('general');
+  const [noteType, setNoteType] = useState<string>('general');
   const [tags, setTags] = useState<string[]>([]);
-  const [selectedProjects, setSelectedProjects] = useState<ProjectId[]>(initialProjectIds || []);
-  const [selectedBoards, setSelectedBoards] = useState<BoardId[]>(initialBoardIds || []);
-  const [selectedTasks, setSelectedTasks] = useState<TaskId[]>(initialTaskIds || []);
+  const [selectedProjects, setSelectedProjects] = useState<string[]>(initialProjectIds || []);
+  const [selectedBoards, setSelectedBoards] = useState<string[]>(initialBoardIds || []);
+  const [selectedTasks, setSelectedTasks] = useState<string[]>(initialTaskIds || []);
   const [tagInput, setTagInput] = useState('');
   const [loading, setLoading] = useState(!!noteId);
   const [showEntityPicker, setShowEntityPicker] = useState(false);
@@ -85,17 +84,16 @@ export default function NoteEditorScreen() {
     }
 
     try {
-      const noteService = getNoteService();
-      const loadedNote = await noteService.getNoteById(noteId);
+      const loadedNote = await noteApi.getNoteById(noteId);
       if (loadedNote) {
         setNote(loadedNote);
         setTitle(loadedNote.title);
         setContent(loadedNote.content);
-        setNoteType(loadedNote.note_type);
-        setTags(loadedNote.tags);
-        setSelectedProjects(loadedNote.project_ids);
-        setSelectedBoards(loadedNote.board_ids);
-        setSelectedTasks(loadedNote.task_ids);
+        setNoteType(loadedNote.noteType);
+        setTags(loadedNote.tags || []);
+        setSelectedProjects(loadedNote.projectIds || []);
+        setSelectedBoards(loadedNote.boardIds || []);
+        setSelectedTasks(loadedNote.taskIds || []);
       }
     } catch (error) {
     } finally {
@@ -118,9 +116,8 @@ export default function NoteEditorScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              const noteService = getNoteService();
               if (noteId) {
-                await noteService.deleteNote(noteId);
+                await noteApi.deleteNote(noteId);
               }
               router.back();
             } catch (error) {
@@ -156,7 +153,7 @@ export default function NoteEditorScreen() {
   }, [selectedTasks]);
 
   const handleEntitySelectionChange = useCallback(
-    (projects: ProjectId[], boards: BoardId[], tasks: TaskId[]) => {
+    (projects: string[], boards: string[], tasks: string[]) => {
       setSelectedProjects(projects);
       setSelectedBoards(boards);
       setSelectedTasks(tasks);

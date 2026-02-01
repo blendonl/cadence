@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { TaskDto } from 'shared-types';
+import { TaskCreateResponseDto, TaskDto } from 'shared-types';
 import { getTaskService } from '@core/di/hooks';
 import { useDebounce } from '@shared/hooks/useDebounce';
 import { uiConstants } from '@shared/theme/uiConstants';
@@ -10,7 +10,7 @@ interface UseTaskAutoSaveProps {
   task: TaskDto | null;
   columnId: string;
   formState: TaskFormState;
-  onTaskCreated?: (task: TaskDto) => void;
+  onTaskCreated?: (task: TaskCreateResponseDto) => void;
 }
 
 interface UseTaskAutoSaveReturn {

@@ -39,7 +39,7 @@ class Logger {
    */
   private formatMessage(level: LogLevel, message: string, context?: LogContext): string {
     const timestamp = new Date().toISOString();
-    const contextStr = context ? ` ${JSON.stringify(context)}` : '';
+    const contextStr = context != null ? ` ${this.safeStringify(context)}` : '';
     return `[${timestamp}] ${level} ${message}${contextStr}`;
   }
 
@@ -48,7 +48,7 @@ class Logger {
    */
   debug(message: string, context?: LogContext): void {
     if (this.shouldLog(LogLevel.DEBUG)) {
-      console.log(this.formatMessage(LogLevel.DEBUG, message, context));
+      console.log(this.formatMessage(LogLevel.DEBUG, message, this.normalizeContext(context)));
     }
   }
 
@@ -57,7 +57,7 @@ class Logger {
    */
   info(message: string, context?: LogContext): void {
     if (this.shouldLog(LogLevel.INFO)) {
-      console.log(this.formatMessage(LogLevel.INFO, message, context));
+      console.log(this.formatMessage(LogLevel.INFO, message, this.normalizeContext(context)));
     }
   }
 
@@ -66,7 +66,7 @@ class Logger {
    */
   warn(message: string, context?: LogContext): void {
     if (this.shouldLog(LogLevel.WARN)) {
-      console.warn(this.formatMessage(LogLevel.WARN, message, context));
+      console.warn(this.formatMessage(LogLevel.WARN, message, this.normalizeContext(context)));
     }
   }
 
@@ -80,6 +80,7 @@ class Logger {
         return;
       }
 
+      const baseContext = this.normalizeContext(context);
       const errorValue = error instanceof Error
         ? error.message
         : error !== null && error !== undefined
@@ -87,13 +88,86 @@ class Logger {
         : undefined;
 
       const errorContext = error instanceof Error
-        ? { ...context, error: error.message, stack: error.stack }
+        ? { ...(baseContext ?? {}), error: error.message, stack: error.stack }
         : errorValue !== undefined
-        ? { ...context, error: errorValue }
-        : context || {};
+        ? { ...(baseContext ?? {}), error: errorValue }
+        : baseContext || {};
 
-      console.error(this.formatMessage(LogLevel.ERROR, message || 'Error occurred', errorContext));
+      const safeMessage = this.normalizeMessage(message, error);
+
+      console.error(this.formatMessage(LogLevel.ERROR, safeMessage, errorContext));
     }
+  }
+
+  private safeStringify(value: unknown): string {
+    try {
+      const seen = new WeakSet<object>();
+      const json = JSON.stringify(value, (_key, current) => {
+        if (typeof current === 'bigint') {
+          return current.toString();
+        }
+
+        if (typeof current === 'symbol') {
+          return current.toString();
+        }
+
+        if (typeof current === 'function') {
+          return `[Function${current.name ? `: ${current.name}` : ''}]`;
+        }
+
+        if (current instanceof Error) {
+          return { name: current.name, message: current.message, stack: current.stack };
+        }
+
+        if (typeof current === 'object' && current !== null) {
+          if (seen.has(current)) {
+            return '[Circular]';
+          }
+          seen.add(current);
+        }
+
+        return current;
+      });
+
+      return json === undefined ? String(value) : json;
+    } catch {
+      return '[Unserializable]';
+    }
+  }
+
+  private normalizeContext(context?: LogContext): LogContext | undefined {
+    if (context === null || context === undefined) {
+      return undefined;
+    }
+
+    if (typeof context !== 'object') {
+      return { value: context } as LogContext;
+    }
+
+    return context;
+  }
+
+  private normalizeMessage(message: unknown, error?: Error | unknown): string {
+    if (typeof message === 'string') {
+      const trimmed = message.trim();
+      if (trimmed.length > 0) {
+        return trimmed;
+      }
+    }
+
+    if (typeof message === 'number' || typeof message === 'boolean' || typeof message === 'bigint') {
+      return String(message);
+    }
+
+    if (message !== null && message !== undefined && typeof message !== 'string') {
+      return this.safeStringify(message);
+    }
+
+    if (error instanceof Error && error.message) {
+      return error.message;
+    }
+
+    return 'Error occurred';
   }
 
   private formatUnknownError(error: unknown): string {
@@ -111,20 +185,8 @@ class Logger {
         return String(message);
       }
 
-      const seen = new WeakSet<object>();
-      try {
-        return JSON.stringify(error, (_key, value) => {
-          if (typeof value === 'object' && value !== null) {
-            if (seen.has(value)) {
-              return '[Circular]';
-            }
-            seen.add(value);
-          }
-          return value;
-        });
-      } catch {
-        return '[Unserializable error]';
-      }
+      const serialized = this.safeStringify(error);
+      return serialized === '[Unserializable]' ? '[Unserializable error]' : serialized;
     }
 
     return String(error);
@@ -168,19 +230,23 @@ class ScopedLogger {
   ) {}
 
   debug(message: string, context?: LogContext): void {
-    this.logger.debug(message, { ...context, scope: this.scopeName });
+    const scopedContext = context ? { ...context, scope: this.scopeName } : { scope: this.scopeName };
+    this.logger.debug(message, scopedContext);
   }
 
   info(message: string, context?: LogContext): void {
-    this.logger.info(message, { ...context, scope: this.scopeName });
+    const scopedContext = context ? { ...context, scope: this.scopeName } : { scope: this.scopeName };
+    this.logger.info(message, scopedContext);
   }
 
   warn(message: string, context?: LogContext): void {
-    this.logger.warn(message, { ...context, scope: this.scopeName });
+    const scopedContext = context ? { ...context, scope: this.scopeName } : { scope: this.scopeName };
+    this.logger.warn(message, scopedContext);
   }
 
   error(message: string, error?: Error | unknown, context?: LogContext): void {
-    this.logger.error(message, error, { ...context, scope: this.scopeName });
+    const scopedContext = context ? { ...context, scope: this.scopeName } : { scope: this.scopeName };
+    this.logger.error(message, error, scopedContext);
   }
 }
 

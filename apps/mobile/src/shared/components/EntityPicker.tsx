@@ -11,12 +11,10 @@ import {
 } from 'react-native';
 import theme from '../theme/colors';
 import { spacing } from '../theme/spacing';
-import { EntityType } from '../../domain/entities/Note';
 import { ProjectId, BoardId, TaskId } from '../../core/types';
-import { getProjectService, getBoardService } from '../../core/di/hooks';
-import { Project } from '../../domain/entities/Project';
-import { Board } from '../../domain/entities/Board';
-import { TaskDto } from 'shared-types';
+import { getBoardService } from '../../core/di/hooks';
+import { projectApi } from '../../features/projects/api/projectApi';
+import { BoardDto, ProjectDto, TaskDto } from 'shared-types';
 import AppIcon, { AppIconName } from './icons/AppIcon';
 
 type Tab = 'projects' | 'boards' | 'tasks';
@@ -26,6 +24,12 @@ interface Entity {
   name: string;
   type: EntityType;
 }
+
+type EntityType = 'project' | 'board' | 'task';
+
+type BoardWithColumns = BoardDto & {
+  columns?: { tasks: TaskDto[] }[];
+};
 
 interface EntityPickerProps {
   visible: boolean;
@@ -50,11 +54,11 @@ export default function EntityPicker({
 }: EntityPickerProps) {
   const [activeTab, setActiveTab] = useState<Tab>('projects');
   const [searchQuery, setSearchQuery] = useState('');
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<ProjectDto[]>([]);
   const [projectsPage, setProjectsPage] = useState(1);
   const [projectsHasMore, setProjectsHasMore] = useState(true);
   const [projectsLoading, setProjectsLoading] = useState(false);
-  const [boards, setBoards] = useState<Board[]>([]);
+  const [boards, setBoards] = useState<BoardWithColumns[]>([]);
   const [tasks, setTasks] = useState<TaskDto[]>([]);
   const [localSelectedProjects, setLocalSelectedProjects] = useState<ProjectId[]>([]);
   const [localSelectedBoards, setLocalSelectedBoards] = useState<BoardId[]>([]);
@@ -71,10 +75,10 @@ export default function EntityPicker({
     }
   }, [visible]);
 
-  const collectTasksFromBoards = (loadedBoards: Board[]): TaskDto[] => {
+  const collectTasksFromBoards = (loadedBoards: BoardWithColumns[]): TaskDto[] => {
     const allTasks: TaskDto[] = [];
     loadedBoards.forEach((board) => {
-      board.columns.forEach((column) => {
+      (board.columns ?? []).forEach((column) => {
         allTasks.push(...column.tasks);
       });
     });
@@ -84,13 +88,13 @@ export default function EntityPicker({
   const loadProjectsPage = async (page: number, append: boolean) => {
     setProjectsLoading(true);
     try {
-      const projectService = getProjectService();
       const boardService = getBoardService();
-      const result = await projectService.getProjectsPaginated(page, PROJECT_PAGE_SIZE);
+      const result = await projectApi.getProjects({ page, limit: PROJECT_PAGE_SIZE });
+      const hasMore = result.page * result.limit < result.total;
 
       setProjects((prev) => (append ? [...prev, ...result.items] : result.items));
       setProjectsPage(page);
-      setProjectsHasMore(result.hasMore);
+      setProjectsHasMore(hasMore);
 
       const newBoards = (await Promise.all(
         result.items.map((project) =>

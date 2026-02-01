@@ -12,13 +12,26 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import theme from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
-import { getTimeTrackingService } from '../../../core/di/hooks';
-import { DailySummary } from '../../../domain/entities/TimeLog';
-import { OverallTimeSummary, TimeSource } from '../../../services/TimeTrackingService';
 import { TimeStackParamList } from '../../navigation/TabNavigator';
 import AppIcon, { AppIconName } from '../../components/icons/AppIcon';
 
 type TimeOverviewNavProp = StackNavigationProp<TimeStackParamList, 'TimeOverview'>;
+
+interface DailySummary {
+  date: string;
+  total_minutes: number;
+}
+
+interface OverallTimeSummary {
+  todayMinutes: number;
+  thisWeekMinutes: number;
+  thisMonthMinutes: number;
+  recentDays: DailySummary[];
+  bySource: Record<string, number>;
+  byProject: Record<string, number>;
+}
+
+type TimeSource = 'manual' | 'git' | 'tmux' | 'calendar';
 
 const SOURCE_ICONS: Record<TimeSource, AppIconName> = {
   manual: 'edit',
@@ -49,9 +62,14 @@ export default function TimeOverviewScreen() {
 
   const loadData = useCallback(async () => {
     try {
-      const timeService = getTimeTrackingService();
-      const overallSummary = await timeService.getOverallTimeSummary();
-      setSummary(overallSummary);
+      setSummary({
+        todayMinutes: 0,
+        thisWeekMinutes: 0,
+        thisMonthMinutes: 0,
+        recentDays: [],
+        bySource: {},
+        byProject: {},
+      });
     } catch (error) {
       console.error('Failed to load time data:', error);
     } finally {

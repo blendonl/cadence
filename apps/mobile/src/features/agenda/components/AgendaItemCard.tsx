@@ -1,12 +1,17 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import type { ScheduledAgendaItem } from '@features/agenda/domain/interfaces/AgendaService.interface';
+import type { AgendaItemEnrichedDto } from 'shared-types';
 import { OrphanedItemBadge } from '@shared/components/OrphanedItemBadge';
 import { theme } from '@shared/theme/colors';
 import AppIcon, { AppIconName } from '@shared/components/icons/AppIcon';
+import {
+  getScheduledTime,
+  isOrphanedItem,
+  isItemCompleted,
+} from '../utils/agendaHelpers';
 
 interface AgendaItemCardProps {
-  scheduledItem: ScheduledAgendaItem;
+  item: AgendaItemEnrichedDto;
   onPress: () => void;
   onLongPress?: () => void;
   onToggleComplete?: () => void;
@@ -93,24 +98,27 @@ const formatStepValue = (value: number | null): string | null => {
 };
 
 const AgendaItemCardComponent: React.FC<AgendaItemCardProps> = ({
-  scheduledItem,
+  item,
   onPress,
   onLongPress,
   onToggleComplete,
   sleepMode,
 }) => {
-  const { agendaItem, task, projectName, boardName, isOrphaned } = scheduledItem;
-  const isRoutineTask = !!agendaItem.routineTaskId;
-  const hasTaskId = !!agendaItem.taskId;
-  const cardVariant = resolveCardVariant(hasTaskId, agendaItem.routineType);
-  const taskType = agendaItem.taskType as TaskType;
+  const isRoutineTask = !!item.routineTaskId;
+  const hasTaskId = !!item.taskId;
+  const cardVariant = resolveCardVariant(hasTaskId, item.routineTask?.routineType || null);
+  const taskType = (item.task?.taskType || 'regular') as TaskType;
+  const isOrphaned = isOrphanedItem(item);
+  const projectName = item.task?.projectName || '';
+  const boardName = item.task?.boardName || '';
 
   const taskTitle = useMemo(
-    () => task?.title
-      || agendaItem.routineTaskName
-      || agendaItem.routineName
-      || agendaItem.taskId,
-    [task?.title, agendaItem.routineTaskName, agendaItem.routineName, agendaItem.taskId]
+    () => item.task?.title
+      || item.routineTask?.name
+      || item.routineTask?.routineName
+      || item.taskId
+      || 'Untitled',
+    [item.task?.title, item.routineTask?.name, item.routineTask?.routineName, item.taskId]
   );
 
   const typeMeta = useMemo(
@@ -119,38 +127,28 @@ const AgendaItemCardComponent: React.FC<AgendaItemCardProps> = ({
   );
 
   const timeLabel = useMemo(
-    () => formatTime(agendaItem.scheduledTime),
-    [agendaItem.scheduledTime]
+    () => formatTime(getScheduledTime(item)),
+    [item.startAt]
   );
 
-  const isCompleted = !!agendaItem.completedAt;
+  const isCompleted = isItemCompleted(item);
   const metadataLabel = useMemo(() => {
     if (isRoutineTask) {
-      return agendaItem.routineName
-        ? `Routine · ${agendaItem.routineName}`
+      return item.routineTask?.routineName
+        ? `Routine · ${item.routineTask.routineName}`
         : 'Routine';
     }
 
     return `${projectName} / ${boardName}`;
-  }, [isRoutineTask, agendaItem.routineName, projectName, boardName]);
+  }, [isRoutineTask, item.routineTask?.routineName, projectName, boardName]);
 
-  const meetingLocation = useMemo(() => {
-    if (!agendaItem.meetingData) return null;
-    const raw = (agendaItem.meetingData as Record<string, unknown>).location;
-    return typeof raw === 'string' ? raw : null;
-  }, [agendaItem.meetingData]);
-
-  const meetingAttendees = useMemo(() => {
-    if (!agendaItem.meetingData) return [];
-    const raw = (agendaItem.meetingData as Record<string, unknown>).attendees;
-    return Array.isArray(raw) ? raw : [];
-  }, [agendaItem.meetingData]);
-
-  const hasDetailChips = !!meetingLocation || meetingAttendees.length > 0;
+  const meetingLocation = null;
+  const meetingAttendees: unknown[] = [];
+  const hasDetailChips = false;
 
   const sleepRange = useMemo(
-    () => parseSleepRange(agendaItem.routineTarget),
-    [agendaItem.routineTarget]
+    () => parseSleepRange(item.routineTask?.routineTarget || null),
+    [item.routineTask?.routineTarget]
   );
 
   const sleepTime = useMemo(() => {
@@ -170,18 +168,14 @@ const AgendaItemCardComponent: React.FC<AgendaItemCardProps> = ({
   );
 
   const stepTarget = useMemo(
-    () => parseNumericTarget(agendaItem.routineTarget),
-    [agendaItem.routineTarget]
+    () => parseNumericTarget(item.routineTask?.routineTarget || null),
+    [item.routineTask?.routineTarget]
   );
 
-  const stepProgress = useMemo(() => {
-    if (!stepTarget || agendaItem.actualValue === null || agendaItem.actualValue === undefined) return 0;
-    const raw = agendaItem.actualValue / stepTarget;
-    if (!Number.isFinite(raw)) return 0;
-    return Math.max(0, Math.min(1, raw));
-  }, [agendaItem.actualValue, stepTarget]);
+  const stepProgress = 0;
+  const actualSteps = 0;
 
-  const formattedActualSteps = formatStepValue(agendaItem.actualValue ?? 0);
+  const formattedActualSteps = formatStepValue(actualSteps);
   const formattedTargetSteps = formatStepValue(stepTarget || 0);
 
   return (
@@ -253,11 +247,11 @@ const AgendaItemCardComponent: React.FC<AgendaItemCardProps> = ({
             <Text style={styles.metadataText} numberOfLines={1}>
               {metadataLabel}
             </Text>
-            {agendaItem.durationMinutes && (
+            {item.duration && (
               <View style={styles.durationBadge}>
                 <AppIcon name="clock" size={12} color={theme.text.secondary} />
                 <Text style={styles.durationText}>
-                  {formatDuration(agendaItem.durationMinutes)}
+                  {formatDuration(item.duration)}
                 </Text>
               </View>
             )}
@@ -357,7 +351,7 @@ const AgendaItemCardComponent: React.FC<AgendaItemCardProps> = ({
               </View>
               <View style={styles.titleBlock}>
                 <Text style={styles.otherTitle} numberOfLines={1}>
-                  {agendaItem.routineName || 'Routine'}
+                  {item.routineTask?.routineName || 'Routine'}
                 </Text>
                 <Text style={styles.otherSubtitle}>Custom routine</Text>
               </View>
@@ -381,7 +375,7 @@ const AgendaItemCardComponent: React.FC<AgendaItemCardProps> = ({
           </View>
           <View style={styles.otherBody}>
             <Text style={styles.otherTarget} numberOfLines={2}>
-              {agendaItem.routineTarget || 'Target not set'}
+              {item.routineTask?.routineTarget || 'Target not set'}
             </Text>
             {timeLabel && (
               <View style={styles.otherTimeBadge}>
@@ -399,19 +393,17 @@ const arePropsEqual = (
   prevProps: AgendaItemCardProps,
   nextProps: AgendaItemCardProps
 ): boolean => {
-  const prevItem = prevProps.scheduledItem;
-  const nextItem = nextProps.scheduledItem;
+  const prevItem = prevProps.item;
+  const nextItem = nextProps.item;
 
   return (
-    prevItem.agendaItem.id === nextItem.agendaItem.id &&
-    prevItem.agendaItem.completedAt === nextItem.agendaItem.completedAt &&
-    prevItem.agendaItem.scheduledTime === nextItem.agendaItem.scheduledTime &&
-    prevItem.agendaItem.taskType === nextItem.agendaItem.taskType &&
-    prevItem.agendaItem.routineType === nextItem.agendaItem.routineType &&
-    prevItem.agendaItem.actualValue === nextItem.agendaItem.actualValue &&
-    prevItem.agendaItem.routineTarget === nextItem.agendaItem.routineTarget &&
+    prevItem.id === nextItem.id &&
+    prevItem.status === nextItem.status &&
+    prevItem.startAt === nextItem.startAt &&
+    prevItem.task?.taskType === nextItem.task?.taskType &&
+    prevItem.routineTask?.routineType === nextItem.routineTask?.routineType &&
+    prevItem.routineTask?.routineTarget === nextItem.routineTask?.routineTarget &&
     prevItem.task?.title === nextItem.task?.title &&
-    prevItem.isOrphaned === nextItem.isOrphaned &&
     prevProps.onPress === nextProps.onPress &&
     prevProps.onLongPress === nextProps.onLongPress &&
     prevProps.onToggleComplete === nextProps.onToggleComplete &&

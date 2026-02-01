@@ -7,21 +7,22 @@ import {
   ScrollView,
   TextInput,
   Alert,
-  Platform,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
-import { getAgendaService, getBoardService } from '@core/di/hooks';
+import { agendaApi } from '../api/agendaApi';
+import { getBoardService } from '@core/di/hooks';
 import { RecurrenceRule } from '@shared/types/recurrence';
 import { AgendaTaskType } from '../domain/entities/AgendaItem';
 import { TaskWithSchedule } from '@features/tasks/types/taskSchedule';
 import { AgendaStackParamList } from '@shared/types/navigation';
 import AppIcon, { AppIconName } from '@shared/components/icons/AppIcon';
 import BaseModal from '@shared/components/BaseModal';
+import { ThemedDatePicker } from '@shared/components/pickers/ThemedDatePicker';
+import { ThemedTimePicker } from '@shared/components/pickers/ThemedTimePicker';
 
 type TaskScheduleRouteProp = RouteProp<AgendaStackParamList, 'TaskSchedule'>;
 type TaskScheduleNavProp = StackNavigationProp<AgendaStackParamList, 'TaskSchedule'>;
@@ -78,9 +79,18 @@ export default function TaskScheduleScreen() {
   const [activeTimePicker, setActiveTimePicker] = useState<'primary' | 'extra' | null>(null);
   const [showAdvancedRepeat, setShowAdvancedRepeat] = useState(false);
   const [meetingExpanded, setMeetingExpanded] = useState(false);
+  const [pendingExtraTime, setPendingExtraTime] = useState<string>('');
 
   const [draftRepeatInterval, setDraftRepeatInterval] = useState<string>('1');
   const [draftExtraTimes, setDraftExtraTimes] = useState<string[]>([]);
+
+  const clearTimeSelection = useCallback(() => {
+    setSelectedTime('');
+    setExtraTimes([]);
+    setDurationMode('none');
+    setSelectedDuration(null);
+    setCustomDuration('');
+  }, []);
 
   const applyRecurrenceToState = (
     rule: RecurrenceRule | null | undefined,
@@ -133,9 +143,15 @@ export default function TaskScheduleScreen() {
         setTask(taskInstance);
         const nextDate = taskInstance.scheduled_date || getTodayString();
         setSelectedDate(nextDate);
-        setSelectedTime(taskInstance.scheduled_time || '');
-        setSelectedDuration(taskInstance.time_block_minutes || null);
-        initializeDurationState(taskInstance.time_block_minutes || null);
+        const nextTime = taskInstance.scheduled_time || '';
+        setSelectedTime(nextTime);
+        if (nextTime) {
+          setSelectedDuration(taskInstance.time_block_minutes || null);
+          initializeDurationState(taskInstance.time_block_minutes || null);
+        } else {
+          setSelectedDuration(null);
+          initializeDurationState(null);
+        }
         setSelectedType((taskInstance.task_type || 'regular') as AgendaTaskType);
         setMeetingLocation(taskInstance.meeting_data?.location || '');
         setMeetingAttendees(taskInstance.meeting_data?.attendees?.join(', ') || '');
@@ -161,9 +177,15 @@ export default function TaskScheduleScreen() {
           setTask(foundTask);
           const nextDate = foundTask.scheduled_date || getTodayString();
           setSelectedDate(nextDate);
-          setSelectedTime(foundTask.scheduled_time || '');
-          setSelectedDuration(foundTask.time_block_minutes || null);
-          initializeDurationState(foundTask.time_block_minutes || null);
+          const nextTime = foundTask.scheduled_time || '';
+          setSelectedTime(nextTime);
+          if (nextTime) {
+            setSelectedDuration(foundTask.time_block_minutes || null);
+            initializeDurationState(foundTask.time_block_minutes || null);
+          } else {
+            setSelectedDuration(null);
+            initializeDurationState(null);
+          }
           setSelectedType((foundTask.task_type || 'regular') as AgendaTaskType);
           setMeetingLocation(foundTask.meeting_data?.location || '');
           setMeetingAttendees(foundTask.meeting_data?.attendees?.join(', ') || '');
@@ -208,7 +230,6 @@ export default function TaskScheduleScreen() {
 
     setSaving(true);
     try {
-      const agendaService = getAgendaService();
       const recurrenceRule = buildRecurrenceRule();
       const durationMinutes = resolveDurationMinutes();
 
@@ -218,31 +239,25 @@ export default function TaskScheduleScreen() {
         return;
       }
 
-      await agendaService.scheduleTask(
-        boardId,
-        taskId,
-        selectedDate,
-        selectedTime || undefined,
-        durationMinutes ?? undefined,
-        recurrenceRule
-      );
-
-      if (allowTypeEdit && selectedType !== (task.task_type || 'regular')) {
-        await agendaService.setTaskType(boardId, taskId, selectedType);
-      }
-
       const effectiveType = allowTypeEdit ? selectedType : (task.task_type || 'regular');
-      if (effectiveType === 'meeting' && (meetingLocation || meetingAttendees)) {
-        const attendeesList = meetingAttendees
-          .split(',')
-          .map(a => a.trim())
-          .filter(a => a.length > 0);
+      const attendeesList = effectiveType === 'meeting' && meetingAttendees
+        ? meetingAttendees.split(',').map(a => a.trim()).filter(a => a.length > 0)
+        : undefined;
 
-        await agendaService.updateMeetingData(boardId, taskId, {
-          location: meetingLocation || undefined,
-          attendees: attendeesList.length > 0 ? attendeesList : undefined,
-        });
-      }
+      await agendaApi.createAgendaItem({
+        agendaId: selectedDate,
+        taskId: taskId,
+        type: effectiveType,
+        scheduledTime: selectedTime || null,
+        durationMinutes: durationMinutes || null,
+        recurrence: recurrenceRule || undefined,
+        meetingData: effectiveType === 'meeting' && (meetingLocation || attendeesList?.length)
+          ? {
+              location: meetingLocation || undefined,
+              attendees: attendeesList,
+            }
+          : undefined,
+      });
 
       navigation.goBack();
     } catch (error) {
@@ -327,7 +342,7 @@ export default function TaskScheduleScreen() {
   };
 
   const handleUnschedule = async () => {
-    if (!task) return;
+    if (!task || !task.scheduled_date) return;
 
     Alert.alert(
       'Remove Schedule',
@@ -340,8 +355,6 @@ export default function TaskScheduleScreen() {
           onPress: async () => {
             setSaving(true);
             try {
-              const agendaService = getAgendaService();
-              await agendaService.unscheduleTask(boardId, taskId);
               navigation.goBack();
             } catch (error) {
               console.error('Failed to unschedule:', error);
@@ -516,8 +529,7 @@ export default function TaskScheduleScreen() {
             <TouchableOpacity
               style={[styles.pill, !selectedTime && styles.pillSelected]}
               onPress={() => {
-                setSelectedTime('');
-                setExtraTimes([]);
+                clearTimeSelection();
               }}
             >
               <Text style={[styles.pillText, !selectedTime && styles.pillTextSelected]}>All day</Text>
@@ -533,7 +545,7 @@ export default function TaskScheduleScreen() {
             {!!selectedTime && (
               <TouchableOpacity
                 style={styles.iconButton}
-                onPress={() => setSelectedTime('')}
+                onPress={clearTimeSelection}
                 accessibilityLabel="Clear time"
               >
                 <AppIcon name="trash" size={18} color={theme.text.tertiary} />
@@ -542,108 +554,94 @@ export default function TaskScheduleScreen() {
           </View>
 
           {activeTimePicker === 'primary' && (
-            <View style={styles.pickerWrapper}>
-              <DateTimePicker
-                value={getTimePickerValue(selectedDate, selectedTime)}
-                mode="time"
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                onChange={(event, date) => {
-                  if (event.type === 'dismissed') {
-                    if (Platform.OS !== 'ios') {
-                      setActiveTimePicker(null);
-                    }
-                    return;
-                  }
-
-                  const nextTime = date || getTimePickerValue(selectedDate, selectedTime);
-                  setSelectedTime(formatTimeValue(nextTime));
-                  if (Platform.OS !== 'ios') {
-                    setActiveTimePicker(null);
-                  }
-                }}
+            <BaseModal
+              visible
+              onClose={() => setActiveTimePicker(null)}
+              title="Pick time"
+              scrollable={false}
+            >
+              <ThemedTimePicker
+                value={selectedTime}
+                onChange={time => setSelectedTime(time)}
+                onDone={() => setActiveTimePicker(null)}
               />
-              {Platform.OS === 'ios' && (
-                <TouchableOpacity
-                  style={styles.pickerDoneButton}
-                  onPress={() => setActiveTimePicker(null)}
-                >
-                  <Text style={styles.pickerDoneText}>Done</Text>
-                </TouchableOpacity>
-              )}
-            </View>
+            </BaseModal>
           )}
 
-          <View style={styles.cardDivider} />
-
-          <Text style={styles.cardTitle}>Duration</Text>
-          <Text style={styles.cardSubtitle}>Optional. Helps time-blocking and planning.</Text>
-          <View style={styles.pillRow}>
-            <TouchableOpacity
-              style={[styles.pill, durationMode === 'none' && styles.pillSelected]}
-              onPress={() => {
-                setDurationMode('none');
-                setSelectedDuration(null);
-                setCustomDuration('');
-              }}
-            >
-              <Text style={[styles.pillText, durationMode === 'none' && styles.pillTextSelected]}>None</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.pill, durationMode === 'tbd' && styles.pillSelected]}
-              onPress={() => {
-                setDurationMode('tbd');
-                setSelectedDuration(null);
-                setCustomDuration('');
-              }}
-            >
-              <Text style={[styles.pillText, durationMode === 'tbd' && styles.pillTextSelected]}>TBD</Text>
-            </TouchableOpacity>
-            {DURATION_PRESETS.map(minutes => (
-              <TouchableOpacity
-                key={`dur-${minutes}`}
-                style={[
-                  styles.pill,
-                  durationMode === 'preset' && selectedDuration === minutes && styles.pillSelected,
-                ]}
-                onPress={() => {
-                  setDurationMode('preset');
-                  setSelectedDuration(minutes);
-                  setCustomDuration('');
-                }}
-              >
-                <Text
-                  style={[
-                    styles.pillText,
-                    durationMode === 'preset' && selectedDuration === minutes && styles.pillTextSelected,
-                  ]}
+          {!!selectedTime && (
+            <>
+              <View style={styles.cardDivider} />
+              <Text style={styles.cardTitle}>Duration</Text>
+              <Text style={styles.cardSubtitle}>Optional. Helps time-blocking and planning.</Text>
+              <View style={styles.pillRow}>
+                <TouchableOpacity
+                  style={[styles.pill, durationMode === 'none' && styles.pillSelected]}
+                  onPress={() => {
+                    setDurationMode('none');
+                    setSelectedDuration(null);
+                    setCustomDuration('');
+                  }}
                 >
-                  {minutes}m
-                </Text>
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity
-              style={[styles.pill, durationMode === 'custom' && styles.pillSelected]}
-              onPress={() => {
-                setDurationMode('custom');
-                setSelectedDuration(null);
-              }}
-            >
-              <Text style={[styles.pillText, durationMode === 'custom' && styles.pillTextSelected]}>Custom</Text>
-            </TouchableOpacity>
-          </View>
+                  <Text style={[styles.pillText, durationMode === 'none' && styles.pillTextSelected]}>None</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.pill, durationMode === 'tbd' && styles.pillSelected]}
+                  onPress={() => {
+                    setDurationMode('tbd');
+                    setSelectedDuration(null);
+                    setCustomDuration('');
+                  }}
+                >
+                  <Text style={[styles.pillText, durationMode === 'tbd' && styles.pillTextSelected]}>TBD</Text>
+                </TouchableOpacity>
+                {DURATION_PRESETS.map(minutes => (
+                  <TouchableOpacity
+                    key={`dur-${minutes}`}
+                    style={[
+                      styles.pill,
+                      durationMode === 'preset' && selectedDuration === minutes && styles.pillSelected,
+                    ]}
+                    onPress={() => {
+                      setDurationMode('preset');
+                      setSelectedDuration(minutes);
+                      setCustomDuration('');
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.pillText,
+                        durationMode === 'preset' && selectedDuration === minutes && styles.pillTextSelected,
+                      ]}
+                    >
+                      {minutes}m
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+                <TouchableOpacity
+                  style={[styles.pill, durationMode === 'custom' && styles.pillSelected]}
+                  onPress={() => {
+                    setDurationMode('custom');
+                    setSelectedDuration(null);
+                  }}
+                >
+                  <Text style={[styles.pillText, durationMode === 'custom' && styles.pillTextSelected]}>Custom</Text>
+                </TouchableOpacity>
+              </View>
 
-          {durationMode === 'custom' && (
-            <View style={styles.customDurationRow}>
-              <TextInput
-                style={styles.durationInput}
-                value={customDuration}
-                onChangeText={setCustomDuration}
-                keyboardType="number-pad"
-                placeholder="Minutes"
-                placeholderTextColor={theme.text.muted}
-              />
-              <Text style={styles.helperText}>min</Text>
-            </View>
+              {durationMode === 'custom' && (
+                <View style={styles.customDurationRow}>
+                  <TextInput
+                    style={styles.durationInput}
+                    value={customDuration}
+                    onChangeText={setCustomDuration}
+                    keyboardType="number-pad"
+                    placeholder="Minutes"
+                    placeholderTextColor={theme.text.muted}
+                  />
+                  <Text style={styles.helperText}>min</Text>
+                </View>
+              )}
+            </>
           )}
         </View>
 
@@ -835,41 +833,21 @@ export default function TaskScheduleScreen() {
         maxHeight="90%"
         scrollable={false}
       >
-        <DateTimePicker
-          value={getDatePickerValue(selectedDate)}
-          mode="date"
-          display={Platform.OS === 'ios' ? 'inline' : 'default'}
-          onChange={(event, date) => {
-            if (event.type === 'dismissed') {
-              if (Platform.OS !== 'ios') {
-                setShowSystemDatePicker(false);
-              }
-              return;
-            }
-
-            const nextDate = date || getDatePickerValue(selectedDate);
-            const formatted = formatDateString(nextDate);
-            setSelectedDate(formatted);
-            setViewMonth(getMonthStart(nextDate));
-            if (Platform.OS !== 'ios') {
-              setShowSystemDatePicker(false);
-            }
+        <ThemedDatePicker
+          value={selectedDate}
+          onChange={dateString => {
+            setSelectedDate(dateString);
+            setViewMonth(getMonthStart(getDatePickerValue(dateString)));
           }}
+          onClose={() => setShowSystemDatePicker(false)}
         />
-        {Platform.OS === 'ios' && (
-          <TouchableOpacity
-            style={[styles.pickerDoneButton, { alignSelf: 'flex-end', marginTop: spacing.md }]}
-            onPress={() => setShowSystemDatePicker(false)}
-          >
-            <Text style={styles.pickerDoneText}>Done</Text>
-          </TouchableOpacity>
-        )}
       </BaseModal>
 
       <BaseModal
         visible={showAdvancedRepeat}
         onClose={() => {
           setActiveTimePicker(null);
+          setPendingExtraTime('');
           setShowAdvancedRepeat(false);
         }}
         title="Repeat advanced"
@@ -895,7 +873,10 @@ export default function TaskScheduleScreen() {
             <View style={styles.choiceRow}>
               <TouchableOpacity
                 style={styles.choiceButton}
-                onPress={() => setActiveTimePicker('extra')}
+                onPress={() => {
+                  setPendingExtraTime(selectedTime || '');
+                  setActiveTimePicker('extra');
+                }}
                 disabled={!selectedTime}
               >
                 <Text style={styles.choiceLabel}>Add time</Text>
@@ -919,38 +900,28 @@ export default function TaskScheduleScreen() {
               ))}
             </View>
             {activeTimePicker === 'extra' && (
-              <View style={styles.pickerWrapper}>
-                <DateTimePicker
-                  value={getTimePickerValue(selectedDate, selectedTime)}
-                  mode="time"
-                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                  onChange={(event, date) => {
-                    if (event.type === 'dismissed') {
-                      if (Platform.OS !== 'ios') {
-                        setActiveTimePicker(null);
-                      }
-                      return;
+              <BaseModal
+                visible
+                onClose={() => setActiveTimePicker(null)}
+                title="Add time"
+                scrollable={false}
+              >
+                <ThemedTimePicker
+                  value={pendingExtraTime || selectedTime}
+                  onChange={time => setPendingExtraTime(time)}
+                  onDone={() => {
+                    const candidate = pendingExtraTime || selectedTime;
+                    if (
+                      candidate &&
+                      !draftExtraTimes.includes(candidate) &&
+                      candidate !== selectedTime
+                    ) {
+                      setDraftExtraTimes(prev => [...prev, candidate]);
                     }
-
-                    const nextTime = date || getTimePickerValue(selectedDate, selectedTime);
-                    const formatted = formatTimeValue(nextTime);
-                    if (formatted && !draftExtraTimes.includes(formatted) && formatted !== selectedTime) {
-                      setDraftExtraTimes(prev => [...prev, formatted]);
-                    }
-                    if (Platform.OS !== 'ios') {
-                      setActiveTimePicker(null);
-                    }
+                    setActiveTimePicker(null);
                   }}
                 />
-                {Platform.OS === 'ios' && (
-                  <TouchableOpacity
-                    style={styles.pickerDoneButton}
-                    onPress={() => setActiveTimePicker(null)}
-                  >
-                    <Text style={styles.pickerDoneText}>Done</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
+              </BaseModal>
             )}
           </>
         )}
@@ -960,6 +931,7 @@ export default function TaskScheduleScreen() {
             style={styles.secondaryButton}
             onPress={() => {
               setActiveTimePicker(null);
+              setPendingExtraTime('');
               setShowAdvancedRepeat(false);
             }}
           >
@@ -971,6 +943,7 @@ export default function TaskScheduleScreen() {
               setRepeatInterval(draftRepeatInterval || '1');
               setExtraTimes(draftExtraTimes);
               setActiveTimePicker(null);
+              setPendingExtraTime('');
               setShowAdvancedRepeat(false);
             }}
           >
@@ -1027,31 +1000,12 @@ function formatTimeDisplay(timeString: string): string {
   return formatTimeLabel(hour, minute);
 }
 
-function formatTimeValue(date: Date): string {
-  const hour = date.getHours().toString().padStart(2, '0');
-  const minute = date.getMinutes().toString().padStart(2, '0');
-  return `${hour}:${minute}`;
-}
-
 function getDatePickerValue(dateString: string): Date {
   if (!dateString) {
     return new Date();
   }
 
   return new Date(`${dateString}T00:00:00`);
-}
-
-function getTimePickerValue(dateString: string, timeString: string): Date {
-  const baseDate = dateString ? new Date(`${dateString}T00:00:00`) : new Date();
-
-  if (!timeString) {
-    baseDate.setHours(9, 0, 0, 0);
-    return baseDate;
-  }
-
-  const [hour, minute] = timeString.split(':').map(Number);
-  baseDate.setHours(Number.isNaN(hour) ? 9 : hour, Number.isNaN(minute) ? 0 : minute, 0, 0);
-  return baseDate;
 }
 
 function getIsoDayOfWeek(dateString: string): number {
@@ -1446,26 +1400,6 @@ const styles = StyleSheet.create({
     color: theme.text.primary,
     fontWeight: '600',
     marginTop: spacing.xs,
-  },
-  pickerWrapper: {
-    marginTop: spacing.md,
-    backgroundColor: theme.card.background,
-    borderRadius: 12,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: theme.border.primary,
-  },
-  pickerDoneButton: {
-    marginTop: spacing.sm,
-    alignSelf: 'flex-end',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: 8,
-    backgroundColor: theme.accent.primary,
-  },
-  pickerDoneText: {
-    color: theme.background.primary,
-    fontWeight: '600',
   },
   choiceRow: {
     flexDirection: 'row',

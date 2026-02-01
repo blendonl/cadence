@@ -10,21 +10,21 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { Routine, RoutineProps } from '../domain/entities/Routine';
+import { RoutineDetailDto, RoutineUpdateRequestDto } from 'shared-types';
 import {
   validateRoutineTarget,
   getTargetPlaceholder,
   getTargetHelperText,
-} from '../domain/utils/routineValidation';
+} from '../utils/routineValidation';
 import { WeekdayPicker } from './WeekdayPicker';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
 
 interface RoutineEditModalProps {
   visible: boolean;
-  routine: Routine | null;
+  routine: RoutineDetailDto | null;
   onClose: () => void;
-  onSubmit: (id: string, updates: Partial<RoutineProps>) => Promise<void>;
+  onSubmit: (id: string, updates: RoutineUpdateRequestDto) => Promise<void>;
 }
 
 export function RoutineEditModal({
@@ -95,7 +95,7 @@ export function RoutineEditModal({
 
     setLoading(true);
     try {
-      const updates: Partial<RoutineProps> = {
+      const updates: RoutineUpdateRequestDto = {
         name,
         target,
         repeatIntervalMinutes: repeatNum,

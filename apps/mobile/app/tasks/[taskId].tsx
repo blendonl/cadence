@@ -25,7 +25,7 @@ import { useMetaPickerState } from "@/features/tasks/hooks/useMetaPickerState";
 import { LoadingState } from "@/features/tasks/components/LoadingState";
 import theme from "@shared/theme/colors";
 import { spacing } from "@shared/theme/spacing";
-import { TaskPriority, TaskType } from "shared-types";
+import { TaskCreateResponseDto, TaskPriority, TaskType } from "shared-types";
 
 export default function TaskDetailRoute() {
   const { boardId, taskId, columnId } = useLocalSearchParams<{
@@ -62,7 +62,7 @@ export default function TaskDetailRoute() {
 
   const { activeMetaPicker, togglePicker, closePicker } = useMetaPickerState();
 
-  const handleTaskCreated = (newTask: any) => {
+  const handleTaskCreated = (newTask: TaskCreateResponseDto) => {
     setCreatedTaskId(newTask.id);
   };
 

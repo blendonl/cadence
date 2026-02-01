@@ -4,14 +4,14 @@ import { BoardNotFoundError, ValidationError } from "@core/exceptions";
 import { getEventBus } from "@core/EventBus";
 import logger from "@utils/logger";
 import { BoardDto, BoardDetailDto, BoardListResponseDto } from "shared-types";
-import { BackendApiClient } from "@infrastructure/api/BackendApiClient";
+import { ApiClient } from "@infrastructure/api/apiClient";
 
-import { BACKEND_API_CLIENT } from "@core/di/tokens";
+import { API_CLIENT } from "@core/di/tokens";
 
 @injectable()
 export class BoardService {
   constructor(
-    @inject(BACKEND_API_CLIENT) private apiClient: BackendApiClient
+    @inject(API_CLIENT) private apiClient: ApiClient
   ) {}
 
   private validateBoardName(name: string): void {
@@ -21,14 +21,22 @@ export class BoardService {
   }
 
   async getBoardsByProject(projectId: ProjectId): Promise<BoardDto[]> {
-    const response = await this.apiClient.request<BoardListResponseDto>(
+    const response = await this.apiClient.request<BoardListResponseDto | null>(
       `/boards?projectId=${projectId}`
     );
+    if (!response || !Array.isArray(response.items)) {
+      logger.warn('[BoardService] Unexpected board list response', { projectId, response });
+      return [];
+    }
     return response.items;
   }
 
   async getAllBoards(): Promise<BoardDto[]> {
-    const response = await this.apiClient.request<BoardListResponseDto>(`/boards`);
+    const response = await this.apiClient.request<BoardListResponseDto | null>(`/boards`);
+    if (!response || !Array.isArray(response.items)) {
+      logger.warn('[BoardService] Unexpected board list response', { response });
+      return [];
+    }
     return response.items;
   }
 

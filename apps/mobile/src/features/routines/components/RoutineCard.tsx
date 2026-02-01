@@ -1,14 +1,14 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Routine } from '../domain/entities/Routine';
-import { formatTargetDisplay } from '../domain/utils/routineValidation';
+import { RoutineDetailDto } from 'shared-types';
+import { formatTargetDisplay } from '../utils/routineValidation';
 import GlassCard from '@shared/components/GlassCard';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
 
 interface RoutineCardProps {
-  routine: Routine;
-  onPress: (routine: Routine) => void;
+  routine: RoutineDetailDto;
+  onPress: (routine: RoutineDetailDto) => void;
 }
 
 const TYPE_BADGE_CONFIG = {
@@ -20,6 +20,7 @@ const TYPE_BADGE_CONFIG = {
 export function RoutineCard({ routine, onPress }: RoutineCardProps) {
   const badgeConfig = TYPE_BADGE_CONFIG[routine.type];
   const targetDisplay = formatTargetDisplay(routine.type, routine.target);
+  const taskCount = routine.tasks?.length ?? 0;
 
   return (
     <TouchableOpacity
@@ -54,7 +55,7 @@ export function RoutineCard({ routine, onPress }: RoutineCardProps) {
           </View>
 
           <Text style={styles.taskCount}>
-            {routine.taskCount} {routine.taskCount === 1 ? 'task' : 'tasks'}
+            {taskCount} {taskCount === 1 ? 'task' : 'tasks'}
           </Text>
 
           <Text style={styles.chevron}>›</Text>

@@ -1,17 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getRoutineService } from '@core/di/hooks';
-import { Routine, RoutineId } from '../domain/entities/Routine';
+import { routineApi } from '../api/routineApi';
+import { RoutineDetailDto } from 'shared-types';
 import { logger } from '@utils/logger';
 
 export interface UseRoutineDetailReturn {
-  routine: Routine | null;
+  routine: RoutineDetailDto | null;
   loading: boolean;
   error: Error | null;
   refresh: () => Promise<void>;
 }
 
-export function useRoutineDetail(routineId: RoutineId): UseRoutineDetailReturn {
-  const [routine, setRoutine] = useState<Routine | null>(null);
+export function useRoutineDetail(routineId: string): UseRoutineDetailReturn {
+  const [routine, setRoutine] = useState<RoutineDetailDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -22,8 +22,7 @@ export function useRoutineDetail(routineId: RoutineId): UseRoutineDetailReturn {
     }
 
     try {
-      const routineService = getRoutineService();
-      const result = await routineService.getRoutineById(routineId);
+      const result = await routineApi.getRoutineById(routineId);
       setRoutine(result);
       setError(null);
     } catch (err) {

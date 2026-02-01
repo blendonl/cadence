@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getProjectService, getBoardService, getTaskService } from '@core/di/hooks';
-import { Note } from '@features/notes/domain/entities/Note';
+import { projectApi } from '@features/projects/api/projectApi';
+import { NoteDetailDto } from 'shared-types';
 
 interface EntityNames {
   projects: Map<string, string>;
@@ -9,7 +9,7 @@ interface EntityNames {
 }
 
 interface UseEntityNamesOptions {
-  notes?: Note[];
+  notes?: NoteDetailDto[];
   projectIds?: string[];
   boardIds?: string[];
   taskIds?: string[];
@@ -33,10 +33,6 @@ export const useEntityNames = (options: UseEntityNamesOptions = {}) => {
     setError(null);
 
     try {
-      const projectService = getProjectService();
-      const boardService = getBoardService();
-      const taskService = getTaskService();
-
       const newEntityNames: EntityNames = {
         projects: new Map(),
         boards: new Map(),
@@ -49,9 +45,9 @@ export const useEntityNames = (options: UseEntityNamesOptions = {}) => {
 
       if (notes) {
         notes.forEach(note => {
-          note.project_ids.forEach(id => allProjectIds.add(id));
-          note.board_ids.forEach(id => allBoardIds.add(id));
-          note.task_ids.forEach(id => allTaskIds.add(id));
+          note.projectIds?.forEach(id => allProjectIds.add(id));
+          note.boardIds?.forEach(id => allBoardIds.add(id));
+          note.taskIds?.forEach(id => allTaskIds.add(id));
         });
       }
 
@@ -61,22 +57,8 @@ export const useEntityNames = (options: UseEntityNamesOptions = {}) => {
 
       for (const projectId of allProjectIds) {
         try {
-          const project = await projectService.getProjectById(projectId);
+          const project = await projectApi.getProjectById(projectId);
           if (project) newEntityNames.projects.set(projectId, project.name);
-        } catch (e) {
-        }
-      }
-
-      for (const boardId of allBoardIds) {
-        try {
-          const board = await boardService.getBoardById(boardId);
-          if (board) newEntityNames.boards.set(boardId, board.name);
-        } catch (e) {
-        }
-      }
-
-      for (const taskId of allTaskIds) {
-        try {
         } catch (e) {
         }
       }

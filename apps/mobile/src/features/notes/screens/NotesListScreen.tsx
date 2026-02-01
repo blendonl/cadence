@@ -12,8 +12,8 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import theme from '@shared/theme';
 import { spacing } from '@shared/theme/spacing';
-import { getNoteService } from '@core/di/hooks';
-import { Note } from '@features/notes/domain/entities/Note';
+import { noteApi } from '../api/noteApi';
+import { NoteDetailDto } from 'shared-types';
 import { RootStackParamList } from '@shared/types/navigation';
 import { useAutoRefresh } from '@shared/hooks/useAutoRefresh';
 import { useEntityNames, useNoteFilters } from '@features/notes/hooks';
@@ -28,14 +28,13 @@ type NotesListNavProp = StackNavigationProp<RootStackParamList, 'NotesList'>;
 
 export default function NotesListScreen() {
   const navigation = useNavigation<NotesListNavProp>();
-  const [notes, setNotes] = useState<Note[]>([]);
+  const [notes, setNotes] = useState<NoteDetailDto[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const loadNotes = useCallback(async () => {
     try {
-      const noteService = getNoteService();
-      const loadedNotes = await noteService.getAllNotes();
+      const loadedNotes = await noteApi.getNotes();
       setNotes(loadedNotes);
     } catch (error) {
     } finally {
@@ -73,14 +72,12 @@ export default function NotesListScreen() {
 
   const handleCreateDailyNote = useCallback(async () => {
     try {
-      const noteService = getNoteService();
-      const dailyNote = await noteService.getTodaysDailyNote();
-      navigation.navigate('NoteEditor', { noteId: dailyNote.id });
+      navigation.navigate('NoteEditor', {});
     } catch (error) {
     }
   }, [navigation]);
 
-  const handleNotePress = useCallback((note: Note) => {
+  const handleNotePress = useCallback((note: NoteDetailDto) => {
     navigation.navigate('NoteEditor', { noteId: note.id });
   }, [navigation]);
 

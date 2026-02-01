@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { RoutineTask } from '../domain/entities/RoutineTask';
+import { RoutineTaskDto } from 'shared-types';
 import GlassCard from '@shared/components/GlassCard';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
 
 interface RoutineTaskListProps {
-  tasks: RoutineTask[];
-  onTaskPress?: (task: RoutineTask) => void;
+  tasks: RoutineTaskDto[];
+  onTaskPress?: (task: RoutineTaskDto) => void;
 }
 
 export function RoutineTaskList({ tasks }: RoutineTaskListProps) {

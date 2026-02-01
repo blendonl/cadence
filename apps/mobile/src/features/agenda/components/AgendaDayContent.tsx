@@ -11,26 +11,24 @@ import {
 import AppIcon, { AppIconName } from "@shared/components/icons/AppIcon";
 import theme from "@shared/theme/colors";
 import { spacing } from "@shared/theme/spacing";
-import {
-  DayAgenda,
-  ScheduledAgendaItem,
-} from "../domain/interfaces/AgendaService.interface";
+import { AgendaEnrichedDto, AgendaItemEnrichedDto } from 'shared-types';
 import { AgendaSection } from "../types/agenda-screen.types";
 import { AgendaItemCard } from "./AgendaItemCard";
 import { formatDateKey, formatSearchDateLabel } from "@shared/utils/date.utils";
+import { getScheduledDate, getScheduledTime, getOrphanedItems, isItemCompleted } from '../utils/agendaHelpers';
 
 interface AgendaDayContentProps {
   selectedDate: Date;
-  agendaData: DayAgenda[];
-  unfinishedItems: ScheduledAgendaItem[];
-  searchResults: ScheduledAgendaItem[];
+  agendaData: AgendaEnrichedDto[];
+  unfinishedItems: AgendaItemEnrichedDto[];
+  searchResults: AgendaItemEnrichedDto[];
   isSearching: boolean;
   searchLoading: boolean;
   refreshing: boolean;
   onRefresh: () => void;
-  onItemPress: (item: ScheduledAgendaItem) => void;
-  onItemLongPress: (item: ScheduledAgendaItem) => void;
-  onToggleComplete: (item: ScheduledAgendaItem) => void;
+  onItemPress: (item: AgendaItemEnrichedDto) => void;
+  onItemLongPress: (item: AgendaItemEnrichedDto) => void;
+  onToggleComplete: (item: AgendaItemEnrichedDto) => void;
   onScheduleTask: () => void;
 }
 
@@ -49,9 +47,9 @@ export function AgendaDayContent({
   onScheduleTask,
 }: AgendaDayContentProps) {
   const renderAgendaItem = useCallback(
-    ({ item }: { item: ScheduledAgendaItem }) => (
+    ({ item }: { item: AgendaItemEnrichedDto }) => (
       <AgendaItemCard
-        scheduledItem={item}
+        item={item}
         onPress={() => onItemPress(item)}
         onLongPress={() => onItemLongPress(item)}
         onToggleComplete={() => onToggleComplete(item)}
@@ -82,12 +80,14 @@ export function AgendaDayContent({
   );
 
   const searchSections = useMemo(() => {
-    const grouped = new Map<string, ScheduledAgendaItem[]>();
+    const grouped = new Map<string, AgendaItemEnrichedDto[]>();
     searchResults.forEach((item) => {
-      const dateKey = item.agendaItem.scheduledDate;
-      const existing = grouped.get(dateKey) || [];
-      existing.push(item);
-      grouped.set(dateKey, existing);
+      const dateKey = getScheduledDate(item) || '';
+      if (dateKey) {
+        const existing = grouped.get(dateKey) || [];
+        existing.push(item);
+        grouped.set(dateKey, existing);
+      }
     });
 
     return Array.from(grouped.entries())
@@ -95,8 +95,8 @@ export function AgendaDayContent({
       .map(([dateKey, items]) => ({
         title: formatSearchDateLabel(dateKey),
         data: items.sort((left, right) => {
-          const leftTime = left.agendaItem.scheduledTime || "";
-          const rightTime = right.agendaItem.scheduledTime || "";
+          const leftTime = getScheduledTime(left) || "";
+          const rightTime = getScheduledTime(right) || "";
           return leftTime.localeCompare(rightTime);
         }),
       }));
@@ -127,7 +127,7 @@ export function AgendaDayContent({
     return (
       <SectionList
         sections={searchSections}
-        keyExtractor={(item) => item.agendaItem.id}
+        keyExtractor={(item) => item.id}
         renderItem={renderAgendaItem}
         renderSectionHeader={({ section }) => (
           <View style={styles.searchSectionHeader}>
@@ -175,10 +175,10 @@ export function AgendaDayContent({
     + (sleepItem ? 1 : 0);
 
   const timeBlocks = agendaItems.filter(
-    (item) => item.agendaItem.scheduledTime && !item.agendaItem.isUnfinished,
+    (item) => getScheduledTime(item) !== null && !isItemCompleted(item),
   );
   const allDayTasks = agendaItems.filter(
-    (item) => !item.agendaItem.scheduledTime,
+    (item) => getScheduledTime(item) === null,
   );
 
   if (!dayAgenda || (totalItemCount === 0 && unfinishedItems.length === 0)) {
@@ -210,7 +210,7 @@ export function AgendaDayContent({
   return (
     <SectionList
       sections={sections}
-      keyExtractor={(item) => item.agendaItem.id}
+      keyExtractor={(item) => item.id}
       renderItem={renderAgendaItem}
       renderSectionHeader={renderSectionHeader}
       initialNumToRender={10}
@@ -224,7 +224,7 @@ export function AgendaDayContent({
             <View style={styles.specialSection}>
               <Text style={styles.specialTitle}>Wake up</Text>
               <AgendaItemCard
-                scheduledItem={wakeupItem}
+                item={wakeupItem}
                 sleepMode="wakeup"
                 onPress={() => onItemPress(wakeupItem)}
                 onLongPress={() => onItemLongPress(wakeupItem)}
@@ -236,7 +236,7 @@ export function AgendaDayContent({
             <View style={styles.specialSection}>
               <Text style={styles.specialTitle}>Steps</Text>
               <AgendaItemCard
-                scheduledItem={stepItem}
+                item={stepItem}
                 onPress={() => onItemPress(stepItem)}
                 onLongPress={() => onItemLongPress(stepItem)}
                 onToggleComplete={() => onToggleComplete(stepItem)}
@@ -252,7 +252,7 @@ export function AgendaDayContent({
             <View style={styles.specialDivider} />
             <Text style={styles.specialTitle}>Sleep</Text>
             <AgendaItemCard
-              scheduledItem={sleepItem}
+              item={sleepItem}
               sleepMode="sleep"
               onPress={() => onItemPress(sleepItem)}
               onLongPress={() => onItemLongPress(sleepItem)}

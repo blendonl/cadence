@@ -1,20 +1,20 @@
 import { useRoutineListData } from './useRoutineListData';
 import { useRoutineModals } from './useRoutineModals';
 import { useRoutineActions } from './useRoutineActions';
-import { Routine } from '../domain/entities/Routine';
+import { RoutineDetailDto, RoutineUpdateRequestDto } from 'shared-types';
 
 export interface UseRoutineListScreenReturn {
   viewState: {
-    routines: Routine[];
+    routines: RoutineDetailDto[];
     loading: boolean;
   };
   modals: {
     showCreateModal: boolean;
     showEditModal: boolean;
-    editingRoutine: Routine | null;
+    editingRoutine: RoutineDetailDto | null;
     openCreateModal: () => void;
     closeCreateModal: () => void;
-    openEditModal: (routine: Routine) => void;
+    openEditModal: (routine: RoutineDetailDto) => void;
     closeEditModal: () => void;
   };
   actions: {
@@ -26,7 +26,7 @@ export interface UseRoutineListScreenReturn {
       repeatIntervalMinutes?: number,
       activeDays?: string[]
     ) => Promise<void>;
-    handleUpdateRoutine: (id: string, updates: any) => Promise<void>;
+    handleUpdateRoutine: (id: string, updates: RoutineUpdateRequestDto) => Promise<void>;
     handleDeleteRoutine: (id: string) => Promise<void>;
     handleToggleStatus: (id: string, currentStatus: string) => Promise<void>;
   };

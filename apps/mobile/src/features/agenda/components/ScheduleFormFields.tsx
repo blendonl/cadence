@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, StyleSheet } from 'react-native';
 import theme from '@shared/theme';
-import AppIcon from '@shared/components/icons/AppIcon';
 
 interface FormFieldProps {
   label: string;
@@ -37,27 +36,6 @@ export const FormField: React.FC<FormFieldProps> = ({
   );
 };
 
-interface ToggleFieldProps {
-  label: string;
-  value: boolean;
-  onToggle: () => void;
-}
-
-export const ToggleField: React.FC<ToggleFieldProps> = ({ label, value, onToggle }) => {
-  return (
-    <TouchableOpacity style={styles.toggleContainer} onPress={onToggle}>
-      <View style={styles.toggleContent}>
-        <AppIcon
-          name={value ? 'check-square' : 'square'}
-          size={20}
-          color={value ? theme.primary : theme.text.secondary}
-        />
-        <Text style={styles.toggleText}>{label}</Text>
-      </View>
-    </TouchableOpacity>
-  );
-};
-
 const styles = StyleSheet.create({
   formSection: {
     marginBottom: theme.spacing.md,
@@ -74,18 +52,6 @@ const styles = StyleSheet.create({
     borderColor: theme.input.border,
     borderRadius: theme.radius.input,
     padding: theme.spacing.md,
-    fontSize: 16,
-    color: theme.text.primary,
-  },
-  toggleContainer: {
-    marginBottom: theme.spacing.md,
-  },
-  toggleContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.md,
-  },
-  toggleText: {
     fontSize: 16,
     color: theme.text.primary,
   },

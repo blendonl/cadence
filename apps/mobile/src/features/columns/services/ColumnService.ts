@@ -1,14 +1,14 @@
 import { injectable, inject } from "tsyringe";
 import { BoardId, ColumnId } from "@core/types";
-import { BACKEND_API_CLIENT } from "@core/di/tokens";
+import { API_CLIENT } from "@core/di/tokens";
 import { getEventBus } from "@core/EventBus";
-import { BackendApiClient } from "@infrastructure/api/BackendApiClient";
+import { ApiClient } from "@infrastructure/api/apiClient";
 import { ColumnDto, ColumnCreateRequestDto, ColumnUpdateRequestDto } from "shared-types";
 
 @injectable()
 export class ColumnService {
   constructor(
-    @inject(BACKEND_API_CLIENT) private apiClient: BackendApiClient,
+    @inject(API_CLIENT) private apiClient: ApiClient,
   ) {}
 
   async getColumnById(columnId: ColumnId): Promise<ColumnDto | null> {

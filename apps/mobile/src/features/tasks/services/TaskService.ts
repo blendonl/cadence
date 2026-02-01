@@ -1,14 +1,14 @@
 import { injectable, inject } from "tsyringe";
 import { TaskId, ParentId } from "@core/types";
 import { ValidationError } from "@core/exceptions";
-import { TaskDto, TaskDetailDto, TaskCreateRequestDto, TaskUpdateRequestDto, TaskPriorityType, PaginatedResponse } from "shared-types";
-import { BACKEND_API_CLIENT } from "@core/di/tokens";
-import { BackendApiClient } from "@infrastructure/api/BackendApiClient";
+import { TaskDto, TaskDetailDto, TaskCreateRequestDto, TaskCreateResponseDto, TaskUpdateRequestDto, TaskPriorityType, PaginatedResponse } from "shared-types";
+import { API_CLIENT } from "@core/di/tokens";
+import { ApiClient } from "@infrastructure/api/apiClient";
 
 @injectable()
 export class TaskService {
   constructor(
-    @inject(BACKEND_API_CLIENT) private readonly apiClient: BackendApiClient,
+    @inject(API_CLIENT) private readonly apiClient: ApiClient,
   ) {}
 
   async getAllTasks(query: { projectId?: string; boardId?: string } = {}): Promise<TaskDto[]> {
@@ -42,8 +42,8 @@ export class TaskService {
     );
   }
 
-  async createTask(params: TaskCreateRequestDto): Promise<TaskDto> {
-    return await this.apiClient.request<TaskDto>(`/tasks`, {
+  async createTask(params: TaskCreateRequestDto): Promise<TaskCreateResponseDto> {
+    return await this.apiClient.request<TaskCreateResponseDto>(`/tasks`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),

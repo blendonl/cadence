@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import { useRoutineListData } from './useRoutineListData';
-import { Routine } from '../domain/entities/Routine';
+import { RoutineDetailDto } from 'shared-types';
 
 export interface UseRoutineByTypeReturn {
-  sleepRoutine: Routine | null;
-  stepRoutine: Routine | null;
-  otherRoutines: Routine[];
+  sleepRoutine: RoutineDetailDto | null;
+  stepRoutine: RoutineDetailDto | null;
+  otherRoutines: RoutineDetailDto[];
   loading: boolean;
   refresh: () => Promise<void>;
 }

@@ -10,10 +10,9 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Screen } from "@shared/components/Screen";
 import theme from "@shared/theme/colors";
 import { spacing } from "@shared/theme/spacing";
-import { getGoalService, getProjectService } from "@core/di/hooks";
-import { Goal } from "@features/goals/domain/entities/Goal";
-import { Project } from "@domain/entities/Project";
-import { GoalProgress } from "@services/GoalService";
+import { goalApi } from "../api/goalApi";
+import { projectApi } from "@features/projects/api/projectApi";
+import { GoalDto, ProjectDto } from "shared-types";
 import GoalFormModal from "../components/GoalFormModal";
 import AppIcon from "@shared/components/icons/AppIcon";
 
@@ -22,13 +21,13 @@ export default function GoalDetailScreen() {
   const { goalId: goalIdParam } = useLocalSearchParams<{ goalId?: string | string[] }>();
   const goalId = Array.isArray(goalIdParam) ? goalIdParam[0] : goalIdParam;
 
-  const [goal, setGoal] = useState<Goal | null>(null);
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [goal, setGoal] = useState<GoalDto | null>(null);
+  const [projects, setProjects] = useState<ProjectDto[]>([]);
   const [projectsPage, setProjectsPage] = useState(1);
   const [projectsHasMore, setProjectsHasMore] = useState(true);
   const [projectsLoading, setProjectsLoading] = useState(false);
-  const [linkedProjects, setLinkedProjects] = useState<Project[]>([]);
-  const [progress, setProgress] = useState<GoalProgress | null>(null);
+  const [linkedProjects, setLinkedProjects] = useState<ProjectDto[]>([]);
+  const [progress, setProgress] = useState<{ percentComplete: number; completedOccurrences: number; totalOccurrences: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
 
@@ -40,29 +39,26 @@ export default function GoalDetailScreen() {
     }
     try {
       setProjectsLoading(true);
-      const goalService = getGoalService();
-      const projectService = getProjectService();
-      const [loadedGoal, projectResult, goalProgress] = await Promise.all([
-        goalService.getGoalById(goalId),
-        projectService.getProjectsPaginated(1, PROJECT_PAGE_SIZE),
-        goalService.getGoalProgress(goalId),
+      const [loadedGoal, projectResult] = await Promise.all([
+        goalApi.getGoalById(goalId),
+        projectApi.getProjects({ page: 1, limit: PROJECT_PAGE_SIZE }),
       ]);
       setGoal(loadedGoal);
-      setProjects(projectResult.items);
+      setProjects(projectResult.projects);
       setProjectsPage(1);
       setProjectsHasMore(projectResult.hasMore);
 
       const linked = await Promise.all(
-        loadedGoal.project_ids.map((projectId) =>
-          projectService.getProjectById(projectId).catch(() => null),
+        (loadedGoal?.projectIds || []).map((projectId) =>
+          projectApi.getProjectById(projectId).catch(() => null),
         ),
       );
-      const linkedList = linked.filter((project): project is Project => !!project);
-      const merged = new Map(projectResult.items.map((project) => [project.id, project]));
+      const linkedList = linked.filter((project): project is ProjectDto => !!project);
+      const merged = new Map(projectResult.projects.map((project) => [project.id, project]));
       linkedList.forEach((project) => merged.set(project.id, project));
       setProjects(Array.from(merged.values()));
       setLinkedProjects(linkedList);
-      setProgress(goalProgress);
+      setProgress({ percentComplete: 0, completedOccurrences: 0, totalOccurrences: 0 });
     } catch (error) {
       console.error("Failed to load goal:", error);
     } finally {
@@ -78,12 +74,11 @@ export default function GoalDetailScreen() {
 
     setProjectsLoading(true);
     try {
-      const projectService = getProjectService();
       const nextPage = projectsPage + 1;
-      const result = await projectService.getProjectsPaginated(nextPage, PROJECT_PAGE_SIZE);
+      const result = await projectApi.getProjects({ page: nextPage, limit: PROJECT_PAGE_SIZE });
       setProjects((prev) => {
         const merged = new Map(prev.map((project) => [project.id, project]));
-        result.items.forEach((project) => merged.set(project.id, project));
+        result.projects.forEach((project) => merged.set(project.id, project));
         return Array.from(merged.values());
       });
       setProjectsPage(nextPage);
@@ -109,13 +104,12 @@ export default function GoalDetailScreen() {
     if (!goalId) {
       return;
     }
-    const goalService = getGoalService();
-    await goalService.updateGoal(goalId, {
+    await goalApi.updateGoal(goalId, {
       title: data.title,
       description: data.description,
-      start_date: data.startDate,
-      end_date: data.endDate,
-      project_ids: data.projectIds,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      projectIds: data.projectIds,
     });
     await loadGoal();
     setShowEditModal(false);
@@ -135,8 +129,7 @@ export default function GoalDetailScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              const goalService = getGoalService();
-              await goalService.deleteGoal(goalId);
+              await goalApi.deleteGoal(goalId);
               router.back();
             } catch (error) {
               Alert.alert("Error", "Failed to delete goal");
@@ -186,7 +179,7 @@ export default function GoalDetailScreen() {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Timeline</Text>
         <Text style={styles.cardText}>
-          {goal.start_date} → {goal.end_date}
+          {goal.startDate} → {goal.endDate}
         </Text>
       </View>
 

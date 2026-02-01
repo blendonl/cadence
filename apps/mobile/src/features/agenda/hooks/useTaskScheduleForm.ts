@@ -1,10 +1,11 @@
 import { useState, useCallback } from 'react';
 import { TaskType } from 'shared-types';
+import { formatDateKey } from '@shared/utils/date.utils';
 
 export interface ScheduleFormData {
   date: string;
   time: string;
-  durationMinutes: number;
+  durationMinutes: number | undefined;
   taskType: TaskType;
   isAllDay: boolean;
   location: string;
@@ -17,9 +18,9 @@ interface UseTaskScheduleFormProps {
 
 export const useTaskScheduleForm = ({ initialDate }: UseTaskScheduleFormProps = {}) => {
   const [formData, setFormData] = useState<ScheduleFormData>({
-    date: initialDate || new Date().toISOString().split('T')[0],
-    time: '09:00',
-    durationMinutes: 60,
+    date: initialDate || formatDateKey(new Date()),
+    time: '',
+    durationMinutes: undefined,
     taskType: TaskType.TASK,
     isAllDay: false,
     location: '',
@@ -33,15 +34,12 @@ export const useTaskScheduleForm = ({ initialDate }: UseTaskScheduleFormProps = 
     setFormData(prev => ({ ...prev, [field]: value }));
   }, []);
 
-  const toggleAllDay = useCallback(() => {
-    setFormData(prev => ({ ...prev, isAllDay: !prev.isAllDay }));
-  }, []);
 
   const reset = useCallback((date?: string) => {
     setFormData({
-      date: date || new Date().toISOString().split('T')[0],
-      time: '09:00',
-      durationMinutes: 60,
+      date: date || formatDateKey(new Date()),
+      time: '',
+      durationMinutes: undefined,
       taskType: TaskType.TASK,
       isAllDay: false,
       location: '',
@@ -52,7 +50,6 @@ export const useTaskScheduleForm = ({ initialDate }: UseTaskScheduleFormProps = 
   return {
     formData,
     updateField,
-    toggleAllDay,
     reset,
   };
 };

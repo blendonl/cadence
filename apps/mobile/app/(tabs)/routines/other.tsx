@@ -7,7 +7,7 @@ import { useRoutineActions } from '@features/routines/hooks/useRoutineActions';
 import { RoutineListContent } from '@features/routines/components/RoutineListContent';
 import { RoutineCreateModal } from '@features/routines/components/RoutineCreateModal';
 import { CreateRoutineFAB } from '@features/routines/components/CreateRoutineFAB';
-import { Routine } from '@features/routines/domain/entities/Routine';
+import { RoutineDetailDto } from 'shared-types';
 import { Screen } from '@shared/components/Screen';
 import theme from '@shared/theme/colors';
 
@@ -20,7 +20,7 @@ export default function OtherRoutinesScreen() {
     closeModal: modals.closeCreateModal,
   });
 
-  const handleRoutinePress = (routine: Routine) => {
+  const handleRoutinePress = (routine: RoutineDetailDto) => {
     router.push(`/routines/${routine.id}`);
   };
 

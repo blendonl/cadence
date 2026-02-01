@@ -1,11 +1,4 @@
-// Domain Entities
-export { Routine, type RoutineId, type RoutineStatus, type RoutineType, type RoutineProps } from './domain/entities/Routine';
-export { RoutineTask, type RoutineTaskId, type RoutineTaskProps } from './domain/entities/RoutineTask';
-
-// Domain Repositories
-export { type RoutineRepository } from './domain/repositories/RoutineRepository';
-
-// Domain Utils
+// Utils
 export {
   validateSleepTarget,
   validateStepTarget,
@@ -17,10 +10,7 @@ export {
   formatRepeatInterval,
   formatActiveDays,
   type ValidationResult,
-} from './domain/utils/routineValidation';
-
-// Services
-export { RoutineService, RoutineNotFoundError } from './services/RoutineService';
+} from './utils/routineValidation';
 
 // Hooks
 export {

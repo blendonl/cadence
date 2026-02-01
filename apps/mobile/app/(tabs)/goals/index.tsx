@@ -11,18 +11,23 @@ import { Screen } from "@shared/components/Screen";
 import { spacing } from "@shared/theme/spacing";
 import theme from "@shared/theme/colors";
 import { Goal } from "@features/goals/domain/entities/Goal";
-import { Project } from "@domain/entities/Project";
-import { getGoalService, getProjectService } from "@core/di/hooks";
+import { ProjectDto } from "shared-types";
+import { getGoalService } from "@core/di/hooks";
+import { projectApi } from "@features/projects/api/projectApi";
 import GoalFormModal from "@features/goals/components/GoalFormModal";
 import GlassCard from "@shared/components/GlassCard";
 import { PlusIcon } from "@shared/components/icons/TabIcons";
 import { useRouter } from "expo-router";
-import { GoalProgress } from "@services/GoalService";
+interface GoalProgress {
+  percentComplete: number;
+  completedOccurrences: number;
+  totalOccurrences: number;
+}
 
 export default function GoalsListScreen() {
   const router = useRouter();
   const [goals, setGoals] = useState<Goal[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<ProjectDto[]>([]);
   const [projectsPage, setProjectsPage] = useState(1);
   const [projectsHasMore, setProjectsHasMore] = useState(true);
   const [projectsLoading, setProjectsLoading] = useState(false);
@@ -37,15 +42,14 @@ export default function GoalsListScreen() {
     try {
       setProjectsLoading(true);
       const goalService = getGoalService();
-      const projectService = getProjectService();
       const [loadedGoals, projectResult] = await Promise.all([
         goalService.getAllGoals(),
-        projectService.getProjectsPaginated(1, PROJECT_PAGE_SIZE),
+        projectApi.getProjects({ page: 1, limit: PROJECT_PAGE_SIZE }),
       ]);
       setGoals(loadedGoals);
       setProjects(projectResult.items);
       setProjectsPage(1);
-      setProjectsHasMore(projectResult.hasMore);
+      setProjectsHasMore(projectResult.page * projectResult.limit < projectResult.total);
 
       const progressEntries = await Promise.all(
         loadedGoals.map(async (goal) => {
@@ -69,12 +73,11 @@ export default function GoalsListScreen() {
 
     setProjectsLoading(true);
     try {
-      const projectService = getProjectService();
       const nextPage = projectsPage + 1;
-      const result = await projectService.getProjectsPaginated(nextPage, PROJECT_PAGE_SIZE);
+      const result = await projectApi.getProjects({ page: nextPage, limit: PROJECT_PAGE_SIZE });
       setProjects((prev) => [...prev, ...result.items]);
       setProjectsPage(nextPage);
-      setProjectsHasMore(result.hasMore);
+      setProjectsHasMore(result.page * result.limit < result.total);
     } catch (error) {
       console.error("Failed to load more projects:", error);
     } finally {

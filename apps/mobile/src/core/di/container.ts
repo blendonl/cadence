@@ -2,13 +2,7 @@ import "reflect-metadata";
 import { container } from "tsyringe";
 
 import {
-  PROJECT_REPOSITORY,
-  AGENDA_REPOSITORY,
-  NOTE_REPOSITORY,
-  GOAL_REPOSITORY,
-  TIME_LOG_REPOSITORY,
   CALENDAR_REPOSITORY,
-  ROUTINE_REPOSITORY,
   BOARD_SERVICE,
   COLUMN_SERVICE,
   PROJECT_SERVICE,
@@ -22,32 +16,21 @@ import {
   ROUTINE_SERVICE,
   STORAGE_CONFIG,
   ACTIONS_CONFIG,
-  BACKEND_API_CLIENT,
+  API_CLIENT,
   DAEMON_RUNNER,
   WEBSOCKET_MANAGER,
 } from "./tokens";
 
 import { StorageConfig } from "@core/StorageConfig";
 import { ActionsConfig } from "@core/ActionsConfig";
-import { BackendApiClient } from "@infrastructure/api/BackendApiClient";
+import { ApiClient } from "@infrastructure/api/apiClient";
 
-import { BackendProjectRepository } from "@features/projects/infrastructure/BackendProjectRepository";
-import { BackendAgendaRepository } from "@features/agenda/infrastructure/BackendAgendaRepository";
-import { BackendNoteRepository } from "@features/notes/infrastructure/BackendNoteRepository";
-import { BackendGoalRepository } from "@features/goals/infrastructure/BackendGoalRepository";
-import { BackendTimeLogRepository } from "@features/time/infrastructure/BackendTimeLogRepository";
-import { BackendRoutineRepository } from "@features/routines/infrastructure/BackendRoutineRepository";
 
 import { GoogleCalendarRepository } from "@infrastructure/calendar/GoogleCalendarRepository";
-import { BoardService } from "@features/boards";
-import { ColumnService } from "@features/columns";
-import { TaskService } from "@features/tasks";
-import { ProjectService } from "@features/projects/services/ProjectService";
+import { BoardService } from "@features/boards/services/BoardService";
+import { ColumnService } from "@features/columns/services/ColumnService";
+import { TaskService } from "@features/tasks/services/TaskService";
 import { AgendaService } from "@features/agenda/services/AgendaService";
-import { NoteService } from "@features/notes/services/NoteService";
-import { GoalService } from "@features/goals/services/GoalService";
-import { TimeTrackingService } from "@features/time/services/TimeTrackingService";
-import { RoutineService } from "@features/routines/services/RoutineService";
 import { CalendarSyncService } from "@services/CalendarSyncService";
 import { NotificationService } from "@services/NotificationService";
 
@@ -83,7 +66,7 @@ export async function initializeContainer(
   progressCallback?.("Registering core infrastructure...");
   container.registerSingleton(STORAGE_CONFIG, StorageConfig);
   container.registerSingleton(ACTIONS_CONFIG, ActionsConfig);
-  container.registerSingleton(BACKEND_API_CLIENT, BackendApiClient);
+  container.registerSingleton(API_CLIENT, ApiClient);
   container.registerSingleton(WEBSOCKET_MANAGER, WebSocketManager);
 
   progressCallback?.("Loading storage configuration...");
@@ -103,12 +86,6 @@ export async function initializeContainer(
   console.log("[DI Container] Actions config loaded");
 
   progressCallback?.("Registering repositories...");
-  container.registerSingleton(PROJECT_REPOSITORY, BackendProjectRepository);
-  container.registerSingleton(AGENDA_REPOSITORY, BackendAgendaRepository);
-  container.registerSingleton(NOTE_REPOSITORY, BackendNoteRepository);
-  container.registerSingleton(GOAL_REPOSITORY, BackendGoalRepository);
-  container.registerSingleton(TIME_LOG_REPOSITORY, BackendTimeLogRepository);
-  container.registerSingleton(ROUTINE_REPOSITORY, BackendRoutineRepository);
   container.registerSingleton(CALENDAR_REPOSITORY, GoogleCalendarRepository);
 
   progressCallback?.("Registering services...");
@@ -116,12 +93,7 @@ export async function initializeContainer(
   container.registerSingleton(BOARD_SERVICE, BoardService);
   container.registerSingleton(COLUMN_SERVICE, ColumnService);
   container.registerSingleton(TASK_SERVICE, TaskService);
-  container.registerSingleton(PROJECT_SERVICE, ProjectService);
   container.registerSingleton(AGENDA_SERVICE, AgendaService);
-  container.registerSingleton(NOTE_SERVICE, NoteService);
-  container.registerSingleton(GOAL_SERVICE, GoalService);
-  container.registerSingleton(TIME_TRACKING_SERVICE, TimeTrackingService);
-  container.registerSingleton(ROUTINE_SERVICE, RoutineService);
   container.registerSingleton(CALENDAR_SYNC_SERVICE, CalendarSyncService);
 
   container.register(NOTIFICATION_SERVICE, {

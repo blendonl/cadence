@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
-import { DayAgenda } from '../domain/interfaces/AgendaService.interface';
+import { AgendaEnrichedDto } from 'shared-types';
 import { isToday, isSelected, formatDateKey } from '@shared/utils/date.utils';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -10,7 +10,7 @@ const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 interface WeekViewProps {
   weekStart: Date;
   selectedDate: Date;
-  agendaData: DayAgenda[];
+  agendaData: AgendaEnrichedDto[];
   onDateSelect: (date: Date) => void;
 }
 

@@ -10,12 +10,12 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { RoutineType } from '../domain/entities/Routine';
+import { RoutineType } from 'shared-types';
 import {
   validateRoutineTarget,
   getTargetPlaceholder,
   getTargetHelperText,
-} from '../domain/utils/routineValidation';
+} from '../utils/routineValidation';
 import { WeekdayPicker } from './WeekdayPicker';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';

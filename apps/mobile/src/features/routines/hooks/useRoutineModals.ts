@@ -1,20 +1,20 @@
 import { useState, useCallback } from 'react';
-import { Routine } from '../domain/entities/Routine';
+import { RoutineDetailDto } from 'shared-types';
 
 export interface UseRoutineModalsReturn {
   showCreateModal: boolean;
   showEditModal: boolean;
-  editingRoutine: Routine | null;
+  editingRoutine: RoutineDetailDto | null;
   openCreateModal: () => void;
   closeCreateModal: () => void;
-  openEditModal: (routine: Routine) => void;
+  openEditModal: (routine: RoutineDetailDto) => void;
   closeEditModal: () => void;
 }
 
 export function useRoutineModals(): UseRoutineModalsReturn {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editingRoutine, setEditingRoutine] = useState<Routine | null>(null);
+  const [editingRoutine, setEditingRoutine] = useState<RoutineDetailDto | null>(null);
 
   const openCreateModal = useCallback(() => {
     setShowCreateModal(true);
@@ -24,7 +24,7 @@ export function useRoutineModals(): UseRoutineModalsReturn {
     setShowCreateModal(false);
   }, []);
 
-  const openEditModal = useCallback((routine: Routine) => {
+  const openEditModal = useCallback((routine: RoutineDetailDto) => {
     setEditingRoutine(routine);
     setShowEditModal(true);
   }, []);

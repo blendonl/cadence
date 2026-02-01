@@ -1,17 +1,17 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Routine } from '../domain/entities/Routine';
+import { RoutineDetailDto } from 'shared-types';
 import {
   formatTargetDisplay,
   formatRepeatInterval,
   formatActiveDays,
-} from '../domain/utils/routineValidation';
+} from '../utils/routineValidation';
 import GlassCard from '@shared/components/GlassCard';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
 
 interface RoutineSummaryCardProps {
-  routine: Routine;
+  routine: RoutineDetailDto;
   onEdit?: () => void;
   onToggleStatus?: () => void;
 }

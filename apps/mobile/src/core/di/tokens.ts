@@ -1,12 +1,4 @@
-export const PROJECT_REPOSITORY = "ProjectRepository";
-export const AGENDA_REPOSITORY = "AgendaRepository";
-export const NOTE_REPOSITORY = "NoteRepository";
-export const GOAL_REPOSITORY = "GoalRepository";
-export const TIME_LOG_REPOSITORY = "TimeLogRepository";
 export const CALENDAR_REPOSITORY = "CalendarRepository";
-export const STORAGE_REPOSITORY = "StorageRepository";
-export const ACTION_REPOSITORY = "ActionRepository";
-export const ROUTINE_REPOSITORY = "RoutineRepository";
 
 export const BOARD_SERVICE = "BoardService";
 export const COLUMN_SERVICE = "ColumnService";
@@ -26,7 +18,7 @@ export const ROUTINE_SERVICE = "RoutineService";
 export const FILE_SYSTEM_MANAGER = "FileSystemManager";
 export const STORAGE_CONFIG = "StorageConfig";
 export const ACTIONS_CONFIG = "ActionsConfig";
-export const BACKEND_API_CLIENT = "BackendApiClient";
+export const API_CLIENT = "ApiClient";
 export const DAEMON_RUNNER = "DaemonRunner";
 export const WEBSOCKET_MANAGER = "WebSocketManager";
 export const EVENT_BUS = "EventBus";

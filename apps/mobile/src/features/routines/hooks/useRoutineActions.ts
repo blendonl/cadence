@@ -1,9 +1,9 @@
 import { useCallback } from 'react';
 import * as Haptics from 'expo-haptics';
-import { getRoutineService } from '@core/di/hooks';
+import { routineApi } from '../api/routineApi';
 import alertService from '@/services/AlertService';
 import { logger } from '@utils/logger';
-import { RoutineType, RoutineProps } from '../domain/entities/Routine';
+import { RoutineType, RoutineUpdateRequestDto } from 'shared-types';
 
 interface UseRoutineActionsProps {
   refreshRoutines: () => Promise<void>;
@@ -19,7 +19,7 @@ export interface UseRoutineActionsReturn {
     repeatIntervalMinutes?: number,
     activeDays?: string[]
   ) => Promise<void>;
-  handleUpdateRoutine: (id: string, updates: Partial<RoutineProps>) => Promise<void>;
+  handleUpdateRoutine: (id: string, updates: RoutineUpdateRequestDto) => Promise<void>;
   handleDeleteRoutine: (id: string) => Promise<void>;
   handleToggleStatus: (id: string, currentStatus: string) => Promise<void>;
 }
@@ -28,8 +28,6 @@ export function useRoutineActions({
   refreshRoutines,
   closeModal,
 }: UseRoutineActionsProps): UseRoutineActionsReturn {
-  const routineService = getRoutineService();
-
   const handleCreateRoutine = useCallback(
     async (
       name: string,
@@ -40,9 +38,13 @@ export function useRoutineActions({
       activeDays?: string[]
     ) => {
       try {
-        await routineService.createRoutine(name, type, target, {
+        const repeatInterval = repeatIntervalMinutes ?? 1440;
+        await routineApi.createRoutine({
+          name,
+          type,
+          target,
           separateInto,
-          repeatIntervalMinutes,
+          repeatIntervalMinutes: repeatInterval,
           activeDays,
         });
 
@@ -59,13 +61,13 @@ export function useRoutineActions({
         alertService.showError(errorMessage);
       }
     },
-    [routineService, refreshRoutines, closeModal]
+    [refreshRoutines, closeModal]
   );
 
   const handleUpdateRoutine = useCallback(
-    async (id: string, updates: Partial<RoutineProps>) => {
+    async (id: string, updates: RoutineUpdateRequestDto) => {
       try {
-        await routineService.updateRoutine(id, updates);
+        await routineApi.updateRoutine(id, updates);
 
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         await refreshRoutines();
@@ -80,13 +82,13 @@ export function useRoutineActions({
         alertService.showError(errorMessage);
       }
     },
-    [routineService, refreshRoutines, closeModal]
+    [refreshRoutines, closeModal]
   );
 
   const handleDeleteRoutine = useCallback(
     async (id: string) => {
       try {
-        await routineService.deleteRoutine(id);
+        await routineApi.deleteRoutine(id);
 
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         await refreshRoutines();
@@ -97,17 +99,14 @@ export function useRoutineActions({
         alertService.showError('Failed to delete routine. Please try again.');
       }
     },
-    [routineService, refreshRoutines]
+    [refreshRoutines]
   );
 
   const handleToggleStatus = useCallback(
     async (id: string, currentStatus: string) => {
       try {
-        if (currentStatus === 'ACTIVE') {
-          await routineService.disableRoutine(id);
-        } else {
-          await routineService.enableRoutine(id);
-        }
+        const status = currentStatus === 'ACTIVE' ? 'DISABLED' : 'ACTIVE';
+        await routineApi.updateRoutine(id, { status });
 
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         await refreshRoutines();
@@ -118,7 +117,7 @@ export function useRoutineActions({
         alertService.showError('Failed to update routine status. Please try again.');
       }
     },
-    [routineService, refreshRoutines]
+    [refreshRoutines]
   );
 
   return {

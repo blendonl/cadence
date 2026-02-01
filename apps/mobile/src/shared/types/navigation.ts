@@ -9,7 +9,7 @@ export type RootStackParamList = {
   Board: { boardId: BoardId; projectId: ProjectId };
   TaskDetail: { taskId: TaskId; boardId: BoardId; projectId: ProjectId };
   AgendaDay: { date: string };
-  AgendaItemDetail: { itemId: string };
+  AgendaItemDetail: { agendaId: string; itemId: string };
   TaskSchedule: { taskId: TaskId; boardId: BoardId };
   NotesList: undefined;
   NoteEditor: { noteId?: NoteId };
@@ -23,7 +23,7 @@ export type RootStackParamList = {
 export type AgendaStackParamList = {
   AgendaMain: undefined;
   AgendaDay: { date: string };
-  AgendaItemDetail: { itemId: string };
+  AgendaItemDetail: { agendaId: string; itemId: string };
   TaskSchedule: {
     taskId: TaskId;
     boardId: BoardId;

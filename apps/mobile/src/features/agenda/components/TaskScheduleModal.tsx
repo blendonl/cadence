@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { TaskType } from 'shared-types';
 import BaseModal from '@shared/components/BaseModal';
 import theme from '@shared/theme';
 import { TaskDto } from 'shared-types';
 import { useTaskScheduleForm } from '../hooks/useTaskScheduleForm';
 import { TaskTypePicker } from './TaskTypePicker';
-import { FormField, ToggleField } from './ScheduleFormFields';
+import { FormField } from './ScheduleFormFields';
+import { DatePickerField } from './DatePickerField';
+import { TimePickerField } from './TimePickerField';
+import { DurationPickerField } from './DurationPickerField';
+import { getValidationErrors } from '../utils/scheduleValidation';
 
 export interface TaskScheduleData {
   taskId: string;
@@ -34,7 +38,7 @@ export const TaskScheduleModal: React.FC<TaskScheduleModalProps> = ({
   onClose,
   onSubmit,
 }) => {
-  const { formData, updateField, toggleAllDay, reset } = useTaskScheduleForm({
+  const { formData, updateField, reset } = useTaskScheduleForm({
     initialDate: prefilledDate,
   });
   const [submitting, setSubmitting] = useState(false);
@@ -48,13 +52,14 @@ export const TaskScheduleModal: React.FC<TaskScheduleModalProps> = ({
   const handleSubmit = async () => {
     if (!task) return;
 
+    const hasTime = !!formData.time;
     const scheduleData: TaskScheduleData = {
       taskId: task.id,
       date: formData.date,
-      time: formData.isAllDay ? undefined : formData.time,
-      durationMinutes: formData.isAllDay ? undefined : formData.durationMinutes,
+      time: hasTime ? formData.time : undefined,
+      durationMinutes: hasTime ? formData.durationMinutes : undefined,
       taskType: formData.taskType,
-      isAllDay: formData.isAllDay,
+      isAllDay: !hasTime,
       location:
         formData.taskType === TaskType.MEETING && formData.location
           ? formData.location
@@ -64,6 +69,12 @@ export const TaskScheduleModal: React.FC<TaskScheduleModalProps> = ({
           ? formData.attendees.split(',').map(a => a.trim())
           : undefined,
     };
+
+    const errors = getValidationErrors(scheduleData);
+    if (errors.length > 0) {
+      Alert.alert('Validation Error', errors[0]);
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -82,40 +93,28 @@ export const TaskScheduleModal: React.FC<TaskScheduleModalProps> = ({
     <BaseModal visible={visible} onClose={onClose} title="Schedule Task" scrollable>
       <TaskInfoCard task={task} />
 
-      <FormField
+      <DatePickerField
         label="Date"
         value={formData.date}
-        onChangeText={text => updateField('date', text)}
-        placeholder="YYYY-MM-DD"
-        keyboardType="numbers-and-punctuation"
+        onChange={date => updateField('date', date)}
       />
 
-      <ToggleField
-        label="All day task"
-        value={formData.isAllDay}
-        onToggle={toggleAllDay}
+      <TimePickerField
+        label="Time"
+        value={formData.time}
+        onChange={time => updateField('time', time)}
+        onClear={() => {
+          updateField('time', '');
+          updateField('durationMinutes', undefined);
+        }}
       />
 
-      {!formData.isAllDay && (
-        <>
-          <FormField
-            label="Time"
-            value={formData.time}
-            onChangeText={text => updateField('time', text)}
-            placeholder="HH:MM"
-            keyboardType="numbers-and-punctuation"
-          />
-
-          <FormField
-            label="Duration (minutes)"
-            value={formData.durationMinutes.toString()}
-            onChangeText={text =>
-              updateField('durationMinutes', parseInt(text) || 60)
-            }
-            placeholder="60"
-            keyboardType="number-pad"
-          />
-        </>
+      {!!formData.time && (
+        <DurationPickerField
+          label="Duration"
+          value={formData.durationMinutes}
+          onChange={minutes => updateField('durationMinutes', minutes)}
+        />
       )}
 
       <View style={styles.formSection}>

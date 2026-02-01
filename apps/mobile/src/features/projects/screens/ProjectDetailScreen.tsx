@@ -18,11 +18,11 @@ import {
 import { StackNavigationProp } from "@react-navigation/stack";
 import theme from "@shared/theme/colors";
 import { spacing } from "@shared/theme/spacing";
-import { Project } from "@domain/entities/Project";
+import { ProjectDetailDto } from "shared-types";
+import { projectApi } from "../api/projectApi";
 import { Board } from "@features/boards";
 import { Note } from "@features/notes/domain/entities/Note";
 import {
-  getProjectService,
   getBoardService,
   getNoteService,
 } from "@core/di/hooks";
@@ -89,7 +89,7 @@ export default function ProjectDetailScreen() {
   const { projectId } = route.params;
   const insets = useSafeAreaInsets();
 
-  const [project, setProject] = useState<Project | null>(null);
+  const [project, setProject] = useState<ProjectDetailDto | null>(null);
   const [boards, setBoards] = useState<Board[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
   const [boardCount, setBoardCount] = useState(0);
@@ -99,8 +99,7 @@ export default function ProjectDetailScreen() {
 
   const loadData = useCallback(async () => {
     try {
-      const projectService = getProjectService();
-      const loadedProject = await projectService.getProjectById(projectId);
+      const loadedProject = await projectApi.getProjectById(projectId);
       setProject(loadedProject);
 
       const boardService = getBoardService();

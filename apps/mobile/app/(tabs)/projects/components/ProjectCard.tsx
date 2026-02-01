@@ -1,14 +1,14 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { theme, spacing } from '@shared/theme';
-import { Project } from '@/features/projects/domain/entities/Project';
+import { ProjectDto } from 'shared-types';
 import { ChevronRightIcon } from '@shared/components/icons/TabIcons';
 import GlassCard from '@shared/components/GlassCard';
 import { getProjectStatusColor } from '@/features/projects/utils/projectHelpers';
 
 export interface ProjectCardProps {
-  project: Project;
-  onPress: (project: Project) => void;
+  project: ProjectDto;
+  onPress: (project: ProjectDto) => void;
 }
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, onPress }) => {

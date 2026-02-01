@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
-import { DayAgenda } from '../domain/interfaces/AgendaService.interface';
+import { AgendaEnrichedDto } from 'shared-types';
 import { isToday, isSelected, formatDateKey, getMonday, getMonthStart } from '@shared/utils/date.utils';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -10,7 +10,7 @@ const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 interface MonthViewProps {
   monthAnchor: Date;
   selectedDate: Date;
-  agendaData: DayAgenda[];
+  agendaData: AgendaEnrichedDto[];
   loading: boolean;
   onDateSelect: (date: Date) => void;
   onMonthChange: (date: Date) => void;

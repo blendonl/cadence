@@ -1,24 +1,23 @@
 import { useState, useCallback, useEffect } from 'react';
-import { getRoutineService } from '@core/di/hooks';
-import { Routine } from '../domain/entities/Routine';
+import { routineApi } from '../api/routineApi';
+import { RoutineDetailDto } from 'shared-types';
 import { logger } from '@utils/logger';
 
 export interface UseRoutineListDataReturn {
-  routines: Routine[];
+  routines: RoutineDetailDto[];
   loading: boolean;
   loadRoutines: () => Promise<void>;
   refresh: () => Promise<void>;
 }
 
 export function useRoutineListData(): UseRoutineListDataReturn {
-  const [routines, setRoutines] = useState<Routine[]>([]);
+  const [routines, setRoutines] = useState<RoutineDetailDto[]>([]);
   const [loading, setLoading] = useState(false);
 
   const loadRoutines = useCallback(async () => {
     setLoading(true);
     try {
-      const routineService = getRoutineService();
-      const result = await routineService.getRoutines();
+      const result = await routineApi.getRoutines();
       setRoutines(result);
     } catch (error) {
       logger.error('Failed to load routines', { error });

@@ -1,11 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useProjectService } from '@core/di/hooks';
-import { Project } from '../domain/entities/Project';
+import { ProjectDto } from 'shared-types';
+import { projectApi } from '../api/projectApi';
 
 const PROJECT_PAGE_SIZE = 50;
 
 export interface UseProjectListDataReturn {
-  projects: Project[];
+  projects: ProjectDto[];
   loading: boolean;
   hasMore: boolean;
   currentPage: number;
@@ -15,18 +15,16 @@ export interface UseProjectListDataReturn {
 }
 
 export function useProjectListData(): UseProjectListDataReturn {
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<ProjectDto[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
-  const projectService = useProjectService();
-
   const loadProjects = useCallback(async (page = 1, append = false) => {
     setLoading(true);
     try {
-      const result = await projectService.getProjectsPaginated(page, PROJECT_PAGE_SIZE);
-
-      const sanitizedItems = result.items.filter((item): item is Project => Boolean(item));
+      const result = await projectApi.getProjects({ page, limit: PROJECT_PAGE_SIZE });
+      const sanitizedItems = result.items.filter((item): item is ProjectDto => Boolean(item));
+      const hasMore = result.page * result.limit < result.total;
 
       if (append) {
         setProjects((prev) => [...prev, ...sanitizedItems]);
@@ -35,13 +33,13 @@ export function useProjectListData(): UseProjectListDataReturn {
       }
 
       setCurrentPage(page);
-      setHasMore(result.hasMore);
+      setHasMore(hasMore);
     } catch (error) {
       console.error('Failed to load projects:', error);
     } finally {
       setLoading(false);
     }
-  }, [projectService]);
+  }, []);
 
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) {

@@ -31,30 +31,58 @@ export default function TaskSelectorModal({
   const [filteredTasks, setFilteredTasks] = useState<TaskDto[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [total, setTotal] = useState(0);
 
   const [selectedFilter, setSelectedFilter] = useState<FilterType>('all');
   const [selectedPriority, setSelectedPriority] = useState<TaskPriority | null>(null);
 
   useEffect(() => {
     if (visible) {
-      loadData();
+      setPage(1);
+      setTasks([]);
+      setHasMore(true);
+      loadData(1);
     }
-  }, [visible]);
+  }, [visible, searchQuery]);
 
   useEffect(() => {
     applyFilters();
   }, [tasks, selectedPriority]);
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (pageToLoad: number = page, append: boolean = false) => {
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
+
     try {
       const agendaService = getAgendaService();
-      const allTasks = await agendaService.getAllSchedulableTasks(searchQuery);
-      setTasks(allTasks);
+      const response = await agendaService.getAllSchedulableTasks(searchQuery, pageToLoad, 50);
+
+      if (append) {
+        setTasks(prev => [...prev, ...response.items]);
+      } else {
+        setTasks(response.items);
+      }
+
+      setTotal(response.total);
+      setHasMore(response.items.length === response.limit);
+      setPage(pageToLoad);
     } catch (error) {
       console.error('Failed to load tasks:', error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const loadMore = () => {
+    if (!loadingMore && !loading && hasMore) {
+      loadData(page + 1, true);
     }
   };
 
@@ -266,6 +294,15 @@ export default function TaskSelectorModal({
           keyExtractor={item => item.id}
           style={styles.list}
           contentContainerStyle={styles.listContent}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            loadingMore ? (
+              <View style={styles.footerLoader}>
+                <ActivityIndicator size="small" color={theme.primary} />
+              </View>
+            ) : null
+          }
         />
       )}
     </BaseModal>
@@ -399,5 +436,9 @@ const styles = StyleSheet.create({
   emptyText: {
     ...theme.typography.textStyles.body,
     color: theme.text.secondary,
+  },
+  footerLoader: {
+    padding: theme.spacing.md,
+    alignItems: 'center',
   },
 });

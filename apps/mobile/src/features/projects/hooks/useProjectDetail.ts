@@ -1,29 +1,23 @@
 import { useState, useEffect, useCallback } from "react";
-import { useProjectService } from "@core/di/hooks";
+import { ProjectDetailDto } from "shared-types";
+import { projectApi } from "../api/projectApi";
 
 export function useProjectDetail(projectId: string | undefined) {
-  const [data, setData] = useState<{
-    project: any;
-    boards: any[];
-    notes: any[];
-    stats: { boardCount: number; noteCount: number; timeThisWeek: number };
-  } | null>(null);
+  const [project, setProject] = useState<ProjectDetailDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-
-  const projectService = useProjectService();
 
   const loadData = useCallback(async () => {
     if (!projectId) return;
 
     try {
-      const result = await projectService.getProjectByIdWithDetails(projectId);
+      const result = await projectApi.getProjectById(projectId);
       if (result) {
-        setData(result);
+        setProject(result);
         setError(null);
       } else {
-        setData(null);
+        setProject(null);
         setError(new Error("Project not found"));
       }
     } catch (err) {
@@ -32,7 +26,7 @@ export function useProjectDetail(projectId: string | undefined) {
     } finally {
       setLoading(false);
     }
-  }, [projectId, projectService]);
+  }, [projectId]);
 
   useEffect(() => {
     loadData();
@@ -45,12 +39,12 @@ export function useProjectDetail(projectId: string | undefined) {
   }, [loadData]);
 
   return {
-    project: data?.project,
-    boards: data?.boards.slice(0, 3) || [],
-    notes: data?.notes.slice(0, 3) || [],
-    boardCount: data?.stats.boardCount || 0,
-    noteCount: data?.stats.noteCount || 0,
-    timeThisWeek: data?.stats.timeThisWeek || 0,
+    project,
+    boards: project?.boards.slice(0, 3) || [],
+    notes: project?.notes.slice(0, 3) || [],
+    boardCount: project?.stats.boardCount || 0,
+    noteCount: project?.stats.noteCount || 0,
+    timeThisWeek: project?.stats.timeThisWeek || 0,
     loading,
     refreshing,
     error,

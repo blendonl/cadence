@@ -2,11 +2,11 @@ import { useProjectListData } from './useProjectListData';
 import { useProjectListModals } from './useProjectListModals';
 import { useProjectListNavigation } from './useProjectListNavigation';
 import { useProjectActions } from './useProjectActions';
-import { Project } from '../domain/entities/Project';
+import { ProjectDto } from 'shared-types';
 
 export interface UseProjectListScreenReturn {
   viewState: {
-    projects: Project[];
+    projects: ProjectDto[];
     loading: boolean;
     hasMore: boolean;
   };
@@ -16,7 +16,7 @@ export interface UseProjectListScreenReturn {
     closeCreateModal: () => void;
   };
   navigation: {
-    navigateToProject: (project: Project) => void;
+    navigateToProject: (project: ProjectDto) => void;
   };
   actions: {
     handleCreateProject: (

@@ -1,10 +1,10 @@
 import { useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import { useProjectContext } from '@core/ProjectContext';
-import { Project } from '../domain/entities/Project';
+import { ProjectDto } from 'shared-types';
 
 export interface UseProjectListNavigationReturn {
-  navigateToProject: (project: Project) => void;
+  navigateToProject: (project: ProjectDto) => void;
 }
 
 export function useProjectListNavigation(): UseProjectListNavigationReturn {
@@ -12,7 +12,7 @@ export function useProjectListNavigation(): UseProjectListNavigationReturn {
   const { setCurrentProject } = useProjectContext();
 
   const navigateToProject = useCallback(
-    (project: Project) => {
+    (project: ProjectDto) => {
       setCurrentProject(project);
       router.push(`/projects/${project.id}`);
     },

@@ -15,6 +15,7 @@ import { ProjectId, BoardId, TaskId } from '@core/types';
 import BaseModal from '@shared/components/BaseModal';
 import theme from '@shared/theme';
 import AppIcon from '@shared/components/icons/AppIcon';
+import { formatDateKey } from '@shared/utils/date.utils';
 
 interface AgendaItemFormModalProps {
   visible: boolean;
@@ -66,7 +67,7 @@ export const AgendaItemFormModal: React.FC<AgendaItemFormModalProps> = ({
   const [boards, setBoards] = useState<Board[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const [date, setDate] = useState(prefilledDate || new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(prefilledDate || formatDateKey(new Date()));
   const [time, setTime] = useState('09:00');
   const [duration, setDuration] = useState<number | undefined>(60);
   const [taskType, setTaskType] = useState<AgendaTaskType>('regular');
@@ -110,7 +111,7 @@ export const AgendaItemFormModal: React.FC<AgendaItemFormModalProps> = ({
     setSelectedBoard(null);
     setSelectedTask(null);
     setBoards([]);
-    setDate(new Date().toISOString().split('T')[0]);
+    setDate(formatDateKey(new Date()));
     setTime('09:00');
     setDuration(60);
     setTaskType('regular');

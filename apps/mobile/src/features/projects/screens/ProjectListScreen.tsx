@@ -12,8 +12,8 @@ import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import theme from "@shared/theme/colors";
 import { spacing } from "@shared/theme/spacing";
-import { Project } from "@domain/entities/Project";
-import { getProjectService } from "@core/di/hooks";
+import { ProjectDto } from "shared-types";
+import { projectApi } from "../api/projectApi";
 import { useProjectContext } from "@core/ProjectContext";
 import ProjectCreateModal from "../components/ProjectCreateModal";
 import { ProjectStackParamList } from "@/ui/navigation/TabNavigator";
@@ -32,7 +32,7 @@ type ProjectListNavProp = StackNavigationProp<
 export default function ProjectListScreen() {
   const navigation = useNavigation<ProjectListNavProp>();
   const { setCurrentProject } = useProjectContext();
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<ProjectDto[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -42,8 +42,8 @@ export default function ProjectListScreen() {
 
   const loadProjects = useCallback(async (page = 1, append = false) => {
     try {
-      const projectService = getProjectService();
-      const result = await projectService.getProjectsPaginated(page, 20);
+      const result = await projectApi.getProjects({ page, limit: 20 });
+      const hasMore = result.page * result.limit < result.total;
 
       if (append) {
         setProjects(prev => [...prev, ...result.items]);
@@ -52,7 +52,7 @@ export default function ProjectListScreen() {
         setCurrentPage(1);
       }
 
-      setHasMore(result.hasMore);
+      setHasMore(hasMore);
     } catch (error) {
       console.error("Failed to load projects:", error);
     } finally {
@@ -63,7 +63,7 @@ export default function ProjectListScreen() {
 
   const loadMoreProjects = useCallback(async () => {
     if (!hasMore || loadingMore) return;
-    
+
     setLoadingMore(true);
     const nextPage = currentPage + 1;
     await loadProjects(nextPage, true);
@@ -85,13 +85,12 @@ export default function ProjectListScreen() {
     description: string,
     color: string,
   ) => {
-    const projectService = getProjectService();
-    await projectService.createProject(name, description, color);
+    await projectApi.createProject({ name, description, color });
     await loadProjects();
   };
 
-  const handleProjectPress = (project: Project) => {
-    setCurrentProject(project);
+  const handleProjectPress = (project: ProjectDto) => {
+    setCurrentProject(project as any);
     navigation.navigate("ProjectDetail", { projectId: project.id });
   };
 
@@ -108,7 +107,7 @@ export default function ProjectListScreen() {
     }
   };
 
-  const renderProject = ({ item }: { item: Project }) => {
+  const renderProject = ({ item }: { item: ProjectDto }) => {
     const statusColor = getStatusColor(item.status);
     return (
       <TouchableOpacity

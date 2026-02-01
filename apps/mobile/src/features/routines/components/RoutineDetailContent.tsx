@@ -1,18 +1,18 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
-import { Routine } from '../domain/entities/Routine';
+import { RoutineDetailDto } from 'shared-types';
 import { RoutineTaskList } from './RoutineTaskList';
 import {
   formatTargetDisplay,
   formatRepeatInterval,
   formatActiveDays,
-} from '../domain/utils/routineValidation';
+} from '../utils/routineValidation';
 import GlassCard from '@shared/components/GlassCard';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
 
 interface RoutineDetailContentProps {
-  routine: Routine;
+  routine: RoutineDetailDto;
   onEdit: () => void;
   onDelete: () => void;
   onToggleStatus: () => void;

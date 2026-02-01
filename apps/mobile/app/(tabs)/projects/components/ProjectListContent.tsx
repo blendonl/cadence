@@ -1,17 +1,17 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, RefreshControl, StyleSheet } from 'react-native';
 import { theme, spacing } from '@shared/theme';
-import { Project } from '@/features/projects/domain/entities/Project';
+import { ProjectDto } from 'shared-types';
 import ProjectCard from './ProjectCard';
 import EmptyProjectsState from './EmptyProjectsState';
 import CreateProjectFAB from './CreateProjectFAB';
 
 export interface ProjectListContentProps {
-  projects: Project[];
+  projects: ProjectDto[];
   loading: boolean;
   onRefresh: () => Promise<void>;
   onLoadMore: () => Promise<void>;
-  onProjectPress: (project: Project) => void;
+  onProjectPress: (project: ProjectDto) => void;
   onCreatePress: () => void;
 }
 
@@ -40,7 +40,7 @@ const ProjectListContent: React.FC<ProjectListContentProps> = ({
   }, [loadingMore, loading, onLoadMore]);
 
   const renderProject = useCallback(
-    ({ item }: { item: Project }) => (
+    ({ item }: { item: ProjectDto }) => (
       <ProjectCard project={item} onPress={onProjectPress} />
     ),
     [onProjectPress]

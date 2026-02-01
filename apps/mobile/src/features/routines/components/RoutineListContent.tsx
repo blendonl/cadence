@@ -1,16 +1,16 @@
 import React from 'react';
 import { FlatList, RefreshControl, StyleSheet } from 'react-native';
-import { Routine } from '../domain/entities/Routine';
+import { RoutineDetailDto } from 'shared-types';
 import { RoutineCard } from './RoutineCard';
 import { EmptyRoutinesState } from './EmptyRoutinesState';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
 
 interface RoutineListContentProps {
-  routines: Routine[];
+  routines: RoutineDetailDto[];
   loading: boolean;
   onRefresh: () => Promise<void>;
-  onRoutinePress: (routine: Routine) => void;
+  onRoutinePress: (routine: RoutineDetailDto) => void;
   onCreatePress: () => void;
 }
 

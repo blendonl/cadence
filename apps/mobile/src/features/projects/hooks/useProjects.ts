@@ -1,11 +1,11 @@
 import { useState, useCallback } from 'react';
-import { getProjectService } from '@core/di/hooks';
-import { Project } from '../domain/entities/Project';
+import { projectApi } from '../api/projectApi';
+import { ProjectDto } from 'shared-types';
 
 const PROJECT_PAGE_SIZE = 50;
 
 export function useProjects() {
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<ProjectDto[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -13,9 +13,8 @@ export function useProjects() {
   const loadProjects = useCallback(async () => {
     setLoading(true);
     try {
-      const projectService = getProjectService();
-      const result = await projectService.getProjectsPaginated(1, PROJECT_PAGE_SIZE);
-      setProjects(result.items);
+      const result = await projectApi.getProjects({ page: 1, limit: PROJECT_PAGE_SIZE });
+      setProjects(result.projects);
       setPage(1);
       setHasMore(result.hasMore);
     } catch (error) {
@@ -33,9 +32,8 @@ export function useProjects() {
     const nextPage = page + 1;
     setLoading(true);
     try {
-      const projectService = getProjectService();
-      const result = await projectService.getProjectsPaginated(nextPage, PROJECT_PAGE_SIZE);
-      setProjects((prev) => [...prev, ...result.items]);
+      const result = await projectApi.getProjects({ page: nextPage, limit: PROJECT_PAGE_SIZE });
+      setProjects((prev) => [...prev, ...result.projects]);
       setPage(nextPage);
       setHasMore(result.hasMore);
     } catch (error) {

@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { Project } from '@features/projects/domain/entities/Project';
-import { getProjectService } from './di/hooks';
+import { ProjectDto } from 'shared-types';
+import { projectApi } from '@features/projects/api/projectApi';
 
 interface ProjectContextValue {
-  currentProject: Project | null;
-  setCurrentProject: (project: Project | null) => void;
-  projects: Project[];
+  currentProject: ProjectDto | null;
+  setCurrentProject: (project: ProjectDto | null) => void;
+  projects: ProjectDto[];
   loadProjects: () => Promise<void>;
   refreshProjects: () => Promise<void>;
   isLoading: boolean;
@@ -18,15 +18,14 @@ interface ProjectProviderProps {
 }
 
 export function ProjectProvider({ children }: ProjectProviderProps) {
-  const [currentProject, setCurrentProject] = useState<Project | null>(null);
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [currentProject, setCurrentProject] = useState<ProjectDto | null>(null);
+  const [projects, setProjects] = useState<ProjectDto[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const loadProjects = useCallback(async () => {
     setIsLoading(true);
     try {
-      const projectService = getProjectService();
-      const result = await projectService.getProjectsPaginated(1, 50);
+      const result = await projectApi.getProjects({ page: 1, limit: 50 });
       setProjects(result.items);
     } catch (error) {
       console.error('Failed to load projects:', error);
@@ -63,7 +62,7 @@ export function useProjectContext(): ProjectContextValue {
   return context;
 }
 
-export function useCurrentProject(): Project | null {
+export function useCurrentProject(): ProjectDto | null {
   const { currentProject } = useProjectContext();
   return currentProject;
 }

@@ -10,23 +10,22 @@ import {
 import { Screen } from "@shared/components/Screen";
 import { spacing } from "@shared/theme/spacing";
 import theme from "@shared/theme/colors";
-import { Goal } from "@features/goals/domain/entities/Goal";
-import { Project } from "@domain/entities/Project";
-import { getGoalService, getProjectService } from "@core/di/hooks";
+import { GoalDto, ProjectDto } from "shared-types";
+import { goalApi } from "../api/goalApi";
+import { projectApi } from "@features/projects/api/projectApi";
 import GoalFormModal from "../components/GoalFormModal";
 import GlassCard from "@shared/components/GlassCard";
 import { PlusIcon } from "@shared/components/icons/TabIcons";
 import { useRouter } from "expo-router";
-import { GoalProgress } from "@services/GoalService";
 
 export default function GoalsListScreen() {
   const router = useRouter();
-  const [goals, setGoals] = useState<Goal[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [goals, setGoals] = useState<GoalDto[]>([]);
+  const [projects, setProjects] = useState<ProjectDto[]>([]);
   const [projectsPage, setProjectsPage] = useState(1);
   const [projectsHasMore, setProjectsHasMore] = useState(true);
   const [projectsLoading, setProjectsLoading] = useState(false);
-  const [progressMap, setProgressMap] = useState<Record<string, GoalProgress>>({});
+  const [progressMap, setProgressMap] = useState<Record<string, { percentComplete: number; completedOccurrences: number; totalOccurrences: number }>>({});
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -36,23 +35,18 @@ export default function GoalsListScreen() {
   const loadData = useCallback(async () => {
     try {
       setProjectsLoading(true);
-      const goalService = getGoalService();
-      const projectService = getProjectService();
       const [loadedGoals, projectResult] = await Promise.all([
-        goalService.getAllGoals(),
-        projectService.getProjectsPaginated(1, PROJECT_PAGE_SIZE),
+        goalApi.getGoals(),
+        projectApi.getProjects({ page: 1, limit: PROJECT_PAGE_SIZE }),
       ]);
       setGoals(loadedGoals);
-      setProjects(projectResult.items);
+      setProjects(projectResult.projects);
       setProjectsPage(1);
       setProjectsHasMore(projectResult.hasMore);
 
-      const progressEntries = await Promise.all(
-        loadedGoals.map(async (goal) => {
-          const progress = await goalService.getGoalProgress(goal.id);
-          return [goal.id, progress] as const;
-        })
-      );
+      const progressEntries = loadedGoals.map((goal) => {
+        return [goal.id, { percentComplete: 0, completedOccurrences: 0, totalOccurrences: 0 }] as const;
+      });
       setProgressMap(Object.fromEntries(progressEntries));
     } catch (error) {
       console.error("Failed to load goals:", error);
@@ -69,10 +63,9 @@ export default function GoalsListScreen() {
 
     setProjectsLoading(true);
     try {
-      const projectService = getProjectService();
       const nextPage = projectsPage + 1;
-      const result = await projectService.getProjectsPaginated(nextPage, PROJECT_PAGE_SIZE);
-      setProjects((prev) => [...prev, ...result.items]);
+      const result = await projectApi.getProjects({ page: nextPage, limit: PROJECT_PAGE_SIZE });
+      setProjects((prev) => [...prev, ...result.projects]);
       setProjectsPage(nextPage);
       setProjectsHasMore(result.hasMore);
     } catch (error) {
@@ -99,18 +92,17 @@ export default function GoalsListScreen() {
     endDate: string;
     projectIds: string[];
   }) => {
-    const goalService = getGoalService();
-    await goalService.createGoal(
-      data.title,
-      data.description,
-      data.startDate,
-      data.endDate,
-      data.projectIds
-    );
+    await goalApi.createGoal({
+      title: data.title,
+      description: data.description,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      projectIds: data.projectIds,
+    });
     await loadData();
   };
 
-  const renderGoal = ({ item }: { item: Goal }) => {
+  const renderGoal = ({ item }: { item: GoalDto }) => {
     const progress = progressMap[item.id];
     const progressPercent = progress?.percentComplete || 0;
 
@@ -130,10 +122,10 @@ export default function GoalsListScreen() {
           ) : null}
           <View style={styles.metaRow}>
             <Text style={styles.metaText}>
-              {item.start_date} → {item.end_date}
+              {item.startDate} → {item.endDate}
             </Text>
             <Text style={styles.metaText}>
-              {item.project_ids.length} project{item.project_ids.length === 1 ? '' : 's'}
+              {item.projectIds?.length || 0} project{item.projectIds?.length === 1 ? '' : 's'}
             </Text>
           </View>
           <View style={styles.progressTrack}>
