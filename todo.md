@@ -1,0 +1,68 @@
+# Issues
+
+- [x] Board details not loading
+- [x] Add task doesnt work
+- [x] Agenda find tasks doesnt work
+- [x] Agenda create task doesnt work
+- [x] There are no task details
+- [x] No way to delete task
+- [x] Agenda has two ways of finding tasks
+- [x] No way to move task
+- [x] Remove success modal when creating a task
+- [x] Remove modal when deleting task
+- [x] Change default task type when creating a task
+- [x] Remove task id from task details
+- [x] Change flow when scheduling a task to not redirect to agenda but just schedule the task
+- [x] Fix animation when drag and dropping tasks
+- [x] Redesign the task card
+- [x] Redesign the column header
+- [x] Fix column sliding down doesnt work when you have a lot of tasks
+- [x] Fix drag and drop not working properly
+- [x] Fix agenda schedule
+- [x] Fix agenda time, date and duration pickers
+- [ ] Project list screen first loads an empty screeen then loads the projects
+- [ ] Remove agenda domain logic from frontend
+- [ ] Remove All day task from agenda schedule
+- [ ] Add task and agenda from agenda schedule
+- [ ] Add subtask section in task details
+- [ ] Redesign the task options
+- [ ] Remove double modal when deleting a task
+- [ ] Change the saved design
+- [ ] Update the task design in columns
+- [ ] Update the column design
+- [ ] Add logic for adding/removing columns (todo, in progress, done) should never be removed
+- [ ] Fix Project icon not visible in project details
+- [ ] Fix notes background colors issues in the Recent Notes section
+- [ ] Cant update agenda item
+- [ ] Remove time thing at the end
+- [ ] Agenda search doesnt work
+- [ ] Agenda date modal missing
+- [ ] Agenda time modal missing
+- [ ] Agenda duration modal missing
+- [ ] Agenda repeat modal missing
+- [ ] Agenda task type wrong types and bad selection
+- [ ] Agenda Location should be hidden for now with attendees
+- [ ] Add task parent doesnt work
+- [ ] The plus button in the agenda screen is hiding the sleep data
+- [ ] When there are no agenda items there are two empty borders between steps and sleep
+- [ ] The steps are not being separated into multiple steps properly
+- [ ] The search bar in the agenda screen doesnt work properly
+- [ ] The routine design is very bad
+- [ ] The sleep routine design is bad too
+- [ ] The target for sleep should be an hour input not a text input
+- [ ] The repeat interval is very bad
+- [ ] The sleep design should change
+- [ ] The target for steps should be a slider with 500 steps minimum and increasing by 500
+- [ ] the separated into should also be a slider
+- [ ] The repeat interval should change for steps too
+- [ ] The design of the steps routine should change too
+- [ ] The others routine should be more versetile
+- [ ] The other routines need redesign
+- [ ] The agenda details screen is missing
+- [ ] The notes are not being saved in backend
+- [ ] The selected badge shoujld change the color of the icon as the text for (all, Notes, Meeting...)
+- [ ] What is todays journal
+- [ ] The daily not shouldnt allow a title
+- [ ] The meeting note should select a meeting
+- [ ] The editor needs improvement
+- [ ] The Time data screen should be removed
