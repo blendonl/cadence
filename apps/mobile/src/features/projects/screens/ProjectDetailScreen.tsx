@@ -18,10 +18,9 @@ import {
 import { StackNavigationProp } from "@react-navigation/stack";
 import theme from "@shared/theme/colors";
 import { spacing } from "@shared/theme/spacing";
-import { ProjectDetailDto } from "shared-types";
+import { NoteDetailDto, ProjectDetailDto } from "shared-types";
 import { projectApi } from "../api/projectApi";
 import { Board } from "@features/boards";
-import { Note } from "@features/notes/domain/entities/Note";
 import {
   getBoardService,
   getNoteService,
@@ -91,7 +90,7 @@ export default function ProjectDetailScreen() {
 
   const [project, setProject] = useState<ProjectDetailDto | null>(null);
   const [boards, setBoards] = useState<Board[]>([]);
-  const [notes, setNotes] = useState<Note[]>([]);
+  const [notes, setNotes] = useState<NoteDetailDto[]>([]);
   const [boardCount, setBoardCount] = useState(0);
   const [noteCount, setNoteCount] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
@@ -110,7 +109,7 @@ export default function ProjectDetailScreen() {
       const noteService = getNoteService();
       const projectNotes = await noteService.getNotesByProject(projectId);
       const sortedNotes = projectNotes.sort(
-        (a, b) => b.updated_at.getTime() - a.updated_at.getTime(),
+        (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
       );
       setNoteCount(sortedNotes.length);
       setNotes(sortedNotes.slice(0, 3));
@@ -174,7 +173,7 @@ export default function ProjectDetailScreen() {
     );
   };
 
-  const handleNotePress = (note: Note) => {
+  const handleNotePress = (note: NoteDetailDto) => {
     navigation.dispatch(
       CommonActions.navigate({
         name: "NotesTab",
