@@ -13,6 +13,7 @@ import {
   COLUMN_SERVICE,
   TASK_SERVICE,
   AGENDA_SERVICE,
+  NOTE_SERVICE,
 } from "./tokens";
 
 import type { CalendarRepository } from "@domain/repositories/CalendarRepository";
@@ -26,6 +27,7 @@ import type { BoardService } from "@features/boards/services/BoardService";
 import type { ColumnService } from "@features/columns/services/ColumnService";
 import type { TaskService } from "@features/tasks/services/TaskService";
 import type { AgendaService } from "@features/agenda/services/AgendaService";
+import type { NoteService } from "@features/notes/services/NoteService";
 
 export function useCalendarRepository(): CalendarRepository {
   return useMemo(
@@ -83,6 +85,10 @@ export function useAgendaService(): AgendaService {
   return useMemo(() => container.resolve<AgendaService>(AGENDA_SERVICE), []);
 }
 
+export function useNoteService(): NoteService {
+  return useMemo(() => container.resolve<NoteService>(NOTE_SERVICE), []);
+}
+
 export function getCalendarSyncService(): CalendarSyncService {
   return container.resolve<CalendarSyncService>(CALENDAR_SYNC_SERVICE);
 }
@@ -121,6 +127,10 @@ export function getTaskService(): TaskService {
 
 export function getAgendaService(): AgendaService {
   return container.resolve<AgendaService>(AGENDA_SERVICE);
+}
+
+export function getNoteService(): NoteService {
+  return container.resolve<NoteService>(NOTE_SERVICE);
 }
 
 export function getCalendarRepository(): CalendarRepository {

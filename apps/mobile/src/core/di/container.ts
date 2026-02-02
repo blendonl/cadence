@@ -31,6 +31,7 @@ import { BoardService } from "@features/boards/services/BoardService";
 import { ColumnService } from "@features/columns/services/ColumnService";
 import { TaskService } from "@features/tasks/services/TaskService";
 import { AgendaService } from "@features/agenda/services/AgendaService";
+import { NoteService } from "@features/notes/services/NoteService";
 import { CalendarSyncService } from "@services/CalendarSyncService";
 import { NotificationService } from "@services/NotificationService";
 
@@ -94,6 +95,7 @@ export async function initializeContainer(
   container.registerSingleton(COLUMN_SERVICE, ColumnService);
   container.registerSingleton(TASK_SERVICE, TaskService);
   container.registerSingleton(AGENDA_SERVICE, AgendaService);
+  container.registerSingleton(NOTE_SERVICE, NoteService);
   container.registerSingleton(CALENDAR_SYNC_SERVICE, CalendarSyncService);
 
   container.register(NOTIFICATION_SERVICE, {
