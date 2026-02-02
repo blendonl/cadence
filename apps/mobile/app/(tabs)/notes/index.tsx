@@ -12,7 +12,7 @@ import { useRouter } from "expo-router";
 import theme from "@shared/theme";
 import { spacing } from "@shared/theme/spacing";
 import { getNoteService } from "@core/di/hooks";
-import { Note } from "@features/notes/domain/entities/Note";
+import { NoteDetailDto, NoteType } from "shared-types";
 import { useAutoRefresh } from "@shared/hooks/useAutoRefresh";
 import { useEntityNames, useNoteFilters } from "@features/notes/hooks";
 import {
@@ -24,7 +24,7 @@ import {
 
 export default function NotesListScreen() {
   const router = useRouter();
-  const [notes, setNotes] = useState<Note[]>([]);
+  const [notes, setNotes] = useState<NoteDetailDto[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -62,19 +62,30 @@ export default function NotesListScreen() {
     setRefreshing(false);
   }, [loadNotes]);
 
-  const handleCreateNote = useCallback(() => {
-    router.push("/notes/new");
-  }, [router]);
+  const createNote = useCallback(
+    async (type: NoteType) => {
+      try {
+        const noteService = getNoteService();
+        const created = await noteService.createNote({
+          type,
+          title: type === NoteType.Daily ? "Daily Note" : "Untitled Note",
+          content: "",
+        });
+        router.push(`/notes/${created.id}`);
+      } catch (error) {
+        console.error("Failed to create note:", error);
+      }
+    },
+    [router],
+  );
 
-  const handleCreateDailyNote = useCallback(async () => {
-    try {
-      const noteService = getNoteService();
-      const dailyNote = await noteService.getTodaysDailyNote();
-      router.push(`/notes/${dailyNote.id}`);
-    } catch (error) {
-      console.error("Failed to create daily note:", error);
-    }
-  }, [router]);
+  const handleCreateNote = useCallback(() => {
+    createNote(NoteType.General);
+  }, [createNote]);
+
+  const handleCreateDailyNote = useCallback(() => {
+    createNote(NoteType.Daily);
+  }, [createNote]);
 
   const renderEmpty = useCallback(() => {
     if (hasActiveFilters) {

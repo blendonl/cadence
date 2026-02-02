@@ -99,7 +99,7 @@ export default function ProjectDetailScreen() {
   };
 
   const handleNotePress = (note: { id: string }) => {
-    router.push(`/notes/editor/${note.id}`);
+    router.push(`/notes/${note.id}`);
   };
 
   if (loading) {
