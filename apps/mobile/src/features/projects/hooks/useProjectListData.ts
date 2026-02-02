@@ -18,7 +18,7 @@ export function useProjectListData(): UseProjectListDataReturn {
   const [projects, setProjects] = useState<ProjectDto[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const loadProjects = useCallback(async (page = 1, append = false) => {
     setLoading(true);
     try {
