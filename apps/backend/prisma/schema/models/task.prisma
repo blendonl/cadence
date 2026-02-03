@@ -38,6 +38,7 @@ model Task {
   logs     TaskLog[]
   timeLogs TimeLog[]
   agenda   AgendaItem[]
+  notes    Note[]
 
   @@index([slug])
   @@map("task")

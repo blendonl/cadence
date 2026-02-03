@@ -1,9 +1,7 @@
 enum NoteType {
-  PERSONAL
-  WORK
-  STUDY
+  GENERAL
   MEETING
-  PROJECT
+  DAILY
   TASK
 
   @@map("note_type")
@@ -12,13 +10,18 @@ enum NoteType {
 model Note {
   id String @id @default(uuid())
 
-  type NoteType @default(PERSONAL)
+  type NoteType @default(GENERAL)
 
   title   String
   content String
+  tags    String[] @default([])
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+
+  projects Project[]
+  boards   Board[]
+  tasks    Task[]
 
   @@map("note")
 }

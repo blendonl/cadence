@@ -22,6 +22,7 @@ model Project {
 
   boards   Board[]
   timeLogs TimeLog[]
+  notes    Note[]
 
   @@map("project")
 }
