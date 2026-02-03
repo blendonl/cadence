@@ -29,6 +29,8 @@ export type AppIconName =
   | 'info'
   | 'arrow-left'
   | 'arrow-right'
+  | 'arrow-up'
+  | 'arrow-down'
   | 'clock'
   | 'terminal'
   | 'inbox'
@@ -41,7 +43,8 @@ export type AppIconName =
   | 'eye'
   | 'check'
   | 'more'
-  | 'add';
+  | 'add'
+  | 'x';
 
 interface AppIconProps {
   name: AppIconName;
@@ -387,6 +390,27 @@ export default function AppIcon({ name, size = 20, color, strokeWidth = 1.8 }: A
         <Svg width={size} height={size} viewBox={viewBox}>
           <Path d="M12 5V19" {...common} />
           <Path d="M5 12H19" {...common} />
+        </Svg>
+      );
+    case 'arrow-up':
+      return (
+        <Svg width={size} height={size} viewBox={viewBox}>
+          <Path d="M12 19V5" {...common} />
+          <Path d="M5 12L12 5L19 12" {...common} />
+        </Svg>
+      );
+    case 'arrow-down':
+      return (
+        <Svg width={size} height={size} viewBox={viewBox}>
+          <Path d="M12 5V19" {...common} />
+          <Path d="M19 12L12 19L5 12" {...common} />
+        </Svg>
+      );
+    case 'x':
+      return (
+        <Svg width={size} height={size} viewBox={viewBox}>
+          <Path d="M18 6L6 18" {...common} />
+          <Path d="M6 6L18 18" {...common} />
         </Svg>
       );
     default:
