@@ -8,6 +8,7 @@ import { AgendaCoreModule } from './agenda/agenda.core.module';
 import { AgendaItemCoreModule } from './agenda-item/agenda-item.core.module';
 import { RoutinesCoreModule } from './routines/routines.core.module';
 import { AlarmsCoreModule } from './alarms/alarms.core.module';
+import { NotesCoreModule } from './notes/notes.core.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { AlarmsCoreModule } from './alarms/alarms.core.module';
     AgendaItemCoreModule,
     RoutinesCoreModule,
     AlarmsCoreModule,
+    NotesCoreModule,
   ],
 })
 export class CoreModule {}

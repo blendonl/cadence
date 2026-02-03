@@ -9,6 +9,7 @@ import { AgendaItemRestModule } from './agenda-item/agenda-item.rest.module';
 import { RoutineRestModule } from './routine/routine.rest.module';
 import { AlarmRestModule } from './alarm/alarm.rest.module';
 import { GoalRestModule } from './goal/goal.rest.module';
+import { NotesRestModule } from './notes/notes.rest.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { GoalRestModule } from './goal/goal.rest.module';
     RoutineRestModule,
     AlarmRestModule,
     GoalRestModule,
+    NotesRestModule,
   ],
 })
 export class RestModule {}

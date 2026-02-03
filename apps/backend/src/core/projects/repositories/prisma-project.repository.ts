@@ -70,6 +70,9 @@ export class PrismaProjectRepository implements ProjectRepository {
             date: { gte: weekAgo },
           },
         },
+        notes: {
+          orderBy: { updatedAt: 'desc' },
+        },
       },
     });
 
@@ -97,10 +100,16 @@ export class PrismaProjectRepository implements ProjectRepository {
         name: b.name,
         columnCount: b.columns.length,
       })),
-      notes: [],
+      notes: project.notes.map((note) => ({
+        id: note.id,
+        title: note.title,
+        content: note.content,
+        preview: note.content ? note.content.slice(0, 160) : null,
+        updatedAt: note.updatedAt,
+      })),
       stats: {
         boardCount: project.boards.length,
-        noteCount: 0,
+        noteCount: project.notes.length,
         timeThisWeek: totalMinutes,
       },
     };

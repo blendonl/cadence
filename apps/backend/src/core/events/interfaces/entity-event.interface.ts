@@ -8,7 +8,8 @@ export type EntityType =
   | 'routine'
   | 'routine-task'
   | 'routine-task-log'
-  | 'alarm-plan';
+  | 'alarm-plan'
+  | 'note';
 export type ChangeType = 'added' | 'modified' | 'deleted';
 
 export interface EntityEvent<T = any> {
