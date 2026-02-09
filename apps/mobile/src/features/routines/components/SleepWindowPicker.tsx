@@ -2,8 +2,9 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import AppIcon from '@shared/components/icons/AppIcon';
-import theme from '@shared/theme/colors';
+import theme, { CatppuccinColors } from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
+import { ROUTINE_TYPE_GRADIENTS } from '../constants/routineConstants';
 
 interface SleepWindowPickerProps {
   value: string;
@@ -28,12 +29,6 @@ const formatTime = (hour: number, min: number): string => {
   return `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
 };
 
-const formatTimeDisplay = (hour: number, min: number): string => {
-  const period = hour >= 12 ? 'PM' : 'AM';
-  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  return `${displayHour}:${min.toString().padStart(2, '0')} ${period}`;
-};
-
 const calcDuration = (bedH: number, bedM: number, wakeH: number, wakeM: number): string => {
   let totalMin = (wakeH * 60 + wakeM) - (bedH * 60 + bedM);
   if (totalMin <= 0) totalMin += 24 * 60;
@@ -43,10 +38,10 @@ const calcDuration = (bedH: number, bedM: number, wakeH: number, wakeM: number):
 };
 
 const wrapHour = (h: number): number => ((h % 24) + 24) % 24;
-const wrapMin = (m: number): number => ((m % 60) + 60) % 60;
 
 export function SleepWindowPicker({ value, onChange, error }: SleepWindowPickerProps) {
   const { bedHour, bedMin, wakeHour, wakeMin } = parseSleepWindow(value);
+  const gradient = ROUTINE_TYPE_GRADIENTS.SLEEP;
 
   const buildValue = (bh: number, bm: number, wh: number, wm: number) =>
     `${formatTime(bh, bm)}-${formatTime(wh, wm)}`;
@@ -88,32 +83,36 @@ export function SleepWindowPicker({ value, onChange, error }: SleepWindowPickerP
       <View style={styles.windowRow}>
         <TimeColumn
           icon="moon"
-          iconColor={theme.accent.info}
+          iconColor={CatppuccinColors.mauve}
           title="Bedtime"
           hour={bedHour}
           min={bedMin}
           onStepHour={stepBedHour}
           onStepMin={stepBedMin}
+          accentColor={CatppuccinColors.mauve}
         />
 
-        <View style={styles.divider}>
-          <AppIcon name="arrow-right" size={20} color={theme.text.muted} />
+        <View style={styles.dividerColumn}>
+          <View style={[styles.dividerLine, { backgroundColor: gradient.accent + '30' }]} />
+          <AppIcon name="arrow-right" size={16} color={theme.text.muted} />
+          <View style={[styles.dividerLine, { backgroundColor: gradient.accent + '30' }]} />
         </View>
 
         <TimeColumn
           icon="sun"
-          iconColor={theme.accent.warning}
+          iconColor={CatppuccinColors.yellow}
           title="Wake up"
           hour={wakeHour}
           min={wakeMin}
           onStepHour={stepWakeHour}
           onStepMin={stepWakeMin}
+          accentColor={CatppuccinColors.yellow}
         />
       </View>
 
-      <View style={styles.durationRow}>
-        <AppIcon name="clock" size={14} color={theme.text.tertiary} />
-        <Text style={styles.durationText}>{duration} sleep</Text>
+      <View style={[styles.durationBar, { backgroundColor: gradient.bgColor }]}>
+        <AppIcon name="clock" size={14} color={gradient.accent} />
+        <Text style={[styles.durationText, { color: gradient.accent }]}>{duration} sleep</Text>
       </View>
 
       {error && <Text style={styles.errorText}>{error}</Text>}
@@ -129,41 +128,54 @@ interface TimeColumnProps {
   min: number;
   onStepHour: (delta: number) => void;
   onStepMin: (delta: number) => void;
+  accentColor: string;
 }
 
-function TimeColumn({ icon, iconColor, title, hour, min, onStepHour, onStepMin }: TimeColumnProps) {
+function TimeColumn({ icon, iconColor, title, hour, min, onStepHour, onStepMin, accentColor }: TimeColumnProps) {
   return (
     <View style={styles.timeColumn}>
       <View style={styles.timeHeader}>
-        <AppIcon name={icon} size={16} color={iconColor} />
-        <Text style={styles.timeTitle}>{title}</Text>
+        <AppIcon name={icon} size={14} color={iconColor} />
+        <Text style={[styles.timeTitle, { color: iconColor }]}>{title}</Text>
       </View>
-
-      <Text style={styles.timeDisplay}>{formatTimeDisplay(hour, min)}</Text>
 
       <View style={styles.stepperPair}>
         <View style={styles.stepperUnit}>
-          <TouchableOpacity style={styles.miniStep} onPress={() => onStepHour(1)} activeOpacity={0.7}>
-            <Text style={styles.miniStepText}>+</Text>
+          <TouchableOpacity
+            style={[styles.miniStep, { borderColor: accentColor + '20' }]}
+            onPress={() => onStepHour(1)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.miniStepText, { color: accentColor }]}>+</Text>
           </TouchableOpacity>
           <Text style={styles.digitText}>{hour.toString().padStart(2, '0')}</Text>
-          <TouchableOpacity style={styles.miniStep} onPress={() => onStepHour(-1)} activeOpacity={0.7}>
-            <Text style={styles.miniStepText}>-</Text>
+          <TouchableOpacity
+            style={[styles.miniStep, { borderColor: accentColor + '20' }]}
+            onPress={() => onStepHour(-1)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.miniStepText, { color: accentColor }]}>-</Text>
           </TouchableOpacity>
-          <Text style={styles.unitLabel}>hr</Text>
         </View>
 
         <Text style={styles.colon}>:</Text>
 
         <View style={styles.stepperUnit}>
-          <TouchableOpacity style={styles.miniStep} onPress={() => onStepMin(15)} activeOpacity={0.7}>
-            <Text style={styles.miniStepText}>+</Text>
+          <TouchableOpacity
+            style={[styles.miniStep, { borderColor: accentColor + '20' }]}
+            onPress={() => onStepMin(15)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.miniStepText, { color: accentColor }]}>+</Text>
           </TouchableOpacity>
           <Text style={styles.digitText}>{min.toString().padStart(2, '0')}</Text>
-          <TouchableOpacity style={styles.miniStep} onPress={() => onStepMin(-15)} activeOpacity={0.7}>
-            <Text style={styles.miniStepText}>-</Text>
+          <TouchableOpacity
+            style={[styles.miniStep, { borderColor: accentColor + '20' }]}
+            onPress={() => onStepMin(-15)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.miniStepText, { color: accentColor }]}>-</Text>
           </TouchableOpacity>
-          <Text style={styles.unitLabel}>min</Text>
         </View>
       </View>
     </View>
@@ -183,37 +195,36 @@ const styles = StyleSheet.create({
   windowRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.md,
   },
-  divider: {
+  dividerColumn: {
+    alignItems: 'center',
+    gap: spacing.xs,
     paddingTop: spacing.xl,
+    paddingHorizontal: spacing.sm,
+  },
+  dividerLine: {
+    width: 1,
+    height: 16,
   },
   timeColumn: {
     flex: 1,
     alignItems: 'center',
     backgroundColor: theme.background.elevated,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: theme.border.secondary,
     padding: spacing.md,
+    paddingVertical: spacing.lg,
   },
   timeHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
   },
   timeTitle: {
     fontSize: 12,
-    fontWeight: '600',
-    color: theme.text.secondary,
-  },
-  timeDisplay: {
-    fontSize: 18,
     fontWeight: '700',
-    color: theme.text.primary,
-    marginBottom: spacing.sm,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   stepperPair: {
     flexDirection: 'row',
@@ -222,53 +233,45 @@ const styles = StyleSheet.create({
   },
   stepperUnit: {
     alignItems: 'center',
+    gap: 4,
   },
   miniStep: {
-    width: 36,
+    width: 38,
     height: 28,
-    borderRadius: 8,
-    backgroundColor: theme.background.primary,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
     borderWidth: 1,
-    borderColor: theme.border.secondary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   miniStepText: {
-    fontSize: 18,
-    fontWeight: '400',
-    color: theme.text.primary,
+    fontSize: 16,
+    fontWeight: '500',
   },
   digitText: {
-    fontSize: 20,
-    fontWeight: '600',
+    fontSize: 24,
+    fontWeight: '700',
     color: theme.text.primary,
-    marginVertical: spacing.xs,
+    fontVariant: ['tabular-nums'],
   },
   colon: {
-    fontSize: 20,
-    fontWeight: '600',
+    fontSize: 22,
+    fontWeight: '700',
     color: theme.text.muted,
-    paddingBottom: spacing.lg,
+    paddingBottom: 2,
   },
-  unitLabel: {
-    fontSize: 10,
-    color: theme.text.tertiary,
-    marginTop: 2,
-  },
-  durationRow: {
+  durationBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xs,
     marginTop: spacing.md,
-    paddingVertical: spacing.sm,
-    backgroundColor: theme.background.elevated,
-    borderRadius: 10,
+    paddingVertical: 10,
+    borderRadius: 12,
   },
   durationText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: theme.text.primary,
+    fontSize: 15,
+    fontWeight: '700',
   },
   errorText: {
     fontSize: 12,

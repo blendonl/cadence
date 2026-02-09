@@ -14,10 +14,10 @@ const WEEKDAYS = [
   { value: 'MON', label: 'M' },
   { value: 'TUE', label: 'T' },
   { value: 'WED', label: 'W' },
-  { value: 'THU', label: 'Th' },
+  { value: 'THU', label: 'T' },
   { value: 'FRI', label: 'F' },
-  { value: 'SAT', label: 'Sa' },
-  { value: 'SUN', label: 'Su' },
+  { value: 'SAT', label: 'S' },
+  { value: 'SUN', label: 'S' },
 ];
 
 export function WeekdayPicker({ label, value, onChange, error }: WeekdayPickerProps) {
@@ -25,15 +25,12 @@ export function WeekdayPicker({ label, value, onChange, error }: WeekdayPickerPr
 
   const toggleDay = (day: string) => {
     if (value === null) {
-      // If all days selected, deselect all except this one
       onChange([day]);
     } else {
       if (value.includes(day)) {
-        // Remove day
         const newDays = value.filter((d) => d !== day);
         onChange(newDays.length === 0 ? null : newDays);
       } else {
-        // Add day
         const newDays = [...value, day];
         onChange(newDays.length === 7 ? null : newDays);
       }
@@ -50,31 +47,34 @@ export function WeekdayPicker({ label, value, onChange, error }: WeekdayPickerPr
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
-
-      <TouchableOpacity
-        style={[styles.allDaysButton, isAllDays && styles.allDaysButtonActive]}
-        onPress={toggleAllDays}
-      >
-        <Text style={[styles.allDaysText, isAllDays && styles.allDaysTextActive]}>
-          All Days
-        </Text>
-      </TouchableOpacity>
+      <View style={styles.headerRow}>
+        <Text style={styles.label}>{label}</Text>
+        <TouchableOpacity
+          style={[styles.allDaysChip, isAllDays && styles.allDaysChipActive]}
+          onPress={toggleAllDays}
+        >
+          <Text style={[styles.allDaysText, isAllDays && styles.allDaysTextActive]}>
+            All
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.weekdaysRow}>
-        {WEEKDAYS.map((day) => (
-          <TouchableOpacity
-            key={day.value}
-            style={[styles.dayButton, isDaySelected(day.value) && styles.dayButtonActive]}
-            onPress={() => toggleDay(day.value)}
-          >
-            <Text
-              style={[styles.dayText, isDaySelected(day.value) && styles.dayTextActive]}
+        {WEEKDAYS.map((day) => {
+          const selected = isDaySelected(day.value);
+          return (
+            <TouchableOpacity
+              key={day.value}
+              style={[styles.dayButton, selected && styles.dayButtonActive]}
+              onPress={() => toggleDay(day.value)}
+              activeOpacity={0.7}
             >
-              {day.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Text style={[styles.dayText, selected && styles.dayTextActive]}>
+                {day.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       {error && <Text style={styles.errorText}>{error}</Text>}
@@ -86,60 +86,60 @@ const styles = StyleSheet.create({
   container: {
     marginBottom: spacing.lg,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
   label: {
     fontSize: 13,
     fontWeight: '600',
     color: theme.text.secondary,
-    marginBottom: spacing.sm,
   },
-  allDaysButton: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: theme.border.secondary,
+  allDaysChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 4,
+    borderRadius: 8,
     backgroundColor: theme.background.elevated,
-    marginBottom: spacing.sm,
-    alignItems: 'center',
   },
-  allDaysButtonActive: {
-    backgroundColor: theme.accent.primary,
-    borderColor: theme.accent.primary,
+  allDaysChipActive: {
+    backgroundColor: 'rgba(242, 154, 100, 0.12)',
   },
   allDaysText: {
-    fontSize: 14,
-    color: theme.text.secondary,
+    fontSize: 12,
+    fontWeight: '600',
+    color: theme.text.muted,
   },
   allDaysTextActive: {
-    color: theme.text.primary,
-    fontWeight: '600',
+    color: theme.accent.warning,
   },
   weekdaysRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     gap: spacing.sm,
   },
   dayButton: {
     flex: 1,
-    paddingVertical: spacing.md,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: theme.border.secondary,
+    aspectRatio: 1,
+    maxHeight: 44,
+    borderRadius: 12,
     backgroundColor: theme.background.elevated,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   dayButtonActive: {
-    backgroundColor: theme.accent.primary,
-    borderColor: theme.accent.primary,
+    backgroundColor: 'rgba(242, 154, 100, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(242, 154, 100, 0.3)',
   },
   dayText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: theme.text.secondary,
+    fontSize: 13,
+    fontWeight: '600',
+    color: theme.text.muted,
   },
   dayTextActive: {
-    color: theme.text.primary,
-    fontWeight: '600',
+    color: theme.accent.warning,
+    fontWeight: '700',
   },
   errorText: {
     fontSize: 12,

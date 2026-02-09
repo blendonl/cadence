@@ -42,26 +42,21 @@ export function RepeatIntervalPicker({
       {label && <Text style={styles.label}>{label}</Text>}
 
       <View style={styles.presetRow}>
-        {REPEAT_INTERVAL_PRESETS.map(preset => (
-          <TouchableOpacity
-            key={preset.minutes}
-            style={[
-              styles.presetChip,
-              !isCustom && value === preset.minutes && styles.presetChipActive,
-            ]}
-            onPress={() => handlePresetPress(preset.minutes)}
-            activeOpacity={0.7}
-          >
-            <Text
-              style={[
-                styles.presetChipText,
-                !isCustom && value === preset.minutes && styles.presetChipTextActive,
-              ]}
+        {REPEAT_INTERVAL_PRESETS.map(preset => {
+          const isActive = !isCustom && value === preset.minutes;
+          return (
+            <TouchableOpacity
+              key={preset.minutes}
+              style={[styles.presetChip, isActive && styles.presetChipActive]}
+              onPress={() => handlePresetPress(preset.minutes)}
+              activeOpacity={0.7}
             >
-              {preset.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Text style={[styles.presetChipText, isActive && styles.presetChipTextActive]}>
+                {preset.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
         <TouchableOpacity
           style={[styles.presetChip, isCustom && styles.presetChipActive]}
           onPress={handleCustomPress}
@@ -99,7 +94,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: theme.text.secondary,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
   presetRow: {
     flexDirection: 'row',
@@ -110,13 +105,13 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     borderRadius: 10,
-    borderWidth: 1,
-    borderColor: theme.border.secondary,
     backgroundColor: theme.background.elevated,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   presetChipActive: {
-    backgroundColor: theme.accent.primary,
-    borderColor: theme.accent.primary,
+    backgroundColor: 'rgba(242, 154, 100, 0.12)',
+    borderColor: 'rgba(242, 154, 100, 0.3)',
   },
   presetChipText: {
     fontSize: 13,
@@ -124,8 +119,8 @@ const styles = StyleSheet.create({
     color: theme.text.secondary,
   },
   presetChipTextActive: {
-    color: theme.text.primary,
-    fontWeight: '600',
+    color: theme.accent.warning,
+    fontWeight: '700',
   },
   customStepper: {
     marginTop: spacing.md,
@@ -138,7 +133,7 @@ const styles = StyleSheet.create({
   },
   hintText: {
     fontSize: 12,
-    color: theme.text.tertiary,
+    color: theme.text.muted,
     marginTop: spacing.xs,
   },
 });

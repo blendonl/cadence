@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Input } from '@shared/components/Input';
-import { STEP_TARGET_PRESETS } from '../constants/routineConstants';
-import theme from '@shared/theme/colors';
+import { STEP_TARGET_PRESETS, ROUTINE_TYPE_GRADIENTS } from '../constants/routineConstants';
+import theme, { CatppuccinColors } from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
 
 interface StepTargetInputProps {
@@ -28,6 +28,7 @@ export function StepTargetInput({
 }: StepTargetInputProps) {
   const numericValue = Number(value);
   const matchingPreset = STEP_TARGET_PRESETS.find(p => p === numericValue);
+  const gradient = ROUTINE_TYPE_GRADIENTS.STEP;
 
   return (
     <View style={styles.container}>
@@ -38,33 +39,44 @@ export function StepTargetInput({
         </Text>
       )}
 
-      <View style={styles.presetRow}>
-        {STEP_TARGET_PRESETS.map(preset => (
-          <TouchableOpacity
-            key={preset}
-            style={[
-              styles.presetButton,
-              matchingPreset === preset && styles.presetButtonActive,
-            ]}
-            onPress={() => onChange(preset.toString())}
-            activeOpacity={0.7}
-          >
-            <Text
+      <View style={styles.presetGrid}>
+        {STEP_TARGET_PRESETS.map(preset => {
+          const isActive = matchingPreset === preset;
+          return (
+            <TouchableOpacity
+              key={preset}
               style={[
-                styles.presetButtonText,
-                matchingPreset === preset && styles.presetButtonTextActive,
+                styles.presetButton,
+                isActive && { backgroundColor: gradient.iconBg, borderColor: gradient.accent + '40' },
               ]}
+              onPress={() => onChange(preset.toString())}
+              activeOpacity={0.7}
             >
-              {formatPresetLabel(preset)}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Text
+                style={[
+                  styles.presetValue,
+                  isActive && { color: gradient.accent },
+                ]}
+              >
+                {formatPresetLabel(preset)}
+              </Text>
+              <Text
+                style={[
+                  styles.presetUnit,
+                  isActive && { color: gradient.accent + 'AA' },
+                ]}
+              >
+                steps
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       <Input
         value={value}
         onChangeText={onChange}
-        placeholder="e.g., 8000"
+        placeholder="Custom target..."
         keyboardType="number-pad"
         error={error}
         hint={hint}
@@ -82,37 +94,39 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: theme.text.secondary,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
   required: {
     color: theme.status.error,
   },
-  presetRow: {
+  presetGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
   presetButton: {
-    flex: 1,
     paddingVertical: spacing.md,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: theme.border.secondary,
+    paddingHorizontal: spacing.lg,
+    borderRadius: 12,
     backgroundColor: theme.background.elevated,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'transparent',
+    minWidth: 70,
   },
-  presetButtonActive: {
-    backgroundColor: theme.accent.primary,
-    borderColor: theme.accent.primary,
-  },
-  presetButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
+  presetValue: {
+    fontSize: 18,
+    fontWeight: '700',
     color: theme.text.secondary,
   },
-  presetButtonTextActive: {
-    color: theme.text.primary,
+  presetUnit: {
+    fontSize: 10,
     fontWeight: '600',
+    color: theme.text.muted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginTop: 2,
   },
   input: {
     marginBottom: 0,
