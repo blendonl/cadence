@@ -115,6 +115,12 @@ export class PrismaProjectRepository implements ProjectRepository {
     };
   }
 
+  async findByName(name: string): Promise<Project | null> {
+    return this.prisma.project.findFirst({
+      where: { name: { equals: name, mode: 'insensitive' } },
+    });
+  }
+
   async findBySlug(slug: string): Promise<Project | null> {
     return this.prisma.project.findUnique({ where: { slug } });
   }

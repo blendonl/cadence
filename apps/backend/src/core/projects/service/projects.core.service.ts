@@ -5,6 +5,7 @@ import { ProjectListData } from '../data/project.list.data';
 import { ProjectGetAllUseCase } from '../usecases/project.get-all.usecase';
 import { ProjectGetOneUseCase } from '../usecases/project.get-one.usecase';
 import { ProjectGetOneWithDetailsUseCase } from '../usecases/project.get-one-with-details.usecase';
+import { ProjectFindByNameUseCase } from '../usecases/project.find-by-name.usecase';
 
 @Injectable()
 export class ProjectsCoreService {
@@ -13,6 +14,7 @@ export class ProjectsCoreService {
     private readonly projectGetAllUseCase: ProjectGetAllUseCase,
     private readonly projectGetOneUseCase: ProjectGetOneUseCase,
     private readonly projectGetOneWithDetailsUseCase: ProjectGetOneWithDetailsUseCase,
+    private readonly projectFindByNameUseCase: ProjectFindByNameUseCase,
   ) {}
 
   async createProject(data: ProjectCreateData) {
@@ -29,5 +31,9 @@ export class ProjectsCoreService {
 
   async getProjectByIdWithDetails(id: string) {
     return this.projectGetOneWithDetailsUseCase.execute(id);
+  }
+
+  async findByName(name: string) {
+    return this.projectFindByNameUseCase.execute(name);
   }
 }
