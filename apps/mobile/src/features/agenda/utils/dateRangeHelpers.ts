@@ -64,8 +64,8 @@ export const getWeekdayLabels = (): string[] => {
 export const formatDayLabel = (dateKey: string): string => {
   const date = toLocalDate(dateKey);
   return date.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
+    weekday: 'short',
+    month: 'short',
     day: 'numeric',
     year: 'numeric',
   });
@@ -89,7 +89,7 @@ export const formatWeekLabel = (start: string, end: string): string => {
 
 export const formatMonthLabel = (anchorDate: string): string => {
   const date = toLocalDate(anchorDate);
-  return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 };
 
 export const getNavigationDates = (
