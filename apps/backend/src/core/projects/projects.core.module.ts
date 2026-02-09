@@ -8,6 +8,7 @@ import { ProjectFindByNameUseCase } from './usecases/project.find-by-name.usecas
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { PROJECT_REPOSITORY } from './repositories/project.repository';
 import { ProjectsCoreService } from './service/projects.core.service';
+import { ProjectAccessService } from './service/project-access.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { EntityEventEmitter } from '../events/services/entity-event-emitter.service';
 import { RepositoryEventWrapper } from '../events/services/repository-event-wrapper';
@@ -29,8 +30,9 @@ import { RepositoryEventWrapper } from '../events/services/repository-event-wrap
     ProjectGetOneWithDetailsUseCase,
     ProjectFindByNameUseCase,
     ProjectsCoreService,
+    ProjectAccessService,
   ],
 
-  exports: [ProjectsCoreService, PROJECT_REPOSITORY],
+  exports: [ProjectsCoreService, ProjectAccessService, PROJECT_REPOSITORY],
 })
 export class ProjectsCoreModule {}

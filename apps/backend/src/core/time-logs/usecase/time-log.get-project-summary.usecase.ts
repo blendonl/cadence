@@ -13,11 +13,13 @@ export class TimeLogGetProjectSummaryUseCase {
   ) {}
 
   async execute(
+    userId: string,
     projectId?: string,
     startDate?: Date,
     endDate?: Date,
   ): Promise<ProjectSummary[]> {
     return this.timeLogRepository.getProjectSummary(
+      userId,
       projectId,
       startDate,
       endDate,

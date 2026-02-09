@@ -219,6 +219,30 @@ export function RoutinesIcon({ focused, size = 24 }: TabIconProps) {
   );
 }
 
+export function ProfileIcon({ focused, size = 24 }: TabIconProps) {
+  const color = focused ? theme.accent.primary : theme.text.muted;
+  const fill = focused ? color + '20' : 'none';
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M12 12C14.2091 12 16 10.2091 16 8C16 5.79086 14.2091 4 12 4C9.79086 4 8 5.79086 8 8C8 10.2091 9.79086 12 12 12Z"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill={fill}
+      />
+      <Path
+        d="M20 21C20 18.8783 19.1571 16.8434 17.6569 15.3431C16.1566 13.8429 14.1217 13 12 13C9.87827 13 7.84344 13.8429 6.34315 15.3431C4.84285 16.8434 4 18.8783 4 21"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
 export function ChevronRightIcon({ focused, size = 24 }: TabIconProps) {
   const color = focused ? theme.accent.primary : theme.text.muted;
   return (

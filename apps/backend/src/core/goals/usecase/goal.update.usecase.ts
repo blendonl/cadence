@@ -13,9 +13,9 @@ export class GoalUpdateUseCase {
     private readonly goalRepository: GoalRepository,
   ) {}
 
-  async execute(id: number, data: GoalUpdateData): Promise<Goal> {
+  async execute(id: number, userId: string, data: GoalUpdateData): Promise<Goal> {
     const existingGoal = await this.goalRepository.findById(id);
-    if (!existingGoal) {
+    if (!existingGoal || existingGoal.userId !== userId) {
       throw new NotFoundException(`Goal with id ${id} not found`);
     }
     return this.goalRepository.update(id, data);

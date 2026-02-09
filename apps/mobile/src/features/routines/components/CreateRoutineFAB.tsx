@@ -2,7 +2,7 @@ import React from 'react';
 import { TouchableOpacity, StyleSheet } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import AppIcon from '@shared/components/icons/AppIcon';
-import theme, { CatppuccinColors } from '@shared/theme/colors';
+import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
 import uiConstants from '@shared/theme/uiConstants';
 
@@ -32,13 +32,13 @@ const styles = StyleSheet.create({
     right: spacing.lg,
     width: 56,
     height: 56,
-    borderRadius: 18,
-    backgroundColor: CatppuccinColors.peach,
+    borderRadius: 22,
+    backgroundColor: theme.accent.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: CatppuccinColors.peach,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.2,
     shadowRadius: 12,
     elevation: 8,
   },

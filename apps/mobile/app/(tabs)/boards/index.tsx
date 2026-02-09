@@ -17,7 +17,6 @@ import EmptyState from "@shared/components/EmptyState";
 import theme from "@shared/theme";
 import alertService from "@services/AlertService";
 import logger from "@utils/logger";
-import AppIcon from "@shared/components/icons/AppIcon";
 
 export default function BoardListScreen() {
   const router = useRouter();
@@ -200,16 +199,6 @@ export default function BoardListScreen() {
 
   return (
     <Screen hasTabBar>
-      <View style={styles.screenHeader}>
-        <View style={styles.headerLeft} />
-        <TouchableOpacity
-          style={styles.settingsButton}
-          onPress={() => router.push("/settings")}
-        >
-          <AppIcon name="settings" size={18} color={theme.text.secondary} />
-        </TouchableOpacity>
-      </View>
-
       {currentProject && (
         <View style={styles.projectBanner}>
           <View
@@ -264,26 +253,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.background.primary,
-  },
-  screenHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.sm,
-  },
-  headerLeft: {
-    width: 40,
-  },
-  settingsButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.glass.tint.neutral,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: theme.glass.border,
   },
   projectBanner: {
     flexDirection: "row",

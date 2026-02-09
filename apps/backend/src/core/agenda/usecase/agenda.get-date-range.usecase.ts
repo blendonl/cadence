@@ -14,9 +14,14 @@ export class AgendaGetDateRangeUseCase {
     private readonly prisma: PrismaService,
   ) {}
 
-  async execute(startDate: Date, endDate: Date): Promise<AgendaEnriched[]> {
+  async execute(
+    userId: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<AgendaEnriched[]> {
     const agendas = await this.prisma.agenda.findMany({
       where: {
+        userId,
         date: {
           gte: startDate,
           lte: endDate,
@@ -38,6 +43,9 @@ export class AgendaGetDateRangeUseCase {
               include: {
                 routine: true,
               },
+            },
+            logs: {
+              orderBy: { createdAt: 'asc' },
             },
           },
           orderBy: { position: 'asc' },

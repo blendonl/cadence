@@ -1,14 +1,44 @@
 import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import { ErrorBoundary } from '@shared/components';
 import { ProjectProvider } from '../src/core/ProjectContext';
+import { AuthProvider, useAuth } from '../src/core/auth/AuthContext';
 import { initializeContainer, setInitializationProgressCallback, resetContainer } from '../src/core/di/container';
 import { View, ActivityIndicator, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { theme } from '@shared/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type AppState = 'initializing' | 'ready' | 'error';
+
+function AuthGate({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    const onSignIn = segments[0] === 'sign-in';
+
+    if (!isAuthenticated && !onSignIn) {
+      router.replace('/sign-in');
+    } else if (isAuthenticated && onSignIn) {
+      router.replace('/(tabs)/agenda');
+    }
+  }, [isAuthenticated, isLoading, segments]);
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={theme.accent.primary} />
+        <Text style={styles.loadingText}>Authenticating...</Text>
+      </View>
+    );
+  }
+
+  return <>{children}</>;
+}
 
 function RootLayoutContent() {
   const [appState, setAppState] = useState<AppState>('initializing');
@@ -89,14 +119,22 @@ function RootLayoutContent() {
   }
 
   return (
-    <ProjectProvider>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-        }}
-      />
-      <StatusBar style="light" />
-    </ProjectProvider>
+    <AuthProvider>
+      <AuthGate>
+        <ProjectProvider>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+            }}
+          >
+            <Stack.Screen name="sign-in" options={{ headerShown: false }} />
+            <Stack.Screen name="boards/[boardId]" options={{ headerShown: false }} />
+            <Stack.Screen name="goals/[goalId]" options={{ headerShown: false }} />
+          </Stack>
+          <StatusBar style="light" />
+        </ProjectProvider>
+      </AuthGate>
+    </AuthProvider>
   );
 }
 

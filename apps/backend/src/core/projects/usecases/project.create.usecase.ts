@@ -26,6 +26,7 @@ export class ProjectCreateUseCase {
     const status = this.normalizeStatus(input.status);
 
     return this.projectRepository.create({
+      userId: input.userId,
       name,
       slug,
       description: input.description?.trim() || null,

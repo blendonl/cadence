@@ -19,27 +19,34 @@ export class TimeLogsCoreService {
   }
 
   async getProjectSummary(
+    userId: string,
     projectId?: string,
     startDate?: Date,
     endDate?: Date,
   ) {
     return this.timeLogGetProjectSummaryUseCase.execute(
+      userId,
       projectId,
       startDate,
       endDate,
     );
   }
 
-  async getDailySummary(date: Date) {
-    return this.timeLogGetDailyUseCase.execute(date);
+  async getDailySummary(userId: string, date: Date) {
+    return this.timeLogGetDailyUseCase.execute(userId, date);
   }
 
-  async getTaskWorkTime(taskId: string) {
-    return this.timeLogGetTaskTimeUseCase.execute(taskId);
+  async getTaskWorkTime(taskId: string, userId: string) {
+    return this.timeLogGetTaskTimeUseCase.execute(taskId, userId);
   }
 
-  async getOverallSummary(startDate?: Date, endDate?: Date) {
+  async getOverallSummary(
+    userId: string,
+    startDate?: Date,
+    endDate?: Date,
+  ) {
     return this.timeLogGetProjectSummaryUseCase.execute(
+      userId,
       undefined,
       startDate,
       endDate,

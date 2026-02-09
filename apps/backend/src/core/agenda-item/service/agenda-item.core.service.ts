@@ -35,64 +35,66 @@ export class AgendaItemCoreService {
     private readonly agendaGetEnrichedByDateUseCase: AgendaGetEnrichedByDateUseCase,
   ) {}
 
-  async createAgendaItem(agendaId: string, data: AgendaItemCreateData) {
-    return this.agendaItemCreateUseCase.execute(agendaId, data);
+  async createAgendaItem(agendaId: string, data: AgendaItemCreateData, userId?: string) {
+    return this.agendaItemCreateUseCase.execute(agendaId, data, userId);
   }
 
-  async getAgendaItems(agendaId: string) {
-    return this.agendaItemGetAllUseCase.execute(agendaId);
+  async getAgendaItems(agendaId: string, userId: string) {
+    return this.agendaItemGetAllUseCase.execute(agendaId, userId);
   }
 
-  async getAgendaItem(id: string) {
-    return this.agendaItemGetOneUseCase.execute(id);
+  async getAgendaItem(id: string, userId: string) {
+    return this.agendaItemGetOneUseCase.execute(id, userId);
   }
 
-  async getEnrichedAgendaItem(id: string) {
-    return this.agendaItemGetOneUseCase.executeEnriched(id);
+  async getEnrichedAgendaItem(id: string, userId: string) {
+    return this.agendaItemGetOneUseCase.executeEnriched(id, userId);
   }
 
-  async updateAgendaItem(id: string, data: AgendaItemUpdateData) {
-    return this.agendaItemUpdateUseCase.execute(id, data);
+  async updateAgendaItem(id: string, userId: string, data: AgendaItemUpdateData) {
+    return this.agendaItemUpdateUseCase.execute(id, userId, data);
   }
 
-  async deleteAgendaItem(id: string) {
-    return this.agendaItemDeleteUseCase.execute(id);
+  async deleteAgendaItem(id: string, userId: string) {
+    return this.agendaItemDeleteUseCase.execute(id, userId);
   }
 
-  async getOrphanedAgendaItems() {
-    return this.agendaItemGetOrphanedUseCase.execute();
+  async getOrphanedAgendaItems(userId: string) {
+    return this.agendaItemGetOrphanedUseCase.execute(userId);
   }
 
-  async getOverdueAgendaItems() {
-    return this.agendaItemGetOverdueUseCase.execute();
+  async getOverdueAgendaItems(userId: string) {
+    return this.agendaItemGetOverdueUseCase.execute(userId);
   }
 
-  async getUpcomingAgendaItems(days: number = 7) {
-    return this.agendaItemGetUpcomingUseCase.execute(days);
+  async getUpcomingAgendaItems(userId: string, days: number = 7) {
+    return this.agendaItemGetUpcomingUseCase.execute(userId, days);
   }
 
-  async getUnfinishedAgendaItems(beforeDate?: Date) {
-    return this.agendaItemGetUnfinishedUseCase.execute(beforeDate);
+  async getUnfinishedAgendaItems(userId: string, beforeDate?: Date) {
+    return this.agendaItemGetUnfinishedUseCase.execute(userId, beforeDate);
   }
 
-  async completeAgendaItem(id: string, completedAt?: Date, notes?: string) {
-    return this.agendaItemCompleteUseCase.execute(id, completedAt, notes);
+  async completeAgendaItem(id: string, userId: string, completedAt?: Date, notes?: string) {
+    return this.agendaItemCompleteUseCase.execute(id, userId, completedAt, notes);
   }
 
   async rescheduleAgendaItem(
     id: string,
+    userId: string,
     newDate: Date,
     startAt?: Date | null,
     duration?: number | null,
   ) {
-    return this.agendaItemRescheduleUseCase.execute(id, newDate, startAt, duration);
+    return this.agendaItemRescheduleUseCase.execute(id, userId, newDate, startAt, duration);
   }
 
-  async markAsUnfinished(id: string) {
-    return this.agendaItemMarkUnfinishedUseCase.execute(id);
+  async markAsUnfinished(id: string, userId: string) {
+    return this.agendaItemMarkUnfinishedUseCase.execute(id, userId);
   }
 
   async findAgendaItems(params: {
+    userId?: string;
     startDate?: Date;
     endDate?: Date;
     query?: string;
@@ -103,7 +105,7 @@ export class AgendaItemCoreService {
     return this.agendaItemFindAllUseCase.execute(params);
   }
 
-  async getEnrichedAgendaByDate(date: Date) {
-    return this.agendaGetEnrichedByDateUseCase.execute(date);
+  async getEnrichedAgendaByDate(date: Date, userId?: string) {
+    return this.agendaGetEnrichedByDateUseCase.execute(date, userId);
   }
 }

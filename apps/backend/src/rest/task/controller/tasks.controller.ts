@@ -23,6 +23,8 @@ import { TaskUpdateRequest } from '../dto/task.update.request';
 import { TaskListQueryRequest } from '../dto/task.list.query.request';
 import { TasksCoreService } from 'src/core/tasks/service/tasks.core.service';
 import { TaskLogsCoreService } from 'src/core/task-logs/service/task-logs.core.service';
+import { ProjectAccessService } from 'src/core/projects/service/project-access.service';
+import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import { TaskMapper } from '../task.mapper';
 import { TaskLogMapper } from '../task-log.mapper';
 import { TaskFindOneResponse } from '../dto/task.find.one.response';
@@ -34,11 +36,13 @@ export class TasksController {
   constructor(
     private readonly tasksService: TasksCoreService,
     private readonly taskLogsService: TaskLogsCoreService,
+    private readonly projectAccessService: ProjectAccessService,
   ) {}
 
   @Post('quick')
   @ApiOperation({ summary: 'Quick create a task in the General project' })
   async quickCreate(
+    @Session() session: UserSession,
     @Body() body: TaskQuickCreateRequest,
   ): Promise<TaskDto> {
     const task = await this.tasksService.quickCreateTask({
@@ -55,8 +59,10 @@ export class TasksController {
   @Post()
   @ApiOperation({ summary: 'Create a new task' })
   async create(
+    @Session() session: UserSession,
     @Body() body: TaskCreateRequest,
   ): Promise<TaskCreateResponse> {
+    await this.projectAccessService.assertColumnAccess(session.user.id, body.columnId);
     const task = await this.tasksService.createTask({
       title: body.title,
       columnId: body.columnId,
@@ -77,8 +83,15 @@ export class TasksController {
   @Get()
   @ApiOperation({ summary: 'List tasks with pagination' })
   async list(
+    @Session() session: UserSession,
     @Query() query: TaskListQueryRequest,
   ): Promise<PaginatedResponse<TaskDto>> {
+    if (query.boardId) {
+      await this.projectAccessService.assertBoardAccess(session.user.id, query.boardId);
+    }
+    if (query.columnId) {
+      await this.projectAccessService.assertColumnAccess(session.user.id, query.columnId);
+    }
     const result = await this.tasksService.getTasks({
       boardId: query.boardId,
       columnId: query.columnId,
@@ -97,7 +110,11 @@ export class TasksController {
 
   @Get(':taskId')
   @ApiOperation({ summary: 'Get task by ID' })
-  async getOne(@Param('taskId') taskId: string): Promise<TaskFindOneResponse> {
+  async getOne(
+    @Session() session: UserSession,
+    @Param('taskId') taskId: string,
+  ): Promise<TaskFindOneResponse> {
+    await this.projectAccessService.assertTaskAccess(session.user.id, taskId);
     const task = await this.tasksService.getTask(taskId);
 
     return TaskFindOneResponse.fromDomain(task);
@@ -106,9 +123,11 @@ export class TasksController {
   @Patch(':taskId')
   @ApiOperation({ summary: 'Update task' })
   async update(
+    @Session() session: UserSession,
     @Param('taskId') taskId: string,
     @Body() body: TaskUpdateRequest,
   ): Promise<TaskDto> {
+    await this.projectAccessService.assertTaskAccess(session.user.id, taskId);
     const task = await this.tasksService.updateTask(taskId, {
       title: body.title,
       columnId: body.columnId,
@@ -128,7 +147,11 @@ export class TasksController {
 
   @Delete(':taskId')
   @ApiOperation({ summary: 'Delete task' })
-  async delete(@Param('taskId') taskId: string): Promise<{ deleted: boolean }> {
+  async delete(
+    @Session() session: UserSession,
+    @Param('taskId') taskId: string,
+  ): Promise<{ deleted: boolean }> {
+    await this.projectAccessService.assertTaskAccess(session.user.id, taskId);
     const deleted = await this.tasksService.deleteTask(taskId);
     if (!deleted) {
       throw new NotFoundException('Task not found');
@@ -140,9 +163,11 @@ export class TasksController {
   @Post(':taskId/move')
   @ApiOperation({ summary: 'Move task to another column' })
   async moveTask(
+    @Session() session: UserSession,
     @Param('taskId') taskId: string,
     @Body() body: { targetColumnId: string },
   ): Promise<TaskDto> {
+    await this.projectAccessService.assertTaskAccess(session.user.id, taskId);
     const task = await this.tasksService.moveTask(taskId, body.targetColumnId);
     return TaskMapper.toResponse(task);
   }
@@ -150,8 +175,10 @@ export class TasksController {
   @Get(':taskId/work-duration')
   @ApiOperation({ summary: 'Get task work duration' })
   async getWorkDuration(
+    @Session() session: UserSession,
     @Param('taskId') taskId: string,
   ): Promise<WorkDurationDto | null> {
+    await this.projectAccessService.assertTaskAccess(session.user.id, taskId);
     const duration = await this.taskLogsService.getWorkDuration(taskId);
     if (!duration) {
       return null;
@@ -161,7 +188,11 @@ export class TasksController {
 
   @Get(':taskId/logs')
   @ApiOperation({ summary: 'Get task logs' })
-  async getTaskLogs(@Param('taskId') taskId: string): Promise<TaskLogDto[]> {
+  async getTaskLogs(
+    @Session() session: UserSession,
+    @Param('taskId') taskId: string,
+  ): Promise<TaskLogDto[]> {
+    await this.projectAccessService.assertTaskAccess(session.user.id, taskId);
     const logs = await this.taskLogsService.getTaskHistory(taskId);
     return logs.map(TaskLogMapper.toResponse);
   }

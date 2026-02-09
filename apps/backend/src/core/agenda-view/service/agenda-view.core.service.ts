@@ -41,11 +41,11 @@ const MAX_MONTH_ITEMS = 3;
 export class AgendaViewCoreService {
   constructor(private readonly agendaItemService: AgendaItemCoreService) {}
 
-  async getDayView(anchorDate: string, timeZone: string): Promise<AgendaDayView> {
+  async getDayView(userId: string, anchorDate: string, timeZone: string): Promise<AgendaDayView> {
     const todayDateKey = getTodayDateKey(timeZone);
     const navigation = this.buildDayNavigation(anchorDate, todayDateKey);
     const agendaDate = getUtcStartOfDay(anchorDate);
-    const agenda = await this.agendaItemService.getEnrichedAgendaByDate(agendaDate);
+    const agenda = await this.agendaItemService.getEnrichedAgendaByDate(agendaDate, userId);
     const items = agenda?.items ?? [];
 
     const classified = this.classifyItems(items);
@@ -100,11 +100,11 @@ export class AgendaViewCoreService {
     };
   }
 
-  async getWeekView(anchorDate: string, timeZone: string): Promise<AgendaWeekView> {
+  async getWeekView(userId: string, anchorDate: string, timeZone: string): Promise<AgendaWeekView> {
     const todayDateKey = getTodayDateKey(timeZone);
     const range = getWeekRange(anchorDate, timeZone);
     const navigation = this.buildWeekNavigation(range.start, todayDateKey);
-    const itemsByDate = await this.getAgendaItemsByDateRange(range.start, range.end);
+    const itemsByDate = await this.getAgendaItemsByDateRange(range.start, range.end, userId);
     const weekDays = getWeekDays(anchorDate, timeZone);
 
     const days: AgendaWeekDay[] = weekDays.map((dateKey) => {
@@ -130,7 +130,7 @@ export class AgendaViewCoreService {
     });
 
     const anchorAgendaDate = getUtcStartOfDay(anchorDate);
-    const anchorAgenda = await this.agendaItemService.getEnrichedAgendaByDate(anchorAgendaDate);
+    const anchorAgenda = await this.agendaItemService.getEnrichedAgendaByDate(anchorAgendaDate, userId);
     const anchorItems = anchorAgenda?.items ?? [];
     const unfinishedItems = anchorItems.filter((item) => item.status === 'UNFINISHED');
 
@@ -148,14 +148,14 @@ export class AgendaViewCoreService {
     };
   }
 
-  async getMonthView(anchorDate: string, timeZone: string): Promise<AgendaMonthView> {
+  async getMonthView(userId: string, anchorDate: string, timeZone: string): Promise<AgendaMonthView> {
     const todayDateKey = getTodayDateKey(timeZone);
     const monthRange = getMonthRange(anchorDate);
     const gridDays = getMonthGridDays(anchorDate, timeZone);
     const gridStart = gridDays[0];
     const gridEnd = gridDays[gridDays.length - 1];
     const navigation = this.buildMonthNavigation(monthRange.start, todayDateKey);
-    const itemsByDate = await this.getAgendaItemsByDateRange(gridStart, gridEnd);
+    const itemsByDate = await this.getAgendaItemsByDateRange(gridStart, gridEnd, userId);
 
     const days: AgendaMonthDay[] = gridDays.map((dateKey) => {
       const items = itemsByDate.get(dateKey) ?? [];
@@ -179,7 +179,7 @@ export class AgendaViewCoreService {
     });
 
     const anchorAgendaDate = getUtcStartOfDay(anchorDate);
-    const anchorAgenda = await this.agendaItemService.getEnrichedAgendaByDate(anchorAgendaDate);
+    const anchorAgenda = await this.agendaItemService.getEnrichedAgendaByDate(anchorAgendaDate, userId);
     const anchorItems = anchorAgenda?.items ?? [];
     const unfinishedItems = anchorItems.filter((item) => item.status === 'UNFINISHED');
 
@@ -226,11 +226,13 @@ export class AgendaViewCoreService {
 
   private async getAgendaItemsByDateRange(
     startDateKey: string,
-    endDateKey: string
+    endDateKey: string,
+    userId: string
   ): Promise<Map<string, AgendaItemEnriched[]>> {
     const startDate = getUtcStartOfDay(startDateKey);
     const endDate = getUtcEndOfDay(endDateKey);
     const result = await this.agendaItemService.findAgendaItems({
+      userId,
       startDate,
       endDate,
       mode: 'all',

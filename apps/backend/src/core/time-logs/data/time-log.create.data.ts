@@ -1,4 +1,5 @@
 export class TimeLogCreateData {
+  userId: string;
   projectId?: string;
   taskId?: string;
   date: Date;

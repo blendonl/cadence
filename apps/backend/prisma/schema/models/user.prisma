@@ -1,0 +1,25 @@
+model User {
+  id            String  @id @default(uuid())
+  email         String  @unique
+  name          String
+  image         String? @map("avatar_url")
+  emailVerified Boolean @default(false) @map("email_verified")
+  googleId      String? @unique @map("google_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  projects        Project[]
+  agendas         Agenda[]
+  routines        Routine[]
+  goals           Goal[]
+  notes           Note[]
+  timeLogs        TimeLog[]
+  routineTaskLogs RoutineTaskLog[]
+  projectMembers  ProjectMember[]
+  teamMembers     TeamMember[]
+  sessions        Session[]
+  accounts        Account[]
+
+  @@map("user")
+}

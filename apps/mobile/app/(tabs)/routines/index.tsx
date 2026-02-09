@@ -10,6 +10,7 @@ import {
 } from '@features/routines/constants/routineConstants';
 import { formatTargetDisplay } from '@features/routines/utils/routineValidation';
 import { Screen } from '@shared/components/Screen';
+import GlassCard from '@shared/components/GlassCard';
 import AppIcon from '@shared/components/icons/AppIcon';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
@@ -82,67 +83,68 @@ export default function RoutinesHubScreen() {
           <AnimatedTouchable
             key={card.type}
             entering={FadeInDown.delay(index * 100).duration(500).springify()}
-            style={styles.cardWrapper}
             onPress={() => router.push(card.route as never)}
             activeOpacity={0.85}
           >
-            <View style={[styles.cardGradient, { backgroundColor: gradient.bgColor }]}>
-              <View style={[styles.glowBorder, { shadowColor: gradient.accent }]} />
+            <GlassCard style={styles.glassCard}>
+              <View style={styles.cardRow}>
+                <View style={[styles.colorBar, { backgroundColor: gradient.accent }]} />
 
-              <View style={styles.cardContent}>
-                <View style={styles.cardTop}>
-                  <View style={[styles.iconContainer, { backgroundColor: gradient.iconBg }]}>
-                    <AppIcon name={config.icon} size={28} color={gradient.accent} />
+                <View style={styles.cardContent}>
+                  <View style={styles.cardTop}>
+                    <View style={styles.iconContainer}>
+                      <AppIcon name={config.icon} size={22} color={gradient.accent} />
+                    </View>
+
+                    <View style={styles.titleBlock}>
+                      <Text style={styles.cardTitle}>{config.label}</Text>
+                      <Text style={styles.cardTagline}>{card.tagline}</Text>
+                    </View>
                   </View>
 
-                  {status !== 'empty' && (
-                    <View style={styles.statusRow}>
-                      <View
-                        style={[
-                          styles.statusDot,
-                          {
-                            backgroundColor:
-                              status === 'active'
-                                ? theme.status.success
-                                : theme.text.muted,
-                          },
-                        ]}
-                      />
-                      <Text
-                        style={[
-                          styles.statusText,
-                          {
-                            color:
-                              status === 'active'
-                                ? theme.status.success
-                                : theme.text.muted,
-                          },
-                        ]}
-                      >
-                        {status === 'active' ? 'Active' : 'Paused'}
-                      </Text>
+                  <View style={styles.cardBottom}>
+                    {status !== 'empty' && (
+                      <View style={styles.statusBadge}>
+                        <View
+                          style={[
+                            styles.statusDot,
+                            {
+                              backgroundColor:
+                                status === 'active'
+                                  ? theme.status.success
+                                  : theme.text.muted,
+                            },
+                          ]}
+                        />
+                        <Text
+                          style={[
+                            styles.statusText,
+                            {
+                              color:
+                                status === 'active'
+                                  ? theme.status.success
+                                  : theme.text.muted,
+                            },
+                          ]}
+                        >
+                          {status === 'active' ? 'Active' : 'Paused'}
+                        </Text>
+                      </View>
+                    )}
+
+                    {metric ? (
+                      <Text style={styles.cardMetric}>{metric}</Text>
+                    ) : (
+                      <Text style={styles.cardEmpty}>Tap to set up</Text>
+                    )}
+
+                    <View style={styles.arrowWrap}>
+                      <AppIcon name="arrow-right" size={16} color={theme.text.muted} />
                     </View>
-                  )}
-                </View>
-
-                <View style={styles.cardBottom}>
-                  <Text style={styles.cardTitle}>{config.label}</Text>
-                  <Text style={[styles.cardTagline, { color: gradient.accent }]}>
-                    {card.tagline}
-                  </Text>
-
-                  {metric ? (
-                    <Text style={styles.cardMetric}>{metric}</Text>
-                  ) : (
-                    <Text style={styles.cardEmpty}>Tap to set up</Text>
-                  )}
-                </View>
-
-                <View style={styles.arrowContainer}>
-                  <AppIcon name="arrow-right" size={16} color={gradient.accent} />
+                  </View>
                 </View>
               </View>
-            </View>
+            </GlassCard>
           </AnimatedTouchable>
         );
       })}
@@ -161,92 +163,91 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  cardWrapper: {
-    borderRadius: 20,
-    overflow: 'hidden',
+  glassCard: {
+    marginBottom: 0,
   },
-  cardGradient: {
-    borderRadius: 20,
-    padding: 1,
+  cardRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
   },
-  glowBorder: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 20,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    elevation: 8,
+  colorBar: {
+    width: 4,
+    borderRadius: 2,
+    alignSelf: 'stretch',
   },
   cardContent: {
-    padding: spacing.xl,
-    paddingVertical: 28,
+    flex: 1,
+    gap: spacing.md,
   },
   cardTop: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.lg,
+    gap: spacing.md,
   },
   iconContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: theme.glass.tint.neutral,
+    borderWidth: 1,
+    borderColor: theme.glass.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  statusDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 0.3,
-  },
-  cardBottom: {
-    gap: 4,
+  titleBlock: {
+    flex: 1,
+    gap: 2,
   },
   cardTitle: {
-    fontSize: 26,
+    fontSize: 18,
     fontWeight: '700',
     color: theme.text.primary,
-    letterSpacing: -0.5,
+    letterSpacing: -0.3,
   },
   cardTagline: {
     fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-    marginBottom: 6,
-  },
-  cardMetric: {
-    fontSize: 15,
     fontWeight: '500',
     color: theme.text.secondary,
+  },
+  cardBottom: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: theme.glass.tint.neutral,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  cardMetric: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: theme.text.secondary,
+    flex: 1,
   },
   cardEmpty: {
     fontSize: 14,
     color: theme.text.muted,
     fontStyle: 'italic',
+    flex: 1,
   },
-  arrowContainer: {
-    position: 'absolute',
-    right: spacing.xl,
-    bottom: 28,
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+  arrowWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },

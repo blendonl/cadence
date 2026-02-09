@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Agenda } from '@prisma/client';
 import {
   AGENDA_REPOSITORY,
@@ -12,7 +12,11 @@ export class AgendaGetOneUseCase {
     private readonly agendaRepository: AgendaRepository,
   ) {}
 
-  async execute(id: string): Promise<Agenda | null> {
-    return this.agendaRepository.findById(id);
+  async execute(id: string, userId: string): Promise<Agenda> {
+    const agenda = await this.agendaRepository.findById(id);
+    if (!agenda || agenda.userId !== userId) {
+      throw new NotFoundException('Agenda not found');
+    }
+    return agenda;
   }
 }

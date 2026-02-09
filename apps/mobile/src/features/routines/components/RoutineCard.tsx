@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { RoutineDetailDto } from 'shared-types';
 import { formatTargetDisplay } from '../utils/routineValidation';
 import { ROUTINE_TYPE_BADGE_CONFIG, ROUTINE_TYPE_GRADIENTS } from '../constants/routineConstants';
+import GlassCard from '@shared/components/GlassCard';
 import AppIcon from '@shared/components/icons/AppIcon';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
@@ -20,86 +21,94 @@ export function RoutineCard({ routine, onPress }: RoutineCardProps) {
 
   return (
     <TouchableOpacity
-      style={styles.card}
       onPress={() => onPress(routine)}
       activeOpacity={0.8}
+      style={styles.touchable}
     >
-      <View style={[styles.accentBar, { backgroundColor: gradient.accent }]} />
+      <GlassCard style={styles.glassCard}>
+        <View style={styles.cardRow}>
+          <View style={[styles.accentBar, { backgroundColor: gradient.accent }]} />
 
-      <View style={styles.content}>
-        <View style={styles.top}>
-          <View style={[styles.iconWrap, { backgroundColor: gradient.iconBg }]}>
-            <AppIcon name={badgeConfig.icon} size={20} color={gradient.accent} />
-          </View>
-          <View style={styles.textBlock}>
-            <Text style={styles.name} numberOfLines={1}>{routine.name}</Text>
-            <Text style={[styles.target, { color: gradient.accent }]}>{targetDisplay}</Text>
+          <View style={styles.content}>
+            <View style={styles.top}>
+              <View style={styles.iconWrap}>
+                <AppIcon name={badgeConfig.icon} size={20} color={gradient.accent} />
+              </View>
+              <View style={styles.textBlock}>
+                <Text style={styles.name} numberOfLines={1}>{routine.name}</Text>
+                <Text style={styles.target}>{targetDisplay}</Text>
+              </View>
+            </View>
+
+            <View style={styles.bottom}>
+              <View
+                style={[
+                  styles.statusChip,
+                  {
+                    backgroundColor: routine.isActive
+                      ? 'rgba(60, 203, 140, 0.1)'
+                      : 'rgba(108, 120, 144, 0.1)',
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.statusDot,
+                    {
+                      backgroundColor: routine.isActive
+                        ? theme.status.success
+                        : theme.text.muted,
+                    },
+                  ]}
+                />
+                <Text
+                  style={[
+                    styles.statusText,
+                    {
+                      color: routine.isActive
+                        ? theme.status.success
+                        : theme.text.muted,
+                    },
+                  ]}
+                >
+                  {routine.isActive ? 'Active' : 'Paused'}
+                </Text>
+              </View>
+
+              {taskCount > 0 && (
+                <Text style={styles.taskCount}>
+                  {taskCount} {taskCount === 1 ? 'task' : 'tasks'}
+                </Text>
+              )}
+
+              <AppIcon name="arrow-right" size={14} color={theme.text.muted} />
+            </View>
           </View>
         </View>
-
-        <View style={styles.bottom}>
-          <View
-            style={[
-              styles.statusChip,
-              {
-                backgroundColor: routine.isActive
-                  ? 'rgba(60, 203, 140, 0.1)'
-                  : 'rgba(108, 120, 144, 0.1)',
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.statusDot,
-                {
-                  backgroundColor: routine.isActive
-                    ? theme.status.success
-                    : theme.text.muted,
-                },
-              ]}
-            />
-            <Text
-              style={[
-                styles.statusText,
-                {
-                  color: routine.isActive
-                    ? theme.status.success
-                    : theme.text.muted,
-                },
-              ]}
-            >
-              {routine.isActive ? 'Active' : 'Paused'}
-            </Text>
-          </View>
-
-          {taskCount > 0 && (
-            <Text style={styles.taskCount}>
-              {taskCount} {taskCount === 1 ? 'task' : 'tasks'}
-            </Text>
-          )}
-
-          <AppIcon name="arrow-right" size={14} color={theme.text.muted} />
-        </View>
-      </View>
+      </GlassCard>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    flexDirection: 'row',
+  touchable: {
     marginHorizontal: spacing.lg,
     marginVertical: 6,
-    backgroundColor: theme.background.elevated,
-    borderRadius: 14,
-    overflow: 'hidden',
+  },
+  glassCard: {
+    marginBottom: 0,
+  },
+  cardRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
   },
   accentBar: {
-    width: 3,
+    width: 4,
+    borderRadius: 2,
+    alignSelf: 'stretch',
   },
   content: {
     flex: 1,
-    padding: spacing.lg,
     gap: spacing.md,
   },
   top: {
@@ -108,9 +117,12 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   iconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 11,
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: theme.glass.tint.neutral,
+    borderWidth: 1,
+    borderColor: theme.glass.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -119,13 +131,14 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   name: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '700',
     color: theme.text.primary,
   },
   target: {
     fontSize: 13,
     fontWeight: '500',
+    color: theme.text.secondary,
   },
   bottom: {
     flexDirection: 'row',

@@ -14,6 +14,7 @@ export * from './enums/task-type.enum';
 export * from './enums/agenda-item-status.enum';
 
 // DTOs by domain
+export * from './dtos/users';
 export * from './dtos/projects';
 export * from './dtos/boards';
 export * from './dtos/tasks';

@@ -9,10 +9,14 @@ import { AgendaItemCoreModule } from './agenda-item/agenda-item.core.module';
 import { RoutinesCoreModule } from './routines/routines.core.module';
 import { AlarmsCoreModule } from './alarms/alarms.core.module';
 import { NotesCoreModule } from './notes/notes.core.module';
+import { UsersCoreModule } from './users/users.core.module';
+import { AuthCoreModule } from './auth/auth.core.module';
 
 @Module({
   imports: [
     EventsCoreModule,
+    UsersCoreModule,
+    AuthCoreModule,
     ProjectsCoreModule,
     BoardsCoreModule,
     ColumnsCoreModule,

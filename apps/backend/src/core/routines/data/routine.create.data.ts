@@ -1,6 +1,7 @@
 import { RoutineType } from '@prisma/client';
 
 export interface RoutineCreateData {
+  userId: string;
   name: string;
   type: RoutineType;
   target: string;

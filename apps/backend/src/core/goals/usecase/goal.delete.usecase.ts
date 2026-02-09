@@ -11,9 +11,9 @@ export class GoalDeleteUseCase {
     private readonly goalRepository: GoalRepository,
   ) {}
 
-  async execute(id: number): Promise<void> {
+  async execute(id: number, userId: string): Promise<void> {
     const existingGoal = await this.goalRepository.findById(id);
-    if (!existingGoal) {
+    if (!existingGoal || existingGoal.userId !== userId) {
       throw new NotFoundException(`Goal with id ${id} not found`);
     }
     await this.goalRepository.delete(id);

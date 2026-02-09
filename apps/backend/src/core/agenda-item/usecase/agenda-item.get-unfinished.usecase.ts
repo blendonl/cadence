@@ -7,17 +7,14 @@ import { AgendaItemStatus } from '@prisma/client';
 export class AgendaItemGetUnfinishedUseCase {
   constructor(private readonly prisma: PrismaService) {}
 
-  async execute(beforeDate?: Date): Promise<AgendaItemEnriched[]> {
+  async execute(userId: string, beforeDate?: Date): Promise<AgendaItemEnriched[]> {
     const where: any = {
       status: AgendaItemStatus.UNFINISHED,
+      agenda: { userId } as any,
     };
 
     if (beforeDate) {
-      where.agenda = {
-        date: {
-          lt: beforeDate,
-        },
-      };
+      where.agenda.date = { lt: beforeDate };
     }
 
     const items = await this.prisma.agendaItem.findMany({

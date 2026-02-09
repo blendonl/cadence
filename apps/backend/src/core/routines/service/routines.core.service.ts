@@ -26,20 +26,20 @@ export class RoutinesCoreService {
     return this.routineCreateUseCase.execute(data);
   }
 
-  async getRoutines(): Promise<RoutineWithTasks[]> {
-    return this.routineGetAllUseCase.execute();
+  async getRoutines(userId: string): Promise<RoutineWithTasks[]> {
+    return this.routineGetAllUseCase.execute(userId);
   }
 
-  async getRoutine(id: string): Promise<RoutineWithTasks | null> {
-    return this.routineGetOneUseCase.execute(id);
+  async getRoutine(id: string, userId: string): Promise<RoutineWithTasks> {
+    return this.routineGetOneUseCase.execute(id, userId);
   }
 
-  async updateRoutine(id: string, data: RoutineUpdateData): Promise<Routine> {
-    return this.routineUpdateUseCase.execute(id, data);
+  async updateRoutine(id: string, userId: string, data: RoutineUpdateData): Promise<Routine> {
+    return this.routineUpdateUseCase.execute(id, userId, data);
   }
 
-  async deleteRoutine(id: string): Promise<void> {
-    await this.routineDeleteUseCase.execute(id);
+  async deleteRoutine(id: string, userId: string): Promise<void> {
+    await this.routineDeleteUseCase.execute(id, userId);
   }
 
   async createRoutineTaskLog(data: RoutineTaskLogCreateData) {

@@ -11,6 +11,6 @@ export class RoutineAgendaScheduler {
   @Cron('5 0 * * *')
   async handleAgendaPlanning(): Promise<void> {
     this.logger.debug('Running routine agenda planning');
-    await this.routineAgendaPlanner.planForDate();
+    await this.routineAgendaPlanner.planForAllUsers();
   }
 }

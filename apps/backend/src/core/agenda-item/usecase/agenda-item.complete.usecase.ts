@@ -19,11 +19,20 @@ export class AgendaItemCompleteUseCase {
 
   async execute(
     id: string,
+    userId: string,
     completedAt?: Date,
     notes?: string,
   ): Promise<AgendaItemWithLogs> {
     const item = await this.agendaItemRepository.findById(id);
     if (!item) {
+      throw new Error('AgendaItem not found');
+    }
+
+    const agenda = await this.prisma.agenda.findUnique({
+      where: { id: item.agendaId },
+      select: { userId: true },
+    });
+    if (!agenda || agenda.userId !== userId) {
       throw new Error('AgendaItem not found');
     }
 

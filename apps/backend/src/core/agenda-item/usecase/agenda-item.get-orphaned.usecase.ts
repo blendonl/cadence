@@ -6,9 +6,11 @@ import { AgendaItemEnriched } from './agenda.get-enriched-by-date.usecase';
 export class AgendaItemGetOrphanedUseCase {
   constructor(private readonly prisma: PrismaService) {}
 
-  async execute(): Promise<AgendaItemEnriched[]> {
+  async execute(userId: string): Promise<AgendaItemEnriched[]> {
     const items = await this.prisma.agendaItem.findMany({
-      where: {},
+      where: {
+        agenda: { userId },
+      },
       include: {
         task: {
           include: {

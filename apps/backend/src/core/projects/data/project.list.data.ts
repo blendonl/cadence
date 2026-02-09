@@ -1,6 +1,7 @@
 import { Project, ProjectStatus } from '../domain/project';
 
 export interface ProjectListData {
+  userId: string;
   page?: number;
   limit?: number;
   status?: ProjectStatus;
@@ -8,6 +9,7 @@ export interface ProjectListData {
 }
 
 export interface ProjectListOptions {
+  userId: string;
   page: number;
   limit: number;
   status?: ProjectStatus;

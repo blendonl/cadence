@@ -6,6 +6,7 @@ import { AgendaViewMapper } from './agenda-view.mapper';
 import { AgendaViewGetDayUseCase } from '../../core/agenda-view/usecase/agenda-view.get-day.usecase';
 import { AgendaViewGetWeekUseCase } from '../../core/agenda-view/usecase/agenda-view.get-week.usecase';
 import { AgendaViewGetMonthUseCase } from '../../core/agenda-view/usecase/agenda-view.get-month.usecase';
+import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
 
 @ApiTags('agenda-views')
 @Controller('agenda-views')
@@ -19,21 +20,22 @@ export class AgendaViewController {
   @Get()
   @ApiOperation({ summary: 'Get agenda view by mode' })
   async getView(
+    @Session() session: UserSession,
     @Query() query: AgendaViewQueryRequest
   ): Promise<AgendaViewResponseDto> {
     this.ensureValidTimeZone(query.timezone);
 
     if (query.mode === 'day') {
-      const view = await this.getDayUseCase.execute(query.anchorDate, query.timezone);
+      const view = await this.getDayUseCase.execute(session.user.id, query.anchorDate, query.timezone);
       return AgendaViewMapper.toResponse(view);
     }
 
     if (query.mode === 'week') {
-      const view = await this.getWeekUseCase.execute(query.anchorDate, query.timezone);
+      const view = await this.getWeekUseCase.execute(session.user.id, query.anchorDate, query.timezone);
       return AgendaViewMapper.toResponse(view);
     }
 
-    const view = await this.getMonthUseCase.execute(query.anchorDate, query.timezone);
+    const view = await this.getMonthUseCase.execute(session.user.id, query.anchorDate, query.timezone);
     return AgendaViewMapper.toResponse(view);
   }
 

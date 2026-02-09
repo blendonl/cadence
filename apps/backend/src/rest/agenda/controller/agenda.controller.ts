@@ -4,7 +4,6 @@ import {
   Controller,
   Delete,
   Get,
-  NotFoundException,
   Param,
   Post,
   Put,
@@ -13,6 +12,7 @@ import {
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AgendaDto, AgendaFindAllResponse } from 'shared-types';
 import { AgendaCoreService } from 'src/core/agenda/service/agenda.core.service';
+import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import { AgendaCreateRequest } from '../dto/agenda.create.request';
 import { AgendaFindAllQueryRequest } from '../dto/agenda.find-all.query';
 import { AgendaUpdateRequest } from '../dto/agenda.update.request';
@@ -25,8 +25,12 @@ export class AgendaController {
 
   @Post()
   @ApiOperation({ summary: 'Create agenda' })
-  async create(@Body() body: AgendaCreateRequest): Promise<AgendaDto> {
+  async create(
+    @Session() session: UserSession,
+    @Body() body: AgendaCreateRequest,
+  ): Promise<AgendaDto> {
     const agenda = await this.agendaService.createAgenda({
+      userId: session.user.id,
       date: new Date(body.date),
     });
     return AgendaMapper.toAgendaResponse(agenda);
@@ -35,6 +39,7 @@ export class AgendaController {
   @Get()
   @ApiOperation({ summary: 'List agendas by date range (paginated)' })
   async list(
+    @Session() session: UserSession,
     @Query() query: AgendaFindAllQueryRequest,
   ): Promise<AgendaFindAllResponse> {
     if (!query.startDate || !query.endDate) {
@@ -43,6 +48,7 @@ export class AgendaController {
 
     const range = toDateRange(query.startDate, query.endDate);
     const result = await this.agendaService.getAgendaSummaryForDateRange(
+      session.user.id,
       range.start,
       range.end,
       query.page ?? 1,
@@ -62,21 +68,22 @@ export class AgendaController {
 
   @Get(':agendaId')
   @ApiOperation({ summary: 'Get agenda by ID' })
-  async getOne(@Param('agendaId') agendaId: string): Promise<AgendaDto> {
-    const agenda = await this.agendaService.getAgenda(agendaId);
-    if (!agenda) {
-      throw new NotFoundException('Agenda not found');
-    }
+  async getOne(
+    @Session() session: UserSession,
+    @Param('agendaId') agendaId: string,
+  ): Promise<AgendaDto> {
+    const agenda = await this.agendaService.getAgenda(agendaId, session.user.id);
     return AgendaMapper.toAgendaResponse(agenda);
   }
 
   @Put(':agendaId')
   @ApiOperation({ summary: 'Update agenda' })
   async update(
+    @Session() session: UserSession,
     @Param('agendaId') agendaId: string,
     @Body() body: AgendaUpdateRequest,
   ): Promise<AgendaDto> {
-    const agenda = await this.agendaService.updateAgenda(agendaId, {
+    const agenda = await this.agendaService.updateAgenda(agendaId, session.user.id, {
       date: body.date ? new Date(body.date) : undefined,
     });
     return AgendaMapper.toAgendaResponse(agenda);
@@ -84,9 +91,10 @@ export class AgendaController {
 
   @Delete(':agendaId')
   async delete(
+    @Session() session: UserSession,
     @Param('agendaId') agendaId: string,
   ): Promise<{ deleted: boolean }> {
-    await this.agendaService.deleteAgenda(agendaId);
+    await this.agendaService.deleteAgenda(agendaId, session.user.id);
     return { deleted: true };
   }
 }

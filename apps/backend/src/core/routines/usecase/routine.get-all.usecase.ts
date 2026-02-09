@@ -18,8 +18,8 @@ export class RoutineGetAllUseCase {
     private readonly routineTaskRepository: RoutineTaskRepository,
   ) {}
 
-  async execute(): Promise<RoutineWithTasks[]> {
-    const routines = await this.routineRepository.findAll();
+  async execute(userId: string): Promise<RoutineWithTasks[]> {
+    const routines = await this.routineRepository.findAll(userId);
     const results: RoutineWithTasks[] = [];
 
     for (const routine of routines) {

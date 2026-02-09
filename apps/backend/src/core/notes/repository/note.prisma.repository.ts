@@ -11,7 +11,7 @@ export class NotePrismaRepository implements NoteRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(query: NoteListQueryData): Promise<NoteFindOneData[]> {
-    const where: any = {};
+    const where: any = { userId: query.userId };
 
     if (query.projectId) {
       where.projects = {
@@ -42,6 +42,7 @@ export class NotePrismaRepository implements NoteRepository {
   async create(data: NoteCreateData): Promise<NoteFindOneData> {
     return this.prisma.note.create({
       data: {
+        userId: data.userId,
         title: data.title,
         content: data.content ?? '',
         type: data.type,

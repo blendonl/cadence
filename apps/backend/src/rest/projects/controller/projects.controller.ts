@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Get,
-  NotFoundException,
   Param,
   Post,
   Query,
@@ -14,6 +13,8 @@ import {
   ProjectListResponseDto,
 } from 'shared-types';
 import { ProjectsCoreService } from 'src/core/projects/service/projects.core.service';
+import { ProjectAccessService } from 'src/core/projects/service/project-access.service';
+import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import { ProjectCreateRequest } from '../dto/project.create.request';
 import { ProjectListQuery } from '../dto/project.list.query';
 import { ProjectMapper } from '../project.mapper';
@@ -21,7 +22,10 @@ import { ProjectMapper } from '../project.mapper';
 @ApiTags('projects')
 @Controller('projects')
 export class ProjectsController {
-  constructor(private readonly projectsService: ProjectsCoreService) {}
+  constructor(
+    private readonly projectsService: ProjectsCoreService,
+    private readonly projectAccessService: ProjectAccessService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new project' })
@@ -30,8 +34,12 @@ export class ProjectsController {
     description: 'Project created successfully',
     type: 'ProjectDto',
   })
-  async create(@Body() body: ProjectCreateRequest): Promise<ProjectDto> {
+  async create(
+    @Session() session: UserSession,
+    @Body() body: ProjectCreateRequest,
+  ): Promise<ProjectDto> {
     const project = await this.projectsService.createProject({
+      userId: session.user.id,
       name: body.name,
       description: body.description || null,
       color: body.color,
@@ -49,9 +57,11 @@ export class ProjectsController {
     type: 'ProjectListResponseDto',
   })
   async list(
+    @Session() session: UserSession,
     @Query() query: ProjectListQuery,
   ): Promise<ProjectListResponseDto> {
     const result = await this.projectsService.getProjects({
+      userId: session.user.id,
       page: query.page,
       limit: query.limit,
       status: query.status,
@@ -74,11 +84,15 @@ export class ProjectsController {
     type: 'ProjectDetailDto',
   })
   @ApiResponse({ status: 404, description: 'Project not found' })
-  async getOne(@Param('id') id: string): Promise<ProjectDetailDto> {
+  async getOne(
+    @Session() session: UserSession,
+    @Param('id') id: string,
+  ): Promise<ProjectDetailDto> {
+    await this.projectAccessService.assertAccess(session.user.id, id);
     const project = await this.projectsService.getProjectByIdWithDetails(id);
 
     if (!project) {
-      throw new NotFoundException('Project not found');
+      throw new Error('Project not found');
     }
 
     return ProjectMapper.mapToDetailResponse(project);

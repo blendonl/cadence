@@ -1,0 +1,51 @@
+enum MemberRole {
+  ADMIN
+  EDITOR
+  VIEWER
+
+  @@map("member_role")
+}
+
+model ProjectMember {
+  id        String     @id @default(uuid())
+  projectId String     @map("project_id")
+  userId    String     @map("user_id")
+  role      MemberRole @default(EDITOR)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@map("project_member")
+}
+
+model Team {
+  id   String @id @default(uuid())
+  name String
+  slug String @unique
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  members  TeamMember[]
+  projects Project[]
+
+  @@map("team")
+}
+
+model TeamMember {
+  id     String     @id @default(uuid())
+  teamId String     @map("team_id")
+  userId String     @map("user_id")
+  role   MemberRole @default(EDITOR)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@map("team_member")
+}

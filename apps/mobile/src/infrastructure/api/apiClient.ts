@@ -1,27 +1,50 @@
 import { API_BASE_URL } from "@core/config/ApiConfig";
+import { authClient } from "@core/auth/authClient";
 import logger from "@utils/logger";
+
+type AuthFailureCallback = () => void;
 
 export class ApiClient {
   private baseUrl: string;
+  private onAuthFailure: AuthFailureCallback | null = null;
 
   constructor() {
     this.baseUrl = API_BASE_URL;
+  }
+
+  setOnAuthFailure(callback: AuthFailureCallback | null) {
+    this.onAuthFailure = callback;
   }
 
   buildUrl(path: string): string {
     return `${this.baseUrl}${path}`;
   }
 
+  private injectAuthHeaders(options?: RequestInit): RequestInit {
+    const merged = { ...options };
+    const headers = new Headers(merged.headers);
+
+    const cookies = authClient.getCookie();
+    if (cookies) {
+      headers.set('Cookie', cookies);
+    }
+
+    merged.headers = headers;
+    merged.credentials = 'omit';
+    return merged;
+  }
+
   async request<T>(path: string, options?: RequestInit): Promise<T> {
     const url = this.buildUrl(path);
-    const method = options?.method || 'GET';
+    const authedOptions = this.injectAuthHeaders(options);
+    const method = authedOptions?.method || 'GET';
 
     let requestBody: unknown = undefined;
-    if (options?.body) {
+    if (authedOptions?.body) {
       try {
-        requestBody = JSON.parse(options.body as string);
+        requestBody = JSON.parse(authedOptions.body as string);
       } catch {
-        requestBody = options.body;
+        requestBody = authedOptions.body;
       }
     }
 
@@ -33,10 +56,15 @@ export class ApiClient {
 
     let response: Response;
     try {
-      response = await fetch(url, options);
+      response = await fetch(url, authedOptions);
     } catch (error) {
       logger.error('[ApiClient] Network error', error, { url, method });
       throw error;
+    }
+
+    if (response.status === 401) {
+      this.onAuthFailure?.();
+      throw new Error('Unauthorized');
     }
 
     if (!response.ok) {
@@ -60,14 +88,15 @@ export class ApiClient {
 
   async requestOrNull<T>(path: string, options?: RequestInit): Promise<T | null> {
     const url = this.buildUrl(path);
-    logger.info('[ApiClient] Starting request', { url, method: options?.method || 'GET' });
+    const authedOptions = this.injectAuthHeaders(options);
+    logger.info('[ApiClient] Starting request', { url, method: authedOptions?.method || 'GET' });
 
     const startTime = Date.now();
     let response: Response;
     try {
-      response = await fetch(url, options);
+      response = await fetch(url, authedOptions);
     } catch (error) {
-      logger.error('[ApiClient] Network error', error, { url, method: options?.method || 'GET' });
+      logger.error('[ApiClient] Network error', error, { url, method: authedOptions?.method || 'GET' });
       throw error;
     }
     const duration = Date.now() - startTime;
@@ -77,6 +106,11 @@ export class ApiClient {
       status: response.status,
       duration: `${duration}ms`
     });
+
+    if (response.status === 401) {
+      this.onAuthFailure?.();
+      throw new Error('Unauthorized');
+    }
 
     if (response.status === 404) {
       return null;

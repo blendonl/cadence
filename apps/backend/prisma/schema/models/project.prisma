@@ -7,7 +7,9 @@ enum ProjectStatus {
 }
 
 model Project {
-  id String @id @default(uuid())
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  teamId String? @map("team_id")
 
   name        String
   slug        String        @unique
@@ -20,9 +22,12 @@ model Project {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  user    User    @relation(fields: [userId], references: [id])
+  team    Team?   @relation(fields: [teamId], references: [id])
   boards   Board[]
   timeLogs TimeLog[]
   notes    Note[]
+  members  ProjectMember[]
 
   @@map("project")
 }

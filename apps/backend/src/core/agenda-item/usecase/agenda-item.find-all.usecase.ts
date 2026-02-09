@@ -7,6 +7,7 @@ import {
 } from '../repository/agenda-item.repository';
 
 export interface AgendaItemFindAllParams {
+  userId?: string;
   startDate?: Date;
   endDate?: Date;
   query?: string;
@@ -38,6 +39,9 @@ export class AgendaItemFindAllUseCase {
 
   async execute(params: AgendaItemFindAllParams): Promise<AgendaItemFindAllResult> {
     const agendaWhere: Prisma.AgendaWhereInput = {};
+    if (params.userId) {
+      agendaWhere.userId = params.userId;
+    }
     if (params.startDate && params.endDate) {
       agendaWhere.date = {
         gte: params.startDate,

@@ -26,15 +26,15 @@ export class NotesCoreService {
     return this.noteGetAllUseCase.execute(query);
   }
 
-  async getNoteById(id: string) {
-    return this.noteGetOneUseCase.execute(id);
+  async getNoteById(id: string, userId: string) {
+    return this.noteGetOneUseCase.execute(id, userId);
   }
 
-  async updateNote(id: string, data: NoteUpdateData) {
-    return this.noteUpdateUseCase.execute(id, data);
+  async updateNote(id: string, userId: string, data: NoteUpdateData) {
+    return this.noteUpdateUseCase.execute(id, userId, data);
   }
 
-  async deleteNote(id: string) {
-    return this.noteDeleteUseCase.execute(id);
+  async deleteNote(id: string, userId: string) {
+    return this.noteDeleteUseCase.execute(id, userId);
   }
 }

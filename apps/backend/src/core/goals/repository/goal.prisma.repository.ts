@@ -12,14 +12,16 @@ export class GoalPrismaRepository implements GoalRepository {
   create(data: GoalCreateData): Promise<Goal> {
     return this.prisma.goal.create({
       data: {
+        userId: data.userId,
         title: data.title,
         description: data.description,
       },
     });
   }
 
-  findAll(): Promise<Goal[]> {
+  findAll(userId: string): Promise<Goal[]> {
     return this.prisma.goal.findMany({
+      where: { userId },
       orderBy: { createdAt: 'desc' },
     });
   }

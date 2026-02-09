@@ -25,22 +25,26 @@ export class AgendaItemCreateUseCase {
     return Number.isNaN(date.getTime()) ? null : date;
   }
 
-  async execute(agendaId: string, data: AgendaItemCreateData): Promise<AgendaItemWithLogs> {
+  async execute(agendaId: string, data: AgendaItemCreateData, userId?: string): Promise<AgendaItemWithLogs> {
     let agenda = await this.agendaRepository.findById(agendaId);
 
-    if (!agenda) {
+    if (!agenda && userId) {
       const agendaDateFromId = this.parseAgendaDate(agendaId);
       if (agendaDateFromId) {
-        agenda = await this.agendaRepository.findByDate(agendaDateFromId);
+        agenda = await this.agendaRepository.findByDate(userId, agendaDateFromId);
         if (!agenda) {
-          agenda = await this.agendaRepository.create({ date: agendaDateFromId });
+          agenda = await this.agendaRepository.create({ userId, date: agendaDateFromId });
         }
       }
     }
 
-    if (!agenda) {
+    if (!agenda && userId) {
       const agendaDate = data.startAt || new Date();
-      agenda = await this.agendaRepository.create({ date: agendaDate });
+      agenda = await this.agendaRepository.create({ userId, date: agendaDate });
+    }
+
+    if (!agenda) {
+      throw new Error('Agenda not found and cannot create without userId');
     }
 
     agendaId = agenda.id;

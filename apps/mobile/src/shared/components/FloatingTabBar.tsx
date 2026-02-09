@@ -11,11 +11,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import theme from "@shared/theme/colors";
 import {
   ProjectsIcon,
-  BoardsIcon,
   AgendaIcon,
-  GoalsIcon,
   RoutinesIcon,
   NotesIcon,
+  ProfileIcon,
 } from "@shared/components/icons/TabIcons";
 
 import uiConstants from "@shared/theme/uiConstants";
@@ -40,18 +39,11 @@ function TabItem({ route, focused, onPress, onLongPress }: TabItemProps) {
   }));
 
   const iconMap: Record<string, React.FC<{ focused: boolean }>> = {
-    ProjectsTab: ProjectsIcon,
-    BoardsTab: BoardsIcon,
-    AgendaTab: AgendaIcon,
-    GoalsTab: GoalsIcon,
-    RoutinesTab: RoutinesIcon,
-    NotesTab: NotesIcon,
-    projects: ProjectsIcon,
-    boards: BoardsIcon,
     agenda: AgendaIcon,
-    goals: GoalsIcon,
+    projects: ProjectsIcon,
     routines: RoutinesIcon,
     notes: NotesIcon,
+    profile: ProfileIcon,
   };
 
   const Icon = iconMap[route];

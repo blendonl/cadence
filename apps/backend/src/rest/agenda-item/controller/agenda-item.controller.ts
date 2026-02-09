@@ -13,6 +13,7 @@ import {
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AgendaItemDto, AgendaItemEnrichedDto, AgendaItemsFindAllResponse } from 'shared-types';
 import { AgendaItemCoreService } from 'src/core/agenda-item/service/agenda-item.core.service';
+import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import { AgendaItemCreateRequest } from '../dto/agenda-item.create.request';
 import { AgendaItemUpdateRequest } from '../dto/agenda-item.update.request';
 import { AgendaItemMapper } from '../agenda-item.mapper';
@@ -30,6 +31,7 @@ export class AgendaItemController {
   @ApiOperation({ summary: 'Create agenda item' })
   @ApiResponse({ status: 201, type: 'AgendaItemDto' })
   async create(
+    @Session() session: UserSession,
     @Param('agendaId') agendaId: string,
     @Body() body: AgendaItemCreateRequest,
   ): Promise<AgendaItemDto> {
@@ -44,24 +46,28 @@ export class AgendaItemController {
       position: body.position,
       notes: body.notes,
       notificationId: body.notificationId,
-    });
+    }, session.user.id);
     return AgendaItemMapper.toResponse(item);
   }
 
   @Get()
   @ApiOperation({ summary: 'List agenda items' })
-  async list(@Param('agendaId') agendaId: string): Promise<AgendaItemDto[]> {
-    const items = await this.agendaItemService.getAgendaItems(agendaId);
+  async list(
+    @Session() session: UserSession,
+    @Param('agendaId') agendaId: string,
+  ): Promise<AgendaItemDto[]> {
+    const items = await this.agendaItemService.getAgendaItems(agendaId, session.user.id);
     return items.map(AgendaItemMapper.toResponse);
   }
 
   @Get(':itemId')
   @ApiOperation({ summary: 'Get agenda item by ID' })
   async getOne(
+    @Session() session: UserSession,
     @Param('agendaId') agendaId: string,
     @Param('itemId') itemId: string,
   ): Promise<AgendaItemEnrichedDto> {
-    const item = await this.agendaItemService.getEnrichedAgendaItem(itemId);
+    const item = await this.agendaItemService.getEnrichedAgendaItem(itemId, session.user.id);
     if (!item) {
       throw new NotFoundException('Agenda item not found');
     }
@@ -71,6 +77,7 @@ export class AgendaItemController {
   @Put(':itemId')
   @ApiOperation({ summary: 'Update agenda item' })
   async update(
+    @Session() session: UserSession,
     @Param('agendaId') agendaId: string,
     @Param('itemId') itemId: string,
     @Body() body: AgendaItemUpdateRequest,
@@ -78,7 +85,7 @@ export class AgendaItemController {
     if (body.taskId !== undefined || body.routineTaskId !== undefined) {
       this.ensureRoutineOrTask(body.taskId, body.routineTaskId);
     }
-    const item = await this.agendaItemService.updateAgendaItem(itemId, {
+    const item = await this.agendaItemService.updateAgendaItem(itemId, session.user.id, {
       taskId: body.taskId,
       routineTaskId: body.routineTaskId ?? undefined,
       type: body.type,
@@ -94,22 +101,25 @@ export class AgendaItemController {
 
   @Delete(':itemId')
   async delete(
+    @Session() session: UserSession,
     @Param('agendaId') agendaId: string,
     @Param('itemId') itemId: string,
   ): Promise<{ deleted: boolean }> {
-    await this.agendaItemService.deleteAgendaItem(itemId);
+    await this.agendaItemService.deleteAgendaItem(itemId, session.user.id);
     return { deleted: true };
   }
 
   @Put(':itemId/complete')
   @ApiOperation({ summary: 'Mark agenda item as complete' })
   async complete(
+    @Session() session: UserSession,
     @Param('agendaId') agendaId: string,
     @Param('itemId') itemId: string,
     @Body() body: AgendaItemCompleteRequest,
   ): Promise<AgendaItemDto> {
     const item = await this.agendaItemService.completeAgendaItem(
       itemId,
+      session.user.id,
       body.completedAt ? new Date(body.completedAt) : undefined,
       body.notes,
     );
@@ -119,12 +129,14 @@ export class AgendaItemController {
   @Put(':itemId/reschedule')
   @ApiOperation({ summary: 'Reschedule agenda item' })
   async reschedule(
+    @Session() session: UserSession,
     @Param('agendaId') agendaId: string,
     @Param('itemId') itemId: string,
     @Body() body: AgendaItemRescheduleRequest,
   ): Promise<AgendaItemDto> {
     const item = await this.agendaItemService.rescheduleAgendaItem(
       itemId,
+      session.user.id,
       new Date(body.newDate),
       body.startAt ? new Date(body.startAt) : body.startAt === null ? null : undefined,
       body.duration,
@@ -135,10 +147,11 @@ export class AgendaItemController {
   @Post(':itemId/unfinished')
   @ApiOperation({ summary: 'Mark agenda item as unfinished' })
   async markUnfinished(
+    @Session() session: UserSession,
     @Param('agendaId') agendaId: string,
     @Param('itemId') itemId: string,
   ): Promise<AgendaItemDto> {
-    const item = await this.agendaItemService.markAsUnfinished(itemId);
+    const item = await this.agendaItemService.markAsUnfinished(itemId, session.user.id);
     return AgendaItemMapper.toResponse(item);
   }
 
@@ -166,6 +179,7 @@ export class AgendaItemGlobalController {
   @Get()
   @ApiOperation({ summary: 'List agenda items' })
   async getAll(
+    @Session() session: UserSession,
     @Query() query: AgendaItemListQueryRequest,
   ): Promise<AgendaItemsFindAllResponse> {
     if ((query.startDate && !query.endDate) || (!query.startDate && query.endDate)) {
@@ -177,6 +191,7 @@ export class AgendaItemGlobalController {
       : undefined;
 
     const result = await this.agendaItemService.findAgendaItems({
+      userId: session.user.id,
       startDate: range?.start,
       endDate: range?.end,
       query: query.q,
@@ -214,32 +229,41 @@ export class AgendaItemGlobalController {
 
   @Get('orphaned')
   @ApiOperation({ summary: 'Get orphaned agenda items' })
-  async getOrphaned(): Promise<AgendaItemEnrichedDto[]> {
-    const items = await this.agendaItemService.getOrphanedAgendaItems();
+  async getOrphaned(
+    @Session() session: UserSession,
+  ): Promise<AgendaItemEnrichedDto[]> {
+    const items = await this.agendaItemService.getOrphanedAgendaItems(session.user.id);
     return items.map(AgendaMapper.toAgendaItemEnrichedResponse);
   }
 
   @Get('overdue')
   @ApiOperation({ summary: 'Get overdue agenda items' })
-  async getOverdue(): Promise<AgendaItemEnrichedDto[]> {
-    const items = await this.agendaItemService.getOverdueAgendaItems();
+  async getOverdue(
+    @Session() session: UserSession,
+  ): Promise<AgendaItemEnrichedDto[]> {
+    const items = await this.agendaItemService.getOverdueAgendaItems(session.user.id);
     return items.map(AgendaMapper.toAgendaItemEnrichedResponse);
   }
 
   @Get('upcoming')
   @ApiOperation({ summary: 'Get upcoming agenda items' })
-  async getUpcoming(@Query('days') days?: string): Promise<AgendaItemEnrichedDto[]> {
+  async getUpcoming(
+    @Session() session: UserSession,
+    @Query('days') days?: string,
+  ): Promise<AgendaItemEnrichedDto[]> {
     const numDays = days ? parseInt(days, 10) : 7;
-    const items = await this.agendaItemService.getUpcomingAgendaItems(numDays);
+    const items = await this.agendaItemService.getUpcomingAgendaItems(session.user.id, numDays);
     return items.map(AgendaMapper.toAgendaItemEnrichedResponse);
   }
 
   @Get('unfinished')
   @ApiOperation({ summary: 'Get unfinished agenda items' })
   async getUnfinished(
+    @Session() session: UserSession,
     @Query('beforeDate') beforeDate?: string,
   ): Promise<AgendaItemEnrichedDto[]> {
     const items = await this.agendaItemService.getUnfinishedAgendaItems(
+      session.user.id,
       beforeDate ? new Date(beforeDate) : undefined,
     );
     return items.map(AgendaMapper.toAgendaItemEnrichedResponse);

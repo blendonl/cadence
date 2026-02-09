@@ -18,6 +18,7 @@ export class AgendaGetRangeSummaryUseCase {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(
+    userId: string,
     startDate: Date,
     endDate: Date,
     page: number,
@@ -28,6 +29,7 @@ export class AgendaGetRangeSummaryUseCase {
     const [total, agendas] = await this.prisma.$transaction([
       this.prisma.agenda.count({
         where: {
+          userId,
           date: {
             gte: startDate,
             lte: endDate,
@@ -36,6 +38,7 @@ export class AgendaGetRangeSummaryUseCase {
       }),
       this.prisma.agenda.findMany({
         where: {
+          userId,
           date: {
             gte: startDate,
             lte: endDate,

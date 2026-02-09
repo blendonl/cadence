@@ -14,27 +14,15 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="projects"
-        options={{
-          title: "Projects",
-        }}
-      />
-      <Tabs.Screen
-        name="boards"
-        options={{
-          title: "Boards",
-        }}
-      />
-      <Tabs.Screen
         name="agenda"
         options={{
           title: "Agenda",
         }}
       />
       <Tabs.Screen
-        name="goals"
+        name="projects"
         options={{
-          title: "Goals",
+          title: "Projects",
         }}
       />
       <Tabs.Screen
@@ -47,6 +35,30 @@ export default function TabLayout() {
         name="notes"
         options={{
           title: "",
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profile",
+        }}
+      />
+      <Tabs.Screen
+        name="boards"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="goals"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="time"
+        options={{
+          href: null,
         }}
       />
     </Tabs>

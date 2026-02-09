@@ -47,12 +47,12 @@ export function RoutineDetailContent({
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-      <View style={[styles.hero, { backgroundColor: gradient.bgColor }]}>
-        <View style={[styles.heroIcon, { backgroundColor: gradient.iconBg }]}>
-          <AppIcon name={badgeConfig.icon} size={32} color={gradient.accent} />
+      <View style={styles.hero}>
+        <View style={styles.heroIcon}>
+          <AppIcon name={badgeConfig.icon} size={28} color={gradient.accent} />
         </View>
         <Text style={styles.heroName}>{routine.name}</Text>
-        <Text style={[styles.heroTarget, { color: gradient.accent }]}>{targetDisplay}</Text>
+        <Text style={styles.heroTarget}>{targetDisplay}</Text>
 
         <View style={styles.heroActions}>
           <TouchableOpacity
@@ -96,9 +96,7 @@ export function RoutineDetailContent({
         {routine.type === 'STEP' && routine.separateInto > 1 && (
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>Split Into</Text>
-            <Text style={[styles.statValue, { color: gradient.accent }]}>
-              {routine.separateInto} tasks
-            </Text>
+            <Text style={styles.statValue}>{routine.separateInto} tasks</Text>
           </View>
         )}
 
@@ -106,13 +104,13 @@ export function RoutineDetailContent({
           <>
             <View style={styles.statCard}>
               <Text style={styles.statLabel}>Repeat</Text>
-              <Text style={[styles.statValue, { color: gradient.accent }]}>
+              <Text style={styles.statValue}>
                 {formatRepeatInterval(routine.repeatIntervalMinutes)}
               </Text>
             </View>
             <View style={styles.statCard}>
               <Text style={styles.statLabel}>Active Days</Text>
-              <Text style={[styles.statValue, { color: gradient.accent }]}>
+              <Text style={styles.statValue}>
                 {formatActiveDays(routine.activeDays)}
               </Text>
             </View>
@@ -125,10 +123,7 @@ export function RoutineDetailContent({
       </View>
 
       <View style={styles.actions}>
-        <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: gradient.iconBg }]}
-          onPress={onEdit}
-        >
+        <TouchableOpacity style={styles.actionButton} onPress={onEdit}>
           <AppIcon name="edit" size={18} color={gradient.accent} />
           <Text style={[styles.actionButtonText, { color: gradient.accent }]}>Edit Routine</Text>
         </TouchableOpacity>
@@ -161,15 +156,18 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   heroIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: theme.glass.tint.neutral,
+    borderWidth: 1,
+    borderColor: theme.glass.border,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.xs,
   },
   heroName: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: '700',
     color: theme.text.primary,
     letterSpacing: -0.5,
@@ -178,6 +176,7 @@ const styles = StyleSheet.create({
   heroTarget: {
     fontSize: 16,
     fontWeight: '600',
+    color: theme.text.secondary,
   },
   heroActions: {
     flexDirection: 'row',
@@ -210,7 +209,9 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     minWidth: '45%',
-    backgroundColor: theme.background.elevated,
+    backgroundColor: theme.background.secondary,
+    borderWidth: 1,
+    borderColor: theme.border.primary,
     borderRadius: 14,
     padding: spacing.lg,
     gap: 6,
@@ -225,6 +226,7 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 16,
     fontWeight: '700',
+    color: theme.text.primary,
   },
   taskSection: {
     paddingHorizontal: spacing.lg,
@@ -244,6 +246,9 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingVertical: 14,
     borderRadius: 14,
+    backgroundColor: theme.glass.tint.neutral,
+    borderWidth: 1,
+    borderColor: theme.glass.border,
   },
   actionButtonText: {
     fontSize: 15,
@@ -251,6 +256,7 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     backgroundColor: 'rgba(242, 107, 107, 0.1)',
+    borderColor: 'transparent',
     flex: 0.6,
   },
 });

@@ -9,8 +9,9 @@ import { AgendaUpdateData } from '../data/agenda.update.data';
 export class AgendaPrismaRepository implements AgendaRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll(): Promise<Agenda[]> {
+  findAll(userId: string): Promise<Agenda[]> {
     return this.prisma.agenda.findMany({
+      where: { userId },
       orderBy: { date: 'desc' },
     });
   }
@@ -21,7 +22,7 @@ export class AgendaPrismaRepository implements AgendaRepository {
     });
   }
 
-  findByDate(date: Date): Promise<Agenda | null> {
+  findByDate(userId: string, date: Date): Promise<Agenda | null> {
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(date);
@@ -29,6 +30,7 @@ export class AgendaPrismaRepository implements AgendaRepository {
 
     return this.prisma.agenda.findFirst({
       where: {
+        userId,
         date: {
           gte: startOfDay,
           lte: endOfDay,
@@ -40,6 +42,7 @@ export class AgendaPrismaRepository implements AgendaRepository {
   create(data: AgendaCreateData): Promise<Agenda> {
     return this.prisma.agenda.create({
       data: {
+        userId: data.userId,
         date: data.date,
       },
     });

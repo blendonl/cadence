@@ -83,9 +83,13 @@ export class AgendaGetEnrichedByDateUseCase {
     private readonly prisma: PrismaService,
   ) {}
 
-  async execute(date: Date): Promise<AgendaEnriched | null> {
+  async execute(date: Date, userId?: string): Promise<AgendaEnriched | null> {
+    const where: any = { date };
+    if (userId) {
+      where.userId = userId;
+    }
     const agenda = await this.prisma.agenda.findFirst({
-      where: { date },
+      where,
     });
 
     if (!agenda) {

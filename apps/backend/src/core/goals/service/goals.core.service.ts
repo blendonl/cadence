@@ -21,19 +21,19 @@ export class GoalsCoreService {
     return this.goalCreateUseCase.execute(data);
   }
 
-  async getGoals() {
-    return this.goalGetAllUseCase.execute();
+  async getGoals(userId: string) {
+    return this.goalGetAllUseCase.execute(userId);
   }
 
-  async getGoal(id: number) {
-    return this.goalGetOneUseCase.execute(id);
+  async getGoal(id: number, userId: string) {
+    return this.goalGetOneUseCase.execute(id, userId);
   }
 
-  async updateGoal(id: number, data: GoalUpdateData) {
-    return this.goalUpdateUseCase.execute(id, data);
+  async updateGoal(id: number, userId: string, data: GoalUpdateData) {
+    return this.goalUpdateUseCase.execute(id, userId, data);
   }
 
-  async deleteGoal(id: number) {
-    return this.goalDeleteUseCase.execute(id);
+  async deleteGoal(id: number, userId: string) {
+    return this.goalDeleteUseCase.execute(id, userId);
   }
 }

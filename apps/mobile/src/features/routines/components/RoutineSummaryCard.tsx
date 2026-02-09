@@ -81,19 +81,17 @@ export function RoutineSummaryCard({ routine, onEdit, onToggleStatus }: RoutineS
 
       <View style={styles.statsGrid}>
         {routine.type === 'STEP' && routine.separateInto > 1 && (
-          <StatItem label="Split Into" value={`${routine.separateInto} tasks`} accent={gradient.accent} />
+          <StatItem label="Split Into" value={`${routine.separateInto} tasks`} />
         )}
         {!isFixedDaily && (
           <>
             <StatItem
               label="Repeat"
               value={formatRepeatInterval(routine.repeatIntervalMinutes)}
-              accent={gradient.accent}
             />
             <StatItem
               label="Active Days"
               value={formatActiveDays(routine.activeDays)}
-              accent={gradient.accent}
             />
           </>
         )}
@@ -102,11 +100,11 @@ export function RoutineSummaryCard({ routine, onEdit, onToggleStatus }: RoutineS
   );
 }
 
-function StatItem({ label, value, accent }: { label: string; value: string; accent: string }) {
+function StatItem({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.statItem}>
       <Text style={styles.statLabel}>{label}</Text>
-      <Text style={[styles.statValue, { color: accent }]}>{value}</Text>
+      <Text style={styles.statValue}>{value}</Text>
     </View>
   );
 }
@@ -115,8 +113,10 @@ const styles = StyleSheet.create({
   card: {
     marginHorizontal: spacing.lg,
     marginTop: spacing.lg,
-    backgroundColor: theme.background.elevated,
-    borderRadius: 16,
+    backgroundColor: theme.background.secondary,
+    borderWidth: 1,
+    borderColor: theme.border.primary,
+    borderRadius: 20,
     padding: spacing.xl,
     gap: spacing.lg,
   },
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
   statItem: {
     flex: 1,
     minWidth: '45%',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: theme.glass.tint.neutral,
     borderRadius: 12,
     padding: spacing.md,
     gap: 4,
@@ -187,5 +187,6 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 14,
     fontWeight: '600',
+    color: theme.text.primary,
   },
 });

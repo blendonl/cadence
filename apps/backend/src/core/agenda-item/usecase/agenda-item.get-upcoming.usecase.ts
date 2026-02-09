@@ -7,7 +7,7 @@ import { AgendaItemStatus } from '@prisma/client';
 export class AgendaItemGetUpcomingUseCase {
   constructor(private readonly prisma: PrismaService) {}
 
-  async execute(days: number = 7): Promise<AgendaItemEnriched[]> {
+  async execute(userId: string, days: number = 7): Promise<AgendaItemEnriched[]> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -18,6 +18,7 @@ export class AgendaItemGetUpcomingUseCase {
       where: {
         status: AgendaItemStatus.PENDING,
         agenda: {
+          userId,
           date: {
             gte: today,
             lte: endDate,

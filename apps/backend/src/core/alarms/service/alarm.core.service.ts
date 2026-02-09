@@ -20,15 +20,15 @@ export class AlarmCoreService {
     return this.alarmPlanCreateUseCase.execute(data);
   }
 
-  async getPlan(id: string): Promise<AlarmPlan | null> {
-    return this.alarmPlanGetOneUseCase.execute(id);
+  async getPlan(id: string, userId: string): Promise<AlarmPlan | null> {
+    return this.alarmPlanGetOneUseCase.execute(id, userId);
   }
 
-  async getPlansByRoutineTask(routineTaskId: string): Promise<AlarmPlan[]> {
-    return this.alarmPlanGetByRoutineTaskUseCase.execute(routineTaskId);
+  async getPlansByRoutineTask(routineTaskId: string, userId: string): Promise<AlarmPlan[]> {
+    return this.alarmPlanGetByRoutineTaskUseCase.execute(routineTaskId, userId);
   }
 
-  async updatePlan(id: string, data: AlarmPlanUpdateData): Promise<AlarmPlan> {
-    return this.alarmPlanUpdateUseCase.execute(id, data);
+  async updatePlan(id: string, userId: string, data: AlarmPlanUpdateData): Promise<AlarmPlan> {
+    return this.alarmPlanUpdateUseCase.execute(id, userId, data);
   }
 }

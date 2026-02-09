@@ -119,12 +119,12 @@ export function SingleRoutineScreen({
           />
         }
       >
-        <View style={[styles.hero, { backgroundColor: gradient.bgColor }]}>
-          <View style={[styles.heroIcon, { backgroundColor: gradient.iconBg }]}>
-            <AppIcon name={config.icon} size={32} color={gradient.accent} />
+        <View style={styles.hero}>
+          <View style={styles.heroIcon}>
+            <AppIcon name={config.icon} size={28} color={gradient.accent} />
           </View>
           <Text style={styles.heroTitle}>{config.label}</Text>
-          <Text style={[styles.heroSubtitle, { color: gradient.accent }]}>{subtitle}</Text>
+          <Text style={styles.heroSubtitle}>{subtitle}</Text>
         </View>
 
         {routine && (
@@ -183,15 +183,18 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   heroIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: theme.glass.tint.neutral,
+    borderWidth: 1,
+    borderColor: theme.glass.border,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.xs,
   },
   heroTitle: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: '700',
     color: theme.text.primary,
     letterSpacing: -0.5,
@@ -199,6 +202,7 @@ const styles = StyleSheet.create({
   heroSubtitle: {
     fontSize: 14,
     fontWeight: '500',
+    color: theme.text.secondary,
     textAlign: 'center',
   },
 });

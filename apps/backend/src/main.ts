@@ -5,15 +5,13 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bodyParser: false });
 
-  // Enable CORS for REST API and WebSocket
   app.enableCors({
     origin: true,
     credentials: true,
   });
 
-  // Swagger configuration
   const config = new DocumentBuilder()
     .setTitle('MProject Manager API')
     .setDescription('API for managing projects, tasks, agendas, and more')

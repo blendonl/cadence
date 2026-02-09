@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Routine } from '@prisma/client';
 import { RoutineUpdateData } from '../data/routine.update.data';
 import {
@@ -22,9 +22,14 @@ export class RoutineUpdateUseCase {
     private readonly routineAgendaPlanner: RoutineAgendaPlanner,
   ) {}
 
-  async execute(id: string, data: RoutineUpdateData): Promise<Routine> {
+  async execute(id: string, userId: string, data: RoutineUpdateData): Promise<Routine> {
     if (data.separateInto !== undefined && data.separateInto < 1) {
       throw new BadRequestException('separateInto must be at least 1');
+    }
+
+    const existing = await this.routineRepository.findById(id);
+    if (!existing || existing.userId !== userId) {
+      throw new NotFoundException('Routine not found');
     }
 
     const updated = await this.routineRepository.update(id, data);
@@ -33,7 +38,7 @@ export class RoutineUpdateUseCase {
       await this.routineTaskRepository.deleteByRoutineId(updated.id);
       const tasks = RoutineTaskBuilder.build(updated);
       await this.routineTaskRepository.createMany(tasks);
-      await this.routineAgendaPlanner.planForDate();
+      await this.routineAgendaPlanner.planForDate(updated.userId);
     }
 
     return updated;

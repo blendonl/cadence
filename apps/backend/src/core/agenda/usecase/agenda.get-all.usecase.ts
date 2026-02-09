@@ -12,7 +12,7 @@ export class AgendaGetAllUseCase {
     private readonly agendaRepository: AgendaRepository,
   ) {}
 
-  async execute(): Promise<Agenda[]> {
-    return this.agendaRepository.findAll();
+  async execute(userId: string): Promise<Agenda[]> {
+    return this.agendaRepository.findAll(userId);
   }
 }

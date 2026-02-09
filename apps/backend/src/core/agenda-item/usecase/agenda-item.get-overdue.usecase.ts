@@ -7,7 +7,7 @@ import { AgendaItemStatus } from '@prisma/client';
 export class AgendaItemGetOverdueUseCase {
   constructor(private readonly prisma: PrismaService) {}
 
-  async execute(): Promise<AgendaItemEnriched[]> {
+  async execute(userId: string): Promise<AgendaItemEnriched[]> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -17,6 +17,7 @@ export class AgendaItemGetOverdueUseCase {
           in: [AgendaItemStatus.PENDING],
         },
         agenda: {
+          userId,
           date: {
             lt: today,
           },

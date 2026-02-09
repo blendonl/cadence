@@ -5,7 +5,7 @@ import { AgendaViewCoreService } from '../service/agenda-view.core.service';
 export class AgendaViewGetWeekUseCase {
   constructor(private readonly agendaViewService: AgendaViewCoreService) {}
 
-  async execute(anchorDate: string, timeZone: string) {
-    return this.agendaViewService.getWeekView(anchorDate, timeZone);
+  async execute(userId: string, anchorDate: string, timeZone: string) {
+    return this.agendaViewService.getWeekView(userId, anchorDate, timeZone);
   }
 }

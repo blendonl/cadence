@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { NOTE_REPOSITORY, type NoteRepository } from '../repository/note.repository';
 
 @Injectable()
@@ -8,7 +8,11 @@ export class NoteGetOneUseCase {
     private readonly noteRepository: NoteRepository,
   ) {}
 
-  async execute(id: string) {
-    return this.noteRepository.findById(id);
+  async execute(id: string, userId: string) {
+    const note = await this.noteRepository.findById(id);
+    if (!note || note.userId !== userId) {
+      throw new NotFoundException('Note not found');
+    }
+    return note;
   }
 }

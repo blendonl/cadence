@@ -12,7 +12,7 @@ export class TimeLogGetDailyUseCase {
     private readonly timeLogRepository: TimeLogRepository,
   ) {}
 
-  async execute(date: Date): Promise<TimeLog[]> {
-    return this.timeLogRepository.findByDate(date);
+  async execute(userId: string, date: Date): Promise<TimeLog[]> {
+    return this.timeLogRepository.findByDate(userId, date);
   }
 }

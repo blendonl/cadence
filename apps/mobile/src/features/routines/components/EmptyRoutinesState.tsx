@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import AppIcon from '@shared/components/icons/AppIcon';
-import theme, { CatppuccinColors } from '@shared/theme/colors';
+import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
 
 interface EmptyRoutinesStateProps {
@@ -14,7 +14,7 @@ export function EmptyRoutinesState({ onCreatePress }: EmptyRoutinesStateProps) {
     <Animated.View entering={FadeIn.duration(400)} style={styles.container}>
       <View style={styles.iconRing}>
         <View style={styles.iconInner}>
-          <AppIcon name="list" size={36} color={CatppuccinColors.peach} />
+          <AppIcon name="list" size={36} color={theme.text.secondary} />
         </View>
       </View>
 
@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 28,
-    backgroundColor: 'rgba(242, 154, 100, 0.06)',
+    backgroundColor: theme.glass.tint.neutral,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.sm,
@@ -53,7 +53,9 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 20,
-    backgroundColor: 'rgba(242, 154, 100, 0.12)',
+    backgroundColor: theme.glass.tint.neutral,
+    borderWidth: 1,
+    borderColor: theme.glass.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -74,7 +76,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: CatppuccinColors.peach,
+    backgroundColor: theme.accent.primary,
     paddingHorizontal: spacing.xl,
     paddingVertical: 14,
     borderRadius: 14,

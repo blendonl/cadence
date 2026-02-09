@@ -14,13 +14,15 @@ export class PrismaProjectRepository implements ProjectRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(data: ProjectCreateData): Promise<Project> {
-    return this.prisma.project.create({ data: { ...data, slug: data.slug! } });
+    return this.prisma.project.create({
+      data: { ...data, slug: data.slug! },
+    });
   }
 
   async findAll(
     options: ProjectListOptions,
   ): Promise<ProjectListRepositoryResult> {
-    const where: Prisma.ProjectWhereInput = {};
+    const where: Prisma.ProjectWhereInput = { userId: options.userId };
     const search = options.search?.trim();
 
     if (options.status) {

@@ -6,7 +6,7 @@ export const GOAL_REPOSITORY = 'GOAL_REPOSITORY';
 
 export interface GoalRepository {
   create(data: GoalCreateData): Promise<Goal>;
-  findAll(): Promise<Goal[]>;
+  findAll(userId: string): Promise<Goal[]>;
   findById(id: number): Promise<Goal | null>;
   update(id: number, data: GoalUpdateData): Promise<Goal>;
   delete(id: number): Promise<void>;

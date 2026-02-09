@@ -14,6 +14,7 @@ export class TimeLogPrismaRepository implements TimeLogRepository {
   create(data: TimeLogCreateData): Promise<TimeLog> {
     return this.prisma.timeLog.create({
       data: {
+        userId: data.userId,
         projectId: data.projectId,
         taskId: data.taskId,
         date: data.date,
@@ -52,9 +53,14 @@ export class TimeLogPrismaRepository implements TimeLogRepository {
     });
   }
 
-  findByDateRange(startDate: Date, endDate: Date): Promise<TimeLog[]> {
+  findByDateRange(
+    userId: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<TimeLog[]> {
     return this.prisma.timeLog.findMany({
       where: {
+        userId,
         date: {
           gte: startDate,
           lte: endDate,
@@ -64,7 +70,7 @@ export class TimeLogPrismaRepository implements TimeLogRepository {
     });
   }
 
-  findByDate(date: Date): Promise<TimeLog[]> {
+  findByDate(userId: string, date: Date): Promise<TimeLog[]> {
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(date);
@@ -72,6 +78,7 @@ export class TimeLogPrismaRepository implements TimeLogRepository {
 
     return this.prisma.timeLog.findMany({
       where: {
+        userId,
         date: {
           gte: startOfDay,
           lte: endOfDay,
@@ -82,6 +89,7 @@ export class TimeLogPrismaRepository implements TimeLogRepository {
   }
 
   async getProjectSummary(
+    userId: string,
     projectId?: string,
     startDate?: Date,
     endDate?: Date,
@@ -92,6 +100,7 @@ export class TimeLogPrismaRepository implements TimeLogRepository {
         durationMinutes: true,
       },
       where: {
+        userId,
         ...(projectId ? { projectId } : {}),
         ...(startDate && endDate
           ? {

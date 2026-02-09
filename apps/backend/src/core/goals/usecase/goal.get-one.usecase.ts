@@ -12,9 +12,9 @@ export class GoalGetOneUseCase {
     private readonly goalRepository: GoalRepository,
   ) {}
 
-  async execute(id: number): Promise<Goal> {
+  async execute(id: number, userId: string): Promise<Goal> {
     const goal = await this.goalRepository.findById(id);
-    if (!goal) {
+    if (!goal || goal.userId !== userId) {
       throw new NotFoundException(`Goal with id ${id} not found`);
     }
     return goal;

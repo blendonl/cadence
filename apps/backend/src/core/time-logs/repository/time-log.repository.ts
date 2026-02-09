@@ -17,9 +17,14 @@ export interface TimeLogRepository {
     startDate?: Date,
     endDate?: Date,
   ): Promise<TimeLog[]>;
-  findByDateRange(startDate: Date, endDate: Date): Promise<TimeLog[]>;
-  findByDate(date: Date): Promise<TimeLog[]>;
+  findByDateRange(
+    userId: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<TimeLog[]>;
+  findByDate(userId: string, date: Date): Promise<TimeLog[]>;
   getProjectSummary(
+    userId: string,
     projectId?: string,
     startDate?: Date,
     endDate?: Date,

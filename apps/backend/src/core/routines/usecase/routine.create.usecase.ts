@@ -30,7 +30,7 @@ export class RoutineCreateUseCase {
     const routine = await this.routineRepository.create(data);
     const tasks = RoutineTaskBuilder.build(routine);
     const createdTasks = await this.routineTaskRepository.createMany(tasks);
-    await this.routineAgendaPlanner.planForDate();
+    await this.routineAgendaPlanner.planForDate(data.userId);
 
     return { routine, tasks: createdTasks };
   }

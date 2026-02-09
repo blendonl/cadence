@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { NOTE_REPOSITORY, type NoteRepository } from '../repository/note.repository';
 
 @Injectable()
@@ -8,14 +8,13 @@ export class NoteDeleteUseCase {
     private readonly noteRepository: NoteRepository,
   ) {}
 
-  async execute(id: string): Promise<boolean> {
+  async execute(id: string, userId: string): Promise<void> {
     const note = await this.noteRepository.findById(id);
 
-    if (!note) {
-      return false;
+    if (!note || note.userId !== userId) {
+      throw new NotFoundException('Note not found');
     }
 
     await this.noteRepository.delete(id);
-    return true;
   }
 }

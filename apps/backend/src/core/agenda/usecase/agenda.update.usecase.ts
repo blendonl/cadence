@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Agenda } from '@prisma/client';
 import { AgendaUpdateData } from '../data/agenda.update.data';
 import {
@@ -13,7 +13,11 @@ export class AgendaUpdateUseCase {
     private readonly agendaRepository: AgendaRepository,
   ) {}
 
-  async execute(id: string, data: AgendaUpdateData): Promise<Agenda> {
+  async execute(id: string, userId: string, data: AgendaUpdateData): Promise<Agenda> {
+    const agenda = await this.agendaRepository.findById(id);
+    if (!agenda || agenda.userId !== userId) {
+      throw new NotFoundException('Agenda not found');
+    }
     return this.agendaRepository.update(id, data);
   }
 }

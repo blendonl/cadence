@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { RoutineWithTasks } from '../domain/routine-with-tasks';
 import {
   ROUTINE_REPOSITORY,
@@ -18,10 +18,10 @@ export class RoutineGetOneUseCase {
     private readonly routineTaskRepository: RoutineTaskRepository,
   ) {}
 
-  async execute(id: string): Promise<RoutineWithTasks | null> {
+  async execute(id: string, userId: string): Promise<RoutineWithTasks> {
     const routine = await this.routineRepository.findById(id);
-    if (!routine) {
-      return null;
+    if (!routine || routine.userId !== userId) {
+      throw new NotFoundException('Routine not found');
     }
 
     const tasks = await this.routineTaskRepository.findByRoutineId(id);

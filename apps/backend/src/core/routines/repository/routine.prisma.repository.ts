@@ -9,8 +9,9 @@ import { RoutineRepository } from './routine.repository';
 export class RoutinePrismaRepository implements RoutineRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll(): Promise<Routine[]> {
+  findAll(userId: string): Promise<Routine[]> {
     return this.prisma.routine.findMany({
+      where: { userId },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -24,6 +25,7 @@ export class RoutinePrismaRepository implements RoutineRepository {
   create(data: RoutineCreateData): Promise<Routine> {
     return this.prisma.routine.create({
       data: {
+        userId: data.userId,
         name: data.name,
         type: data.type,
         target: data.target,

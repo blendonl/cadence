@@ -6,6 +6,7 @@ import {
 } from '../repository/agenda-item.repository';
 import { AgendaItemStatus, AgendaItemLogType } from '@prisma/client';
 import { AgendaItemLogCreateUseCase } from './agenda-item-log.create.usecase';
+import { PrismaService } from '../../../prisma/prisma.service';
 
 @Injectable()
 export class AgendaItemMarkUnfinishedUseCase {
@@ -13,11 +14,20 @@ export class AgendaItemMarkUnfinishedUseCase {
     @Inject(AGENDA_ITEM_REPOSITORY)
     private readonly agendaItemRepository: AgendaItemRepository,
     private readonly logUseCase: AgendaItemLogCreateUseCase,
+    private readonly prisma: PrismaService,
   ) {}
 
-  async execute(id: string): Promise<AgendaItemWithLogs> {
+  async execute(id: string, userId: string): Promise<AgendaItemWithLogs> {
     const item = await this.agendaItemRepository.findById(id);
     if (!item) {
+      throw new NotFoundException(`Agenda item with id ${id} not found`);
+    }
+
+    const agenda = await this.prisma.agenda.findUnique({
+      where: { id: item.agendaId },
+      select: { userId: true },
+    });
+    if (!agenda || agenda.userId !== userId) {
       throw new NotFoundException(`Agenda item with id ${id} not found`);
     }
 

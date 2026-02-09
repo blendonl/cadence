@@ -17,6 +17,7 @@ export class ProjectGetAllUseCase {
     const limit = this.normalizeLimit(input.limit);
 
     const { items, total } = await this.projectRepository.findAll({
+      userId: input.userId,
       page,
       limit,
       status: input.status,

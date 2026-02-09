@@ -12,7 +12,7 @@ export class AgendaGetByDateUseCase {
     private readonly agendaRepository: AgendaRepository,
   ) {}
 
-  async execute(date: Date): Promise<Agenda | null> {
-    return this.agendaRepository.findByDate(date);
+  async execute(userId: string, date: Date): Promise<Agenda | null> {
+    return this.agendaRepository.findByDate(userId, date);
   }
 }

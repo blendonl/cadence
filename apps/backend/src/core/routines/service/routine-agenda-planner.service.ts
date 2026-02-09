@@ -16,10 +16,20 @@ export class RoutineAgendaPlanner {
     private readonly agendaItemService: AgendaItemCoreService,
   ) {}
 
-  async planForDate(date: Date = new Date()): Promise<void> {
-    const agenda = await this.ensureAgenda(date);
+  async planForAllUsers(date: Date = new Date()): Promise<void> {
+    const users = await this.prisma.user.findMany({ select: { id: true } });
+    for (const user of users) {
+      await this.planForDate(user.id, date);
+    }
+  }
+
+  async planForDate(
+    userId: string,
+    date: Date = new Date(),
+  ): Promise<void> {
+    const agenda = await this.ensureAgenda(userId, date);
     const routines = await this.prisma.routine.findMany({
-      where: { status: 'ACTIVE' },
+      where: { userId, status: 'ACTIVE' },
       include: { tasks: true },
     });
 
@@ -58,13 +68,13 @@ export class RoutineAgendaPlanner {
     }
   }
 
-  private async ensureAgenda(date: Date) {
-    const existing = await this.agendaService.getAgendaByDate(date);
+  private async ensureAgenda(userId: string, date: Date) {
+    const existing = await this.agendaService.getAgendaByDate(userId, date);
     if (existing) {
       return existing;
     }
 
-    return this.agendaService.createAgenda({ date });
+    return this.agendaService.createAgenda({ userId, date });
   }
 
   private collectOccupied(items: { startAt: Date | null; duration: number | null }[]): TimeBlock[] {

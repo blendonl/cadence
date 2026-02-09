@@ -22,6 +22,7 @@ export class AgendaItemRescheduleUseCase {
 
   async execute(
     id: string,
+    userId: string,
     newDate: Date,
     startAt?: Date | null,
     duration?: number | null,
@@ -31,9 +32,18 @@ export class AgendaItemRescheduleUseCase {
       throw new Error('AgendaItem not found');
     }
 
-    let newAgenda = await this.agendaRepository.findByDate(newDate);
+    const currentAgenda = await this.prisma.agenda.findFirst({
+      where: { id: item.agendaId },
+      select: { userId: true },
+    });
+
+    if (!currentAgenda || currentAgenda.userId !== userId) {
+      throw new Error('AgendaItem not found');
+    }
+
+    let newAgenda = await this.agendaRepository.findByDate(userId, newDate);
     if (!newAgenda) {
-      newAgenda = await this.agendaRepository.create({ date: newDate });
+      newAgenda = await this.agendaRepository.create({ userId, date: newDate });
     }
 
     return this.prisma.agendaItem.update({

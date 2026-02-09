@@ -27,37 +27,43 @@ export class AgendaCoreService {
     return this.agendaCreateUseCase.execute(data);
   }
 
-  async getAgendas() {
-    return this.agendaGetAllUseCase.execute();
+  async getAgendas(userId: string) {
+    return this.agendaGetAllUseCase.execute(userId);
   }
 
-  async getAgenda(id: string) {
-    return this.agendaGetOneUseCase.execute(id);
+  async getAgenda(id: string, userId: string) {
+    return this.agendaGetOneUseCase.execute(id, userId);
   }
 
-  async getAgendaByDate(date: Date) {
-    return this.agendaGetByDateUseCase.execute(date);
+  async getAgendaByDate(userId: string, date: Date) {
+    return this.agendaGetByDateUseCase.execute(userId, date);
   }
 
-  async updateAgenda(id: string, data: AgendaUpdateData) {
-    return this.agendaUpdateUseCase.execute(id, data);
+  async updateAgenda(id: string, userId: string, data: AgendaUpdateData) {
+    return this.agendaUpdateUseCase.execute(id, userId, data);
   }
 
-  async deleteAgenda(id: string) {
-    return this.agendaDeleteUseCase.execute(id);
+  async deleteAgenda(id: string, userId: string) {
+    return this.agendaDeleteUseCase.execute(id, userId);
   }
 
-  async getAgendasForDateRange(startDate: Date, endDate: Date) {
-    return this.agendaGetDateRangeUseCase.execute(startDate, endDate);
+  async getAgendasForDateRange(
+    userId: string,
+    startDate: Date,
+    endDate: Date,
+  ) {
+    return this.agendaGetDateRangeUseCase.execute(userId, startDate, endDate);
   }
 
   async getAgendaSummaryForDateRange(
+    userId: string,
     startDate: Date,
     endDate: Date,
     page: number,
     limit: number,
   ) {
     return this.agendaGetRangeSummaryUseCase.execute(
+      userId,
       startDate,
       endDate,
       page,

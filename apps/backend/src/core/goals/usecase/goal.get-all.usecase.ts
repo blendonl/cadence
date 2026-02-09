@@ -12,7 +12,7 @@ export class GoalGetAllUseCase {
     private readonly goalRepository: GoalRepository,
   ) {}
 
-  async execute(): Promise<Goal[]> {
-    return this.goalRepository.findAll();
+  async execute(userId: string): Promise<Goal[]> {
+    return this.goalRepository.findAll(userId);
   }
 }

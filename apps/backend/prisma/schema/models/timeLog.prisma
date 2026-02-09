@@ -1,5 +1,6 @@
 model TimeLog {
   id        String  @id @default(uuid())
+  userId    String  @map("user_id")
   projectId String? @map("project_id")
   taskId    String? @map("task_id")
 
@@ -11,6 +12,7 @@ model TimeLog {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  user    User     @relation(fields: [userId], references: [id])
   project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
   task    Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
 
