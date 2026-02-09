@@ -1,14 +1,14 @@
-import React from 'react';
-import { View, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
-import { BlurView } from 'expo-blur';
+import React from "react";
+import { View, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
+import { BlurView } from "expo-blur";
 import Animated, {
   useAnimatedStyle,
   withSpring,
   withTiming,
-} from 'react-native-reanimated';
-import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import theme from '@shared/theme/colors';
+} from "react-native-reanimated";
+import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import theme from "@shared/theme/colors";
 import {
   ProjectsIcon,
   BoardsIcon,
@@ -17,11 +17,11 @@ import {
   RoutinesIcon,
   NotesIcon,
   TimeIcon,
-} from '@shared/components/icons/TabIcons';
+} from "@shared/components/icons/TabIcons";
 
-import uiConstants from '@shared/theme/uiConstants';
+import uiConstants from "@shared/theme/uiConstants";
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const TAB_BAR_WIDTH = SCREEN_WIDTH - 32;
 const TAB_BAR_HEIGHT = uiConstants.TAB_BAR_HEIGHT;
 
@@ -47,7 +47,6 @@ function TabItem({ route, focused, onPress, onLongPress }: TabItemProps) {
     GoalsTab: GoalsIcon,
     RoutinesTab: RoutinesIcon,
     NotesTab: NotesIcon,
-    TimeTab: TimeIcon,
     projects: ProjectsIcon,
     boards: BoardsIcon,
     agenda: AgendaIcon,
@@ -91,7 +90,7 @@ export default function FloatingTabBar({
 
               const onPress = () => {
                 const event = navigation.emit({
-                  type: 'tabPress',
+                  type: "tabPress",
                   target: route.key,
                   canPreventDefault: true,
                 });
@@ -108,7 +107,7 @@ export default function FloatingTabBar({
                   focused={focused}
                   onPress={onPress}
                   onLongPress={() =>
-                    navigation.emit({ type: 'tabLongPress', target: route.key })
+                    navigation.emit({ type: "tabLongPress", target: route.key })
                   }
                 />
               );
@@ -122,20 +121,20 @@ export default function FloatingTabBar({
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    alignItems: 'center',
+    alignItems: "center",
   },
   tabBarWrapper: {
     width: TAB_BAR_WIDTH,
     height: TAB_BAR_HEIGHT,
     borderRadius: 32,
-    overflow: 'hidden',
+    overflow: "hidden",
     borderWidth: 1,
     borderColor: theme.glass.border,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 24,
@@ -146,24 +145,24 @@ const styles = StyleSheet.create({
   },
   tabBarContent: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
     backgroundColor: theme.glass.tint.neutral,
     paddingHorizontal: 8,
   },
   tabItem: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
+    alignItems: "center",
+    justifyContent: "center",
+    height: "100%",
   },
   iconContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   activeIndicator: {
-    position: 'absolute',
+    position: "absolute",
     bottom: -8,
     width: 4,
     height: 4,

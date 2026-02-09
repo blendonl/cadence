@@ -12,6 +12,7 @@ export { default as LoadingOverlay } from './LoadingOverlay';
 export { default as FilterChipBar } from './FilterChipBar';
 export { default as GlassCard } from './GlassCard';
 export { default as Input } from './Input';
+export { default as NumericStepper } from './NumericStepper';
 export { OrphanedItemBadge } from './OrphanedItemBadge';
 export { default as ParentBadge } from './ParentBadge';
 export { default as ParentFormModal } from './ParentFormModal';
