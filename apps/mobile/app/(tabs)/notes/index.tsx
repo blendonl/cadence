@@ -49,7 +49,6 @@ export default function NotesListScreen() {
     setSelectedType,
     filteredNotes,
     hasActiveFilters,
-    noteCountLabel,
   } = useNoteFilters(notes);
 
   useEffect(() => {
@@ -113,10 +112,7 @@ export default function NotesListScreen() {
 
   return (
     <Screen hasTabBar>
-      <NoteListHeader
-        noteCountLabel={noteCountLabel}
-        isAutoRefreshing={isAutoRefreshing}
-      />
+      <NoteListHeader isAutoRefreshing={isAutoRefreshing} />
 
       <NoteFilters
         searchQuery={searchQuery}
