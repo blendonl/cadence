@@ -7,10 +7,12 @@ import {
   formatRepeatInterval,
   formatActiveDays,
 } from '../utils/routineValidation';
-import { ROUTINE_TYPE_BADGE_CONFIG, FIXED_DAILY_TYPES } from '../constants/routineConstants';
-import GlassCard from '@shared/components/GlassCard';
+import {
+  ROUTINE_TYPE_BADGE_CONFIG,
+  ROUTINE_TYPE_GRADIENTS,
+  FIXED_DAILY_TYPES,
+} from '../constants/routineConstants';
 import AppIcon from '@shared/components/icons/AppIcon';
-import { PrimaryButton, DangerButton } from '@shared/components/Button';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
 
@@ -28,7 +30,9 @@ export function RoutineDetailContent({
   onToggleStatus,
 }: RoutineDetailContentProps) {
   const badgeConfig = ROUTINE_TYPE_BADGE_CONFIG[routine.type];
+  const gradient = ROUTINE_TYPE_GRADIENTS[routine.type];
   const isFixedDaily = FIXED_DAILY_TYPES.includes(routine.type);
+  const targetDisplay = formatTargetDisplay(routine.type, routine.target);
 
   const handleDelete = () => {
     Alert.alert(
@@ -43,68 +47,99 @@ export function RoutineDetailContent({
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-      <GlassCard style={styles.header}>
-        <View style={styles.headerTop}>
-          <AppIcon name={badgeConfig.icon} size={32} color={badgeConfig.color} />
-          <Text style={styles.name}>{routine.name}</Text>
+      <View style={[styles.hero, { backgroundColor: gradient.bgColor }]}>
+        <View style={[styles.heroIcon, { backgroundColor: gradient.iconBg }]}>
+          <AppIcon name={badgeConfig.icon} size={32} color={gradient.accent} />
         </View>
-        <View style={[styles.typeBadge, { backgroundColor: badgeConfig.color }]}>
-          <Text style={styles.typeBadgeText}>{badgeConfig.label}</Text>
-        </View>
-      </GlassCard>
+        <Text style={styles.heroName}>{routine.name}</Text>
+        <Text style={[styles.heroTarget, { color: gradient.accent }]}>{targetDisplay}</Text>
 
-      <GlassCard style={styles.section}>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Status</Text>
+        <View style={styles.heroActions}>
           <TouchableOpacity
             style={[
-              styles.statusButton,
-              { backgroundColor: routine.isActive ? theme.status.success : theme.text.muted },
+              styles.statusPill,
+              {
+                backgroundColor: routine.isActive
+                  ? 'rgba(60, 203, 140, 0.15)'
+                  : 'rgba(108, 120, 144, 0.15)',
+              },
             ]}
             onPress={onToggleStatus}
           >
-            <Text style={styles.statusButtonText}>
-              {routine.isActive ? 'Active' : 'Disabled'}
+            <View
+              style={[
+                styles.statusDot,
+                {
+                  backgroundColor: routine.isActive
+                    ? theme.status.success
+                    : theme.text.muted,
+                },
+              ]}
+            />
+            <Text
+              style={[
+                styles.statusLabel,
+                {
+                  color: routine.isActive
+                    ? theme.status.success
+                    : theme.text.muted,
+                },
+              ]}
+            >
+              {routine.isActive ? 'Active' : 'Paused'}
             </Text>
           </TouchableOpacity>
         </View>
+      </View>
 
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Target</Text>
-          <Text style={styles.detailValue}>
-            {formatTargetDisplay(routine.type, routine.target)}
-          </Text>
-        </View>
-
+      <View style={styles.statsSection}>
         {routine.type === 'STEP' && routine.separateInto > 1 && (
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Separate Into</Text>
-            <Text style={styles.detailValue}>{routine.separateInto} tasks</Text>
-          </View>
-        )}
-
-        {!isFixedDaily && (
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Repeat Interval</Text>
-            <Text style={styles.detailValue}>
-              {formatRepeatInterval(routine.repeatIntervalMinutes)}
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Split Into</Text>
+            <Text style={[styles.statValue, { color: gradient.accent }]}>
+              {routine.separateInto} tasks
             </Text>
           </View>
         )}
 
         {!isFixedDaily && (
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Active Days</Text>
-            <Text style={styles.detailValue}>{formatActiveDays(routine.activeDays)}</Text>
-          </View>
+          <>
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>Repeat</Text>
+              <Text style={[styles.statValue, { color: gradient.accent }]}>
+                {formatRepeatInterval(routine.repeatIntervalMinutes)}
+              </Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>Active Days</Text>
+              <Text style={[styles.statValue, { color: gradient.accent }]}>
+                {formatActiveDays(routine.activeDays)}
+              </Text>
+            </View>
+          </>
         )}
-      </GlassCard>
+      </View>
 
-      <RoutineTaskList tasks={routine.tasks} />
+      <View style={styles.taskSection}>
+        <RoutineTaskList tasks={routine.tasks} accentColor={gradient.accent} />
+      </View>
 
       <View style={styles.actions}>
-        <PrimaryButton title="Edit Routine" onPress={onEdit} fullWidth />
-        <DangerButton title="Delete Routine" onPress={handleDelete} fullWidth />
+        <TouchableOpacity
+          style={[styles.actionButton, { backgroundColor: gradient.iconBg }]}
+          onPress={onEdit}
+        >
+          <AppIcon name="edit" size={18} color={gradient.accent} />
+          <Text style={[styles.actionButtonText, { color: gradient.accent }]}>Edit Routine</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.actionButton, styles.deleteButton]}
+          onPress={handleDelete}
+        >
+          <AppIcon name="trash" size={18} color={theme.status.error} />
+          <Text style={[styles.actionButtonText, { color: theme.status.error }]}>Delete</Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -116,70 +151,106 @@ const styles = StyleSheet.create({
     backgroundColor: theme.background.primary,
   },
   contentContainer: {
-    padding: spacing.lg,
     paddingBottom: spacing.xxxl,
   },
-  header: {
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
+  hero: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.xl,
+    alignItems: 'center',
+    gap: spacing.sm,
   },
-  headerTop: {
+  heroIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  heroName: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: theme.text.primary,
+    letterSpacing: -0.5,
+    textAlign: 'center',
+  },
+  heroTarget: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  heroActions: {
+    flexDirection: 'row',
+    marginTop: spacing.sm,
+  },
+  statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
-    marginBottom: spacing.md,
+    gap: 6,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: 20,
   },
-  name: {
-    fontSize: 24,
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  statusLabel: {
+    fontSize: 14,
     fontWeight: '600',
-    color: theme.text.primary,
+  },
+  statsSection: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    gap: spacing.sm,
+  },
+  statCard: {
     flex: 1,
-  },
-  typeBadge: {
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
-    borderRadius: 999,
-    alignSelf: 'flex-start',
-  },
-  typeBadgeText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: theme.text.primary,
-  },
-  section: {
+    minWidth: '45%',
+    backgroundColor: theme.background.elevated,
+    borderRadius: 14,
     padding: spacing.lg,
-    marginBottom: spacing.lg,
+    gap: 6,
   },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.border.secondary,
-  },
-  detailLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: theme.text.tertiary,
-  },
-  detailValue: {
-    fontSize: 14,
+  statLabel: {
+    fontSize: 11,
     fontWeight: '600',
-    color: theme.text.primary,
+    color: theme.text.muted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  statusButton: {
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
-    borderRadius: 999,
+  statValue: {
+    fontSize: 16,
+    fontWeight: '700',
   },
-  statusButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: theme.text.primary,
+  taskSection: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
   },
   actions: {
-    gap: spacing.md,
-    marginTop: spacing.xl,
+    flexDirection: 'row',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
+    gap: spacing.sm,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: 14,
+    borderRadius: 14,
+  },
+  actionButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  deleteButton: {
+    backgroundColor: 'rgba(242, 107, 107, 0.1)',
+    flex: 0.6,
   },
 });

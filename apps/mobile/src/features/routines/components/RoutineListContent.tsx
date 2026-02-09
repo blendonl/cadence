@@ -1,5 +1,6 @@
 import React from 'react';
 import { FlatList, RefreshControl, StyleSheet } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { RoutineDetailDto } from 'shared-types';
 import { RoutineCard } from './RoutineCard';
 import { EmptyRoutinesState } from './EmptyRoutinesState';
@@ -34,27 +35,29 @@ export function RoutineListContent({
   }
 
   return (
-      <FlatList
-        data={routines}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
+    <FlatList
+      data={routines}
+      keyExtractor={(item) => item.id}
+      renderItem={({ item, index }) => (
+        <Animated.View entering={FadeInDown.delay(index * 60).duration(350).springify()}>
           <RoutineCard routine={item} onPress={onRoutinePress} />
-        )}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={theme.accent.primary}
-          />
-        }
-      />
+        </Animated.View>
+      )}
+      contentContainerStyle={styles.listContent}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          tintColor={theme.accent.primary}
+        />
+      }
+    />
   );
 }
 
 const styles = StyleSheet.create({
   listContent: {
-    paddingVertical: spacing.sm,
+    paddingTop: spacing.sm,
     paddingBottom: spacing.xxxl,
   },
 });

@@ -1,11 +1,15 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { RoutineType } from 'shared-types';
 import { useRoutineByType } from '@features/routines/hooks';
-import { ROUTINE_TYPE_BADGE_CONFIG } from '@features/routines/constants/routineConstants';
+import {
+  ROUTINE_TYPE_BADGE_CONFIG,
+  ROUTINE_TYPE_GRADIENTS,
+} from '@features/routines/constants/routineConstants';
+import { formatTargetDisplay } from '@features/routines/utils/routineValidation';
 import { Screen } from '@shared/components/Screen';
-import GlassCard from '@shared/components/GlassCard';
 import AppIcon from '@shared/components/icons/AppIcon';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
@@ -13,8 +17,12 @@ import { spacing } from '@shared/theme/spacing';
 interface HubCardConfig {
   type: RoutineType;
   route: string;
-  getDescription: () => string;
+  tagline: string;
+  getMetric: () => string | null;
+  getStatus: () => 'active' | 'disabled' | 'empty';
 }
+
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 export default function RoutinesHubScreen() {
   const router = useRouter();
@@ -24,26 +32,31 @@ export default function RoutinesHubScreen() {
     {
       type: 'SLEEP',
       route: '/routines/sleep',
-      getDescription: () =>
-        sleepRoutine
-          ? `${sleepRoutine.isActive ? 'Active' : 'Disabled'} \u2022 ${sleepRoutine.target}`
-          : 'Set your sleep window and track patterns',
+      tagline: 'Rest & Recovery',
+      getMetric: () =>
+        sleepRoutine ? formatTargetDisplay('SLEEP', sleepRoutine.target) : null,
+      getStatus: () =>
+        sleepRoutine ? (sleepRoutine.isActive ? 'active' : 'disabled') : 'empty',
     },
     {
       type: 'STEP',
       route: '/routines/steps',
-      getDescription: () =>
-        stepRoutine
-          ? `${stepRoutine.isActive ? 'Active' : 'Disabled'} \u2022 ${stepRoutine.target} steps`
-          : 'Set your daily step goal and view progress',
+      tagline: 'Daily Movement',
+      getMetric: () =>
+        stepRoutine ? formatTargetDisplay('STEP', stepRoutine.target) : null,
+      getStatus: () =>
+        stepRoutine ? (stepRoutine.isActive ? 'active' : 'disabled') : 'empty',
     },
     {
       type: 'OTHER',
       route: '/routines/other',
-      getDescription: () =>
+      tagline: 'Custom Rituals',
+      getMetric: () =>
         otherRoutines.length > 0
-          ? `${otherRoutines.length} routine${otherRoutines.length === 1 ? '' : 's'} active`
-          : 'Build custom routines for everything else',
+          ? `${otherRoutines.length} routine${otherRoutines.length === 1 ? '' : 's'}`
+          : null,
+      getStatus: () =>
+        otherRoutines.length > 0 ? 'active' : 'empty',
     },
   ];
 
@@ -59,27 +72,78 @@ export default function RoutinesHubScreen() {
 
   return (
     <Screen hasTabBar scrollable contentContainerStyle={styles.content}>
-      <Text style={styles.subtitle}>Choose a routine type to track details and progress.</Text>
-
-      {cards.map(card => {
+      {cards.map((card, index) => {
         const config = ROUTINE_TYPE_BADGE_CONFIG[card.type];
+        const gradient = ROUTINE_TYPE_GRADIENTS[card.type];
+        const metric = card.getMetric();
+        const status = card.getStatus();
+
         return (
-          <TouchableOpacity
+          <AnimatedTouchable
             key={card.type}
-            style={styles.card}
+            entering={FadeInDown.delay(index * 100).duration(500).springify()}
+            style={styles.cardWrapper}
             onPress={() => router.push(card.route as never)}
+            activeOpacity={0.85}
           >
-            <GlassCard style={styles.cardInner}>
-              <View style={styles.cardHeader}>
-                <AppIcon name={config.icon} size={28} color={config.color} />
-                <View style={styles.cardText}>
+            <View style={[styles.cardGradient, { backgroundColor: gradient.bgColor }]}>
+              <View style={[styles.glowBorder, { shadowColor: gradient.accent }]} />
+
+              <View style={styles.cardContent}>
+                <View style={styles.cardTop}>
+                  <View style={[styles.iconContainer, { backgroundColor: gradient.iconBg }]}>
+                    <AppIcon name={config.icon} size={28} color={gradient.accent} />
+                  </View>
+
+                  {status !== 'empty' && (
+                    <View style={styles.statusRow}>
+                      <View
+                        style={[
+                          styles.statusDot,
+                          {
+                            backgroundColor:
+                              status === 'active'
+                                ? theme.status.success
+                                : theme.text.muted,
+                          },
+                        ]}
+                      />
+                      <Text
+                        style={[
+                          styles.statusText,
+                          {
+                            color:
+                              status === 'active'
+                                ? theme.status.success
+                                : theme.text.muted,
+                          },
+                        ]}
+                      >
+                        {status === 'active' ? 'Active' : 'Paused'}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                <View style={styles.cardBottom}>
                   <Text style={styles.cardTitle}>{config.label}</Text>
-                  <Text style={styles.cardDescription}>{card.getDescription()}</Text>
+                  <Text style={[styles.cardTagline, { color: gradient.accent }]}>
+                    {card.tagline}
+                  </Text>
+
+                  {metric ? (
+                    <Text style={styles.cardMetric}>{metric}</Text>
+                  ) : (
+                    <Text style={styles.cardEmpty}>Tap to set up</Text>
+                  )}
+                </View>
+
+                <View style={styles.arrowContainer}>
+                  <AppIcon name="arrow-right" size={16} color={gradient.accent} />
                 </View>
               </View>
-              <AppIcon name="arrow-right" size={18} color={theme.text.muted} />
-            </GlassCard>
-          </TouchableOpacity>
+            </View>
+          </AnimatedTouchable>
         );
       })}
     </Screen>
@@ -89,44 +153,101 @@ export default function RoutinesHubScreen() {
 const styles = StyleSheet.create({
   content: {
     padding: spacing.lg,
-    paddingBottom: spacing.xxxl,
+    paddingTop: spacing.md,
+    gap: spacing.md,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  subtitle: {
-    fontSize: 14,
-    color: theme.text.tertiary,
-    marginBottom: spacing.lg,
+  cardWrapper: {
+    borderRadius: 20,
+    overflow: 'hidden',
   },
-  card: {
-    marginBottom: spacing.md,
+  cardGradient: {
+    borderRadius: 20,
+    padding: 1,
   },
-  cardInner: {
-    padding: spacing.lg,
+  glowBorder: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 20,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  cardContent: {
+    padding: spacing.xl,
+    paddingVertical: 28,
+  },
+  cardTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: spacing.lg,
   },
-  cardHeader: {
+  iconContainer: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
-    flex: 1,
+    gap: 6,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
-  cardText: {
-    flex: 1,
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+  cardBottom: {
+    gap: 4,
   },
   cardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 26,
+    fontWeight: '700',
     color: theme.text.primary,
-    marginBottom: spacing.xs,
+    letterSpacing: -0.5,
   },
-  cardDescription: {
+  cardTagline: {
     fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  cardMetric: {
+    fontSize: 15,
+    fontWeight: '500',
     color: theme.text.secondary,
+  },
+  cardEmpty: {
+    fontSize: 14,
+    color: theme.text.muted,
+    fontStyle: 'italic',
+  },
+  arrowContainer: {
+    position: 'absolute',
+    right: spacing.xl,
+    bottom: 28,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

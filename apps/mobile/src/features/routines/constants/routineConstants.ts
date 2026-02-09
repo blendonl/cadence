@@ -1,5 +1,5 @@
 import { RoutineType } from 'shared-types';
-import theme from '@shared/theme/colors';
+import theme, { CatppuccinColors } from '@shared/theme/colors';
 import { AppIconName } from '@shared/components/icons/AppIcon';
 
 interface TypeBadgeConfig {
@@ -9,9 +9,41 @@ interface TypeBadgeConfig {
 }
 
 export const ROUTINE_TYPE_BADGE_CONFIG: Record<RoutineType, TypeBadgeConfig> = {
-  SLEEP: { color: theme.accent.info, label: 'Sleep', icon: 'moon' },
-  STEP: { color: theme.accent.success, label: 'Steps', icon: 'steps' },
-  OTHER: { color: theme.text.muted, label: 'Other', icon: 'list' },
+  SLEEP: { color: CatppuccinColors.mauve, label: 'Sleep', icon: 'moon' },
+  STEP: { color: CatppuccinColors.teal, label: 'Steps', icon: 'steps' },
+  OTHER: { color: CatppuccinColors.peach, label: 'Other', icon: 'list' },
+};
+
+export interface RoutineTypeGradient {
+  bgColor: string;
+  accent: string;
+  glow: string;
+  subtleBg: string;
+  iconBg: string;
+}
+
+export const ROUTINE_TYPE_GRADIENTS: Record<RoutineType, RoutineTypeGradient> = {
+  SLEEP: {
+    bgColor: '#1E1250',
+    accent: CatppuccinColors.mauve,
+    glow: 'rgba(155, 122, 246, 0.35)',
+    subtleBg: 'rgba(155, 122, 246, 0.06)',
+    iconBg: 'rgba(155, 122, 246, 0.15)',
+  },
+  STEP: {
+    bgColor: '#0C3028',
+    accent: CatppuccinColors.teal,
+    glow: 'rgba(90, 209, 178, 0.35)',
+    subtleBg: 'rgba(90, 209, 178, 0.06)',
+    iconBg: 'rgba(90, 209, 178, 0.15)',
+  },
+  OTHER: {
+    bgColor: '#30240C',
+    accent: CatppuccinColors.peach,
+    glow: 'rgba(242, 154, 100, 0.35)',
+    subtleBg: 'rgba(242, 154, 100, 0.06)',
+    iconBg: 'rgba(242, 154, 100, 0.15)',
+  },
 };
 
 export interface RepeatIntervalPreset {

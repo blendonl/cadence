@@ -1,39 +1,48 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { RoutineTaskDto } from 'shared-types';
-import GlassCard from '@shared/components/GlassCard';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
 
 interface RoutineTaskListProps {
   tasks: RoutineTaskDto[];
+  accentColor?: string;
   onTaskPress?: (task: RoutineTaskDto) => void;
 }
 
-export function RoutineTaskList({ tasks }: RoutineTaskListProps) {
+export function RoutineTaskList({
+  tasks,
+  accentColor = theme.accent.primary,
+}: RoutineTaskListProps) {
   if (tasks.length === 0) {
     return (
-      <GlassCard style={styles.emptyContainer}>
+      <View style={styles.emptyContainer}>
+        <View style={styles.emptyDot} />
         <Text style={styles.emptyText}>
           Tasks will be auto-generated based on routine configuration
         </Text>
-      </GlassCard>
+      </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Tasks (auto-generated)</Text>
+      <Text style={styles.header}>Tasks</Text>
       {tasks.map((task, index) => (
-        <GlassCard key={task.id} style={styles.taskCard}>
-          <View style={styles.taskNumber}>
-            <Text style={styles.taskNumberText}>{index + 1}</Text>
+        <View key={task.id} style={styles.taskRow}>
+          <View style={styles.timeline}>
+            <View style={[styles.timelineDot, { backgroundColor: accentColor }]} />
+            {index < tasks.length - 1 && (
+              <View style={[styles.timelineLine, { backgroundColor: accentColor + '30' }]} />
+            )}
           </View>
           <View style={styles.taskContent}>
             <Text style={styles.taskName}>{task.name}</Text>
-            <Text style={styles.taskTarget}>Target: {task.target}</Text>
+            <Text style={[styles.taskTarget, { color: accentColor }]}>
+              Target: {task.target}
+            </Text>
           </View>
-        </GlassCard>
+        </View>
       ))}
     </View>
   );
@@ -41,54 +50,69 @@ export function RoutineTaskList({ tasks }: RoutineTaskListProps) {
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: spacing.lg,
+    gap: 0,
   },
   header: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '600',
-    color: theme.text.primary,
+    color: theme.text.muted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
     marginBottom: spacing.md,
   },
-  taskCard: {
+  taskRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    gap: spacing.md,
+    minHeight: 56,
   },
-  taskNumber: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: theme.accent.primary,
-    justifyContent: 'center',
+  timeline: {
+    width: 24,
     alignItems: 'center',
   },
-  taskNumberText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: theme.text.primary,
+  timelineDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginTop: 6,
+  },
+  timelineLine: {
+    width: 2,
+    flex: 1,
+    marginTop: 4,
+    marginBottom: -4,
   },
   taskContent: {
     flex: 1,
+    paddingLeft: spacing.md,
+    paddingBottom: spacing.lg,
+    gap: 3,
   },
   taskName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '500',
     color: theme.text.primary,
-    marginBottom: 2,
   },
   taskTarget: {
-    fontSize: 12,
-    color: theme.text.secondary,
+    fontSize: 13,
+    fontWeight: '500',
   },
   emptyContainer: {
-    padding: spacing.xl,
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: theme.background.elevated,
+    borderRadius: 12,
+    padding: spacing.lg,
+  },
+  emptyDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: theme.text.muted,
+    opacity: 0.5,
   },
   emptyText: {
-    fontSize: 14,
-    color: theme.text.secondary,
-    textAlign: 'center',
+    fontSize: 13,
+    color: theme.text.muted,
+    flex: 1,
   },
 });

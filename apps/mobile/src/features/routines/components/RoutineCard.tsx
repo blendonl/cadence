@@ -2,8 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { RoutineDetailDto } from 'shared-types';
 import { formatTargetDisplay } from '../utils/routineValidation';
-import { ROUTINE_TYPE_BADGE_CONFIG } from '../constants/routineConstants';
-import GlassCard from '@shared/components/GlassCard';
+import { ROUTINE_TYPE_BADGE_CONFIG, ROUTINE_TYPE_GRADIENTS } from '../constants/routineConstants';
 import AppIcon from '@shared/components/icons/AppIcon';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
@@ -15,6 +14,7 @@ interface RoutineCardProps {
 
 export function RoutineCard({ routine, onPress }: RoutineCardProps) {
   const badgeConfig = ROUTINE_TYPE_BADGE_CONFIG[routine.type];
+  const gradient = ROUTINE_TYPE_GRADIENTS[routine.type];
   const targetDisplay = formatTargetDisplay(routine.type, routine.target);
   const taskCount = routine.tasks?.length ?? 0;
 
@@ -22,103 +22,136 @@ export function RoutineCard({ routine, onPress }: RoutineCardProps) {
     <TouchableOpacity
       style={styles.card}
       onPress={() => onPress(routine)}
-      activeOpacity={0.7}
+      activeOpacity={0.8}
     >
-      <GlassCard style={styles.cardInner}>
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <AppIcon name={badgeConfig.icon} size={24} color={badgeConfig.color} />
-            <View>
-              <Text style={styles.name}>{routine.name}</Text>
-              <Text style={styles.target}>{targetDisplay}</Text>
-            </View>
+      <View style={[styles.accentBar, { backgroundColor: gradient.accent }]} />
+
+      <View style={styles.content}>
+        <View style={styles.top}>
+          <View style={[styles.iconWrap, { backgroundColor: gradient.iconBg }]}>
+            <AppIcon name={badgeConfig.icon} size={20} color={gradient.accent} />
           </View>
-          <View style={[styles.badge, { backgroundColor: badgeConfig.color }]}>
-            <Text style={styles.badgeText}>{badgeConfig.label}</Text>
+          <View style={styles.textBlock}>
+            <Text style={styles.name} numberOfLines={1}>{routine.name}</Text>
+            <Text style={[styles.target, { color: gradient.accent }]}>{targetDisplay}</Text>
           </View>
         </View>
 
-        <View style={styles.footer}>
+        <View style={styles.bottom}>
           <View
             style={[
-              styles.statusIndicator,
-              { backgroundColor: routine.isActive ? theme.status.success : theme.text.muted },
+              styles.statusChip,
+              {
+                backgroundColor: routine.isActive
+                  ? 'rgba(60, 203, 140, 0.1)'
+                  : 'rgba(108, 120, 144, 0.1)',
+              },
             ]}
           >
-            <Text style={styles.statusText}>
-              {routine.isActive ? 'Active' : 'Disabled'}
+            <View
+              style={[
+                styles.statusDot,
+                {
+                  backgroundColor: routine.isActive
+                    ? theme.status.success
+                    : theme.text.muted,
+                },
+              ]}
+            />
+            <Text
+              style={[
+                styles.statusText,
+                {
+                  color: routine.isActive
+                    ? theme.status.success
+                    : theme.text.muted,
+                },
+              ]}
+            >
+              {routine.isActive ? 'Active' : 'Paused'}
             </Text>
           </View>
 
-          <Text style={styles.taskCount}>
-            {taskCount} {taskCount === 1 ? 'task' : 'tasks'}
-          </Text>
+          {taskCount > 0 && (
+            <Text style={styles.taskCount}>
+              {taskCount} {taskCount === 1 ? 'task' : 'tasks'}
+            </Text>
+          )}
 
-          <AppIcon name="arrow-right" size={18} color={theme.text.muted} />
+          <AppIcon name="arrow-right" size={14} color={theme.text.muted} />
         </View>
-      </GlassCard>
+      </View>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    marginHorizontal: spacing.lg,
-    marginVertical: spacing.sm,
-  },
-  cardInner: {
-    padding: spacing.lg,
-  },
-  header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: spacing.md,
+    marginHorizontal: spacing.lg,
+    marginVertical: 6,
+    backgroundColor: theme.background.elevated,
+    borderRadius: 14,
+    overflow: 'hidden',
   },
-  headerLeft: {
+  accentBar: {
+    width: 3,
+  },
+  content: {
+    flex: 1,
+    padding: spacing.lg,
+    gap: spacing.md,
+  },
+  top: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
     gap: spacing.md,
+  },
+  iconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 11,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  textBlock: {
+    flex: 1,
+    gap: 2,
   },
   name: {
     fontSize: 16,
     fontWeight: '600',
     color: theme.text.primary,
-    marginBottom: 2,
   },
   target: {
-    fontSize: 14,
-    color: theme.text.secondary,
+    fontSize: 13,
+    fontWeight: '500',
   },
-  badge: {
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    borderRadius: 999,
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: theme.text.primary,
-  },
-  footer: {
+  bottom: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
-  statusIndicator: {
-    paddingVertical: spacing.xs,
+  statusChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     paddingHorizontal: spacing.sm,
-    borderRadius: 999,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   statusText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: theme.text.primary,
+    fontSize: 11,
+    fontWeight: '600',
   },
   taskCount: {
     fontSize: 12,
-    color: theme.text.tertiary,
+    color: theme.text.muted,
     flex: 1,
   },
 });

@@ -7,6 +7,7 @@ import {
   ScrollView,
   RefreshControl,
 } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { RoutineType } from 'shared-types';
 import { useRoutineByType } from '../hooks';
 import { useRoutineActions } from '../hooks/useRoutineActions';
@@ -17,7 +18,11 @@ import { RoutineCreateModal } from './RoutineCreateModal';
 import { RoutineEditModal } from './RoutineEditModal';
 import alertService from '@/services/AlertService';
 import { Screen } from '@shared/components/Screen';
-import { ROUTINE_TYPE_BADGE_CONFIG } from '../constants/routineConstants';
+import AppIcon from '@shared/components/icons/AppIcon';
+import {
+  ROUTINE_TYPE_BADGE_CONFIG,
+  ROUTINE_TYPE_GRADIENTS,
+} from '../constants/routineConstants';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
 
@@ -47,6 +52,9 @@ export function SingleRoutineScreen({
   const { loading, refresh } = routineData;
   const modals = useRoutineModals();
 
+  const config = ROUTINE_TYPE_BADGE_CONFIG[routineType];
+  const gradient = ROUTINE_TYPE_GRADIENTS[routineType];
+
   useEffect(() => {
     if (!loading && !routine) {
       modals.openCreateModal();
@@ -72,11 +80,11 @@ export function SingleRoutineScreen({
     activeDays?: string[]
   ) => {
     if (type !== routineType) {
-      alertService.showError(`${ROUTINE_TYPE_BADGE_CONFIG[routineType].label} routine must be a ${ROUTINE_TYPE_BADGE_CONFIG[routineType].label} type.`);
+      alertService.showError(`${config.label} routine must be a ${config.label} type.`);
       return;
     }
     if (routine) {
-      alertService.showError(`${ROUTINE_TYPE_BADGE_CONFIG[routineType].label} routine already exists.`);
+      alertService.showError(`${config.label} routine already exists.`);
       return;
     }
     await createActions.handleCreateRoutine(
@@ -93,7 +101,7 @@ export function SingleRoutineScreen({
     return (
       <Screen hasTabBar>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.accent.primary} />
+          <ActivityIndicator size="large" color={gradient.accent} />
         </View>
       </Screen>
     );
@@ -107,14 +115,20 @@ export function SingleRoutineScreen({
           <RefreshControl
             refreshing={loading}
             onRefresh={refresh}
-            tintColor={theme.accent.primary}
+            tintColor={gradient.accent}
           />
         }
       >
-        <Text style={styles.subtitle}>{subtitle}</Text>
+        <View style={[styles.hero, { backgroundColor: gradient.bgColor }]}>
+          <View style={[styles.heroIcon, { backgroundColor: gradient.iconBg }]}>
+            <AppIcon name={config.icon} size={32} color={gradient.accent} />
+          </View>
+          <Text style={styles.heroTitle}>{config.label}</Text>
+          <Text style={[styles.heroSubtitle, { color: gradient.accent }]}>{subtitle}</Text>
+        </View>
 
         {routine && (
-          <>
+          <Animated.View entering={FadeInDown.duration(400).springify()}>
             <RoutineSummaryCard
               routine={routine}
               onEdit={() => modals.openEditModal(routine)}
@@ -122,6 +136,7 @@ export function SingleRoutineScreen({
                 editActions.handleToggleStatus(routine.id, routine.status)
               }
             />
+
             {placeholders.map((p, i) => (
               <RoutinePlaceholderSection
                 key={i}
@@ -130,7 +145,7 @@ export function SingleRoutineScreen({
                 helper={p.helper}
               />
             ))}
-          </>
+          </Animated.View>
         )}
       </ScrollView>
 
@@ -154,17 +169,36 @@ export function SingleRoutineScreen({
 const styles = StyleSheet.create({
   content: {
     paddingBottom: spacing.xxxl,
-    paddingTop: spacing.lg,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  subtitle: {
+  hero: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xl,
+    paddingBottom: 28,
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  heroIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  heroTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: theme.text.primary,
+    letterSpacing: -0.5,
+  },
+  heroSubtitle: {
     fontSize: 14,
-    color: theme.text.tertiary,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
+    fontWeight: '500',
+    textAlign: 'center',
   },
 });

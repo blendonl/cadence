@@ -6,10 +6,12 @@ import {
   formatRepeatInterval,
   formatActiveDays,
 } from '../utils/routineValidation';
-import { ROUTINE_TYPE_BADGE_CONFIG, FIXED_DAILY_TYPES } from '../constants/routineConstants';
-import GlassCard from '@shared/components/GlassCard';
+import {
+  ROUTINE_TYPE_BADGE_CONFIG,
+  ROUTINE_TYPE_GRADIENTS,
+  FIXED_DAILY_TYPES,
+} from '../constants/routineConstants';
 import AppIcon from '@shared/components/icons/AppIcon';
-import { PrimaryButton } from '@shared/components/Button';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
 
@@ -21,150 +23,169 @@ interface RoutineSummaryCardProps {
 
 export function RoutineSummaryCard({ routine, onEdit, onToggleStatus }: RoutineSummaryCardProps) {
   const badgeConfig = ROUTINE_TYPE_BADGE_CONFIG[routine.type];
+  const gradient = ROUTINE_TYPE_GRADIENTS[routine.type];
   const isFixedDaily = FIXED_DAILY_TYPES.includes(routine.type);
 
+  const targetDisplay = formatTargetDisplay(routine.type, routine.target);
+
   return (
-    <GlassCard style={styles.card}>
+    <View style={styles.card}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <AppIcon name={badgeConfig.icon} size={28} color={badgeConfig.color} />
-          <View style={styles.headerText}>
-            <Text style={styles.name}>{routine.name}</Text>
-            <Text style={styles.target}>{formatTargetDisplay(routine.type, routine.target)}</Text>
-          </View>
+          <Text style={styles.targetValue}>{targetDisplay}</Text>
         </View>
-        <View style={[styles.typeBadge, { backgroundColor: badgeConfig.color }]}>
-          <Text style={styles.typeBadgeText}>{badgeConfig.label}</Text>
-        </View>
-      </View>
-
-      <View style={styles.details}>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Status</Text>
-          {onToggleStatus ? (
+        <View style={styles.headerActions}>
+          {onToggleStatus && (
             <TouchableOpacity
               style={[
-                styles.statusButton,
-                { backgroundColor: routine.isActive ? theme.status.success : theme.text.muted },
+                styles.statusPill,
+                {
+                  backgroundColor: routine.isActive
+                    ? 'rgba(60, 203, 140, 0.12)'
+                    : 'rgba(108, 120, 144, 0.12)',
+                },
               ]}
               onPress={onToggleStatus}
             >
-              <Text style={styles.statusButtonText}>
-                {routine.isActive ? 'Active' : 'Disabled'}
+              <View
+                style={[
+                  styles.statusDot,
+                  {
+                    backgroundColor: routine.isActive
+                      ? theme.status.success
+                      : theme.text.muted,
+                  },
+                ]}
+              />
+              <Text
+                style={[
+                  styles.statusLabel,
+                  {
+                    color: routine.isActive
+                      ? theme.status.success
+                      : theme.text.muted,
+                  },
+                ]}
+              >
+                {routine.isActive ? 'Active' : 'Paused'}
               </Text>
             </TouchableOpacity>
-          ) : (
-            <Text style={styles.detailValue}>{routine.isActive ? 'Active' : 'Disabled'}</Text>
+          )}
+          {onEdit && (
+            <TouchableOpacity style={styles.editButton} onPress={onEdit}>
+              <AppIcon name="edit" size={18} color={gradient.accent} />
+            </TouchableOpacity>
           )}
         </View>
-
-        {routine.type === 'STEP' && routine.separateInto > 1 && (
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Separate Into</Text>
-            <Text style={styles.detailValue}>{routine.separateInto} tasks</Text>
-          </View>
-        )}
-
-        {!isFixedDaily && (
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Repeat Interval</Text>
-            <Text style={styles.detailValue}>
-              {formatRepeatInterval(routine.repeatIntervalMinutes)}
-            </Text>
-          </View>
-        )}
-
-        {!isFixedDaily && (
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Active Days</Text>
-            <Text style={styles.detailValue}>{formatActiveDays(routine.activeDays)}</Text>
-          </View>
-        )}
       </View>
 
-      {onEdit && (
-        <PrimaryButton title="Edit Routine" onPress={onEdit} fullWidth style={styles.editButton} />
-      )}
-    </GlassCard>
+      <View style={styles.statsGrid}>
+        {routine.type === 'STEP' && routine.separateInto > 1 && (
+          <StatItem label="Split Into" value={`${routine.separateInto} tasks`} accent={gradient.accent} />
+        )}
+        {!isFixedDaily && (
+          <>
+            <StatItem
+              label="Repeat"
+              value={formatRepeatInterval(routine.repeatIntervalMinutes)}
+              accent={gradient.accent}
+            />
+            <StatItem
+              label="Active Days"
+              value={formatActiveDays(routine.activeDays)}
+              accent={gradient.accent}
+            />
+          </>
+        )}
+      </View>
+    </View>
+  );
+}
+
+function StatItem({ label, value, accent }: { label: string; value: string; accent: string }) {
+  return (
+    <View style={styles.statItem}>
+      <Text style={styles.statLabel}>{label}</Text>
+      <Text style={[styles.statValue, { color: accent }]}>{value}</Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    padding: spacing.lg,
     marginHorizontal: spacing.lg,
     marginTop: spacing.lg,
+    backgroundColor: theme.background.elevated,
+    borderRadius: 16,
+    padding: spacing.xl,
+    gap: spacing.lg,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: spacing.lg,
+    alignItems: 'center',
   },
   headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
     flex: 1,
   },
-  headerText: {
-    flex: 1,
-  },
-  name: {
-    fontSize: 20,
-    fontWeight: '600',
+  targetValue: {
+    fontSize: 22,
+    fontWeight: '700',
     color: theme.text.primary,
-    marginBottom: spacing.xs,
+    letterSpacing: -0.3,
   },
-  target: {
-    fontSize: 14,
-    color: theme.text.secondary,
-  },
-  typeBadge: {
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
-    borderRadius: 999,
-    alignSelf: 'flex-start',
-  },
-  typeBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: theme.text.primary,
-  },
-  details: {
-    borderTopWidth: 1,
-    borderTopColor: theme.border.secondary,
-    paddingTop: spacing.sm,
-  },
-  detailRow: {
+  headerActions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.border.secondary,
+    gap: spacing.sm,
   },
-  detailLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: theme.text.tertiary,
-  },
-  detailValue: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: theme.text.primary,
-  },
-  statusButton: {
-    paddingVertical: spacing.xs,
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: spacing.md,
-    borderRadius: 999,
+    paddingVertical: 6,
+    borderRadius: 20,
   },
-  statusButtonText: {
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  statusLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: theme.text.primary,
   },
   editButton: {
-    marginTop: spacing.lg,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  statItem: {
+    flex: 1,
+    minWidth: '45%',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 12,
+    padding: spacing.md,
+    gap: 4,
+  },
+  statLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: theme.text.muted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  statValue: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

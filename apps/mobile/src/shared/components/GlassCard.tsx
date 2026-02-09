@@ -31,8 +31,6 @@ const styles = StyleSheet.create({
   container: {
     borderRadius: 12,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: theme.glass.border,
   },
   blur: {
     flex: 1,

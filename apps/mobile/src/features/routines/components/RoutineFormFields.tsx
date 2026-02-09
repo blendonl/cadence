@@ -10,6 +10,7 @@ import { StepTargetInput } from './StepTargetInput';
 import { SleepWindowPicker } from './SleepWindowPicker';
 import {
   ROUTINE_TYPE_BADGE_CONFIG,
+  ROUTINE_TYPE_GRADIENTS,
   SEPARATE_INTO_RANGE,
 } from '../constants/routineConstants';
 import { getTargetPlaceholder, getTargetHelperText } from '../utils/routineValidation';
@@ -30,9 +31,10 @@ export function RoutineFormFields({ form, mode, lockedType }: RoutineFormFieldsP
   const isEdit = mode === 'edit';
 
   return (
-    <View>
+    <View style={styles.form}>
       {errors.general !== '' && (
-        <View style={styles.errorContainer}>
+        <View style={styles.errorBanner}>
+          <AppIcon name="alert" size={14} color={theme.status.error} />
           <Text style={styles.errorText}>{errors.general}</Text>
         </View>
       )}
@@ -48,39 +50,60 @@ export function RoutineFormFields({ form, mode, lockedType }: RoutineFormFieldsP
         />
       )}
 
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>{isEdit ? 'Type' : 'Type *'}</Text>
-        {isEdit || lockedType ? (
-          <>
+      {lockedType !== 'SLEEP' && (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>{isEdit ? 'Type' : 'Type *'}</Text>
+          {isEdit || lockedType ? (
             <TypeBadge type={values.type} />
-            {isEdit && (
-              <Text style={styles.helperText}>Type cannot be changed after creation</Text>
-            )}
-          </>
-        ) : (
-          <View style={styles.typeButtons}>
-            {ROUTINE_TYPES.map(t => {
-              const config = ROUTINE_TYPE_BADGE_CONFIG[t];
-              const isActive = values.type === t;
-              return (
-                <TouchableOpacity
-                  key={t}
-                  style={[styles.typeButton, isActive && styles.typeButtonActive]}
-                  onPress={() => {
-                    setField('type', t);
-                    setField('target', '');
-                  }}
-                >
-                  <AppIcon name={config.icon} size={16} color={isActive ? theme.text.primary : theme.text.secondary} />
-                  <Text style={[styles.typeButtonText, isActive && styles.typeButtonTextActive]}>
-                    {config.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        )}
-      </View>
+          ) : (
+            <View style={styles.typeSelector}>
+              {ROUTINE_TYPES.map(t => {
+                const config = ROUTINE_TYPE_BADGE_CONFIG[t];
+                const gradient = ROUTINE_TYPE_GRADIENTS[t];
+                const isActive = values.type === t;
+                return (
+                  <TouchableOpacity
+                    key={t}
+                    style={[
+                      styles.typeCard,
+                      isActive && {
+                        backgroundColor: gradient.iconBg,
+                        borderColor: gradient.accent + '40',
+                      },
+                    ]}
+                    onPress={() => {
+                      setField('type', t);
+                      setField('target', '');
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <View
+                      style={[
+                        styles.typeIconWrap,
+                        { backgroundColor: isActive ? gradient.accent + '25' : 'rgba(255,255,255,0.04)' },
+                      ]}
+                    >
+                      <AppIcon
+                        name={config.icon}
+                        size={20}
+                        color={isActive ? gradient.accent : theme.text.muted}
+                      />
+                    </View>
+                    <Text
+                      style={[
+                        styles.typeLabel,
+                        isActive && { color: gradient.accent },
+                      ]}
+                    >
+                      {config.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+        </View>
+      )}
 
       {values.type === 'SLEEP' && (
         <SleepWindowPicker
@@ -146,75 +169,74 @@ export function RoutineFormFields({ form, mode, lockedType }: RoutineFormFieldsP
 
 function TypeBadge({ type }: { type: RoutineType }) {
   const config = ROUTINE_TYPE_BADGE_CONFIG[type];
+  const gradient = ROUTINE_TYPE_GRADIENTS[type];
   return (
-    <View style={[styles.typeBadge, { backgroundColor: config.color + '20', borderColor: config.color }]}>
-      <AppIcon name={config.icon} size={16} color={config.color} />
-      <Text style={[styles.typeBadgeText, { color: config.color }]}>{config.label}</Text>
+    <View style={[styles.typeBadge, { backgroundColor: gradient.iconBg }]}>
+      <AppIcon name={config.icon} size={18} color={gradient.accent} />
+      <Text style={[styles.typeBadgeText, { color: gradient.accent }]}>{config.label}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  errorContainer: {
-    backgroundColor: `${theme.status.error}26`,
-    borderRadius: 10,
+  form: {
+    gap: 0,
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: 'rgba(242, 107, 107, 0.08)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(242, 107, 107, 0.15)',
     padding: spacing.md,
     marginBottom: spacing.lg,
-    borderWidth: 1,
-    borderColor: `${theme.status.error}66`,
   },
   errorText: {
-    fontSize: 12,
+    fontSize: 13,
     color: theme.status.error,
+    flex: 1,
   },
-  formGroup: {
+  section: {
     marginBottom: spacing.lg,
   },
-  label: {
+  sectionLabel: {
     fontSize: 13,
     fontWeight: '600',
     color: theme.text.secondary,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
-  helperText: {
-    fontSize: 12,
-    color: theme.text.tertiary,
-    marginTop: spacing.xs,
-  },
-  typeButtons: {
+  typeSelector: {
     flexDirection: 'row',
     gap: spacing.sm,
   },
-  typeButton: {
+  typeCard: {
     flex: 1,
-    paddingVertical: spacing.md,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.border.secondary,
-    backgroundColor: theme.background.elevated,
     alignItems: 'center',
-    flexDirection: 'row',
+    paddingVertical: spacing.lg,
+    borderRadius: 14,
+    backgroundColor: theme.background.elevated,
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  typeIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     justifyContent: 'center',
-    gap: spacing.xs,
+    alignItems: 'center',
   },
-  typeButtonActive: {
-    backgroundColor: theme.accent.primary,
-    borderColor: theme.accent.primary,
-  },
-  typeButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: theme.text.secondary,
-  },
-  typeButtonTextActive: {
-    color: theme.text.primary,
+  typeLabel: {
+    fontSize: 13,
     fontWeight: '600',
+    color: theme.text.secondary,
   },
   typeBadge: {
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     borderRadius: 12,
-    borderWidth: 1,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
@@ -222,6 +244,6 @@ const styles = StyleSheet.create({
   },
   typeBadgeText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });

@@ -36,7 +36,7 @@ export function RoutineCreateModal({
     <BaseModal
       visible={visible}
       onClose={form.handleClose}
-      title="Create Routine"
+      title="New Routine"
       maxHeight="90%"
       footer={
         <View style={styles.footer}>
