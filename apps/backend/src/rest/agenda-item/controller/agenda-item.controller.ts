@@ -60,12 +60,12 @@ export class AgendaItemController {
   async getOne(
     @Param('agendaId') agendaId: string,
     @Param('itemId') itemId: string,
-  ): Promise<AgendaItemDto> {
-    const item = await this.agendaItemService.getAgendaItem(itemId);
+  ): Promise<AgendaItemEnrichedDto> {
+    const item = await this.agendaItemService.getEnrichedAgendaItem(itemId);
     if (!item) {
       throw new NotFoundException('Agenda item not found');
     }
-    return AgendaItemMapper.toResponse(item);
+    return AgendaMapper.toAgendaItemEnrichedResponse(item);
   }
 
   @Put(':itemId')

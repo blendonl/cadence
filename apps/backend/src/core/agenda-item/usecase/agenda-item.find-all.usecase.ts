@@ -45,19 +45,10 @@ export class AgendaItemFindAllUseCase {
       };
     }
 
-    const page = params.page ?? 1;
-    const limit = params.limit ?? 50;
-    const skip = (page - 1) * limit;
-
-    const [total, agendas] = await this.prisma.$transaction([
-      this.prisma.agenda.count({ where: agendaWhere }),
-      this.prisma.agenda.findMany({
-        where: agendaWhere,
-        orderBy: { date: 'asc' },
-        skip,
-        take: limit,
-      }),
-    ]);
+    const agendas = await this.prisma.agenda.findMany({
+      where: agendaWhere,
+      orderBy: { date: 'asc' },
+    });
 
     const enrichedAgendas = await Promise.all(
       agendas.map(async (agenda) => {
@@ -91,11 +82,81 @@ export class AgendaItemFindAllUseCase {
       }),
     );
 
+    const mergedByDate = this.mergeByDate(enrichedAgendas);
+    const filled = params.startDate && params.endDate
+      ? this.fillDateRange(mergedByDate, params.startDate, params.endDate)
+      : mergedByDate;
+
+    const page = params.page ?? 1;
+    const limit = params.limit ?? 200;
+    const skip = (page - 1) * limit;
+    const paged = filled.slice(skip, skip + limit);
+
     return {
-      items: enrichedAgendas,
-      total,
+      items: paged,
+      total: filled.length,
       page,
       limit,
     };
+  }
+
+  private toDateKey(date: Date): string {
+    return date.toISOString().split('T')[0];
+  }
+
+  private mergeByDate(
+    agendas: Array<{ id: string; date: Date; createdAt: Date; updatedAt: Date; items: any[] }>,
+  ) {
+    const byDate = new Map<string, { id: string; date: Date; createdAt: Date; updatedAt: Date; items: any[] }>();
+
+    for (const agenda of agendas) {
+      const dateKey = this.toDateKey(agenda.date);
+      const existing = byDate.get(dateKey);
+      if (existing) {
+        existing.items.push(...agenda.items);
+      } else {
+        byDate.set(dateKey, { ...agenda, items: [...agenda.items] });
+      }
+    }
+
+    return Array.from(byDate.values()).sort(
+      (a, b) => a.date.getTime() - b.date.getTime(),
+    );
+  }
+
+  private fillDateRange(
+    agendas: Array<{ id: string; date: Date; createdAt: Date; updatedAt: Date; items: any[] }>,
+    startDate: Date,
+    endDate: Date,
+  ) {
+    const byDate = new Map<string, typeof agendas[number]>();
+    for (const agenda of agendas) {
+      byDate.set(this.toDateKey(agenda.date), agenda);
+    }
+
+    const result: typeof agendas = [];
+    const current = new Date(startDate);
+    current.setUTCHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setUTCHours(0, 0, 0, 0);
+
+    while (current <= end) {
+      const dateKey = this.toDateKey(current);
+      const existing = byDate.get(dateKey);
+      if (existing) {
+        result.push(existing);
+      } else {
+        result.push({
+          id: `empty-${dateKey}`,
+          date: new Date(current),
+          createdAt: new Date(current),
+          updatedAt: new Date(current),
+          items: [],
+        });
+      }
+      current.setUTCDate(current.getUTCDate() + 1);
+    }
+
+    return result;
   }
 }

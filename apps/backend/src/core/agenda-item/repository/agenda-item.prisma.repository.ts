@@ -158,4 +158,11 @@ export class AgendaItemPrismaRepository implements AgendaItemRepository {
       include: this.getEnrichedInclude(),
     }) as Promise<AgendaItemEnriched[]>;
   }
+
+  async findEnrichedById(id: string): Promise<AgendaItemEnriched | null> {
+    return this.prisma.agendaItem.findUnique({
+      where: { id },
+      include: this.getEnrichedInclude(),
+    }) as Promise<AgendaItemEnriched | null>;
+  }
 }

@@ -21,4 +21,5 @@ export interface AgendaItemRepository {
   findStepsByAgendaId(agendaId: string): Promise<AgendaItemEnriched[]>;
   findSleepItemsByAgendaId(agendaId: string): Promise<AgendaItemEnriched[]>;
   findUnfinishedByAgendaId(agendaId: string): Promise<AgendaItemEnriched[]>;
+  findEnrichedById(id: string): Promise<AgendaItemEnriched | null>;
 }

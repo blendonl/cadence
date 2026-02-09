@@ -47,6 +47,10 @@ export class AgendaItemCoreService {
     return this.agendaItemGetOneUseCase.execute(id);
   }
 
+  async getEnrichedAgendaItem(id: string) {
+    return this.agendaItemGetOneUseCase.executeEnriched(id);
+  }
+
   async updateAgendaItem(id: string, data: AgendaItemUpdateData) {
     return this.agendaItemUpdateUseCase.execute(id, data);
   }
