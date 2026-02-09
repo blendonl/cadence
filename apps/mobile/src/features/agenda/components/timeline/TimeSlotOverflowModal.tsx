@@ -5,6 +5,7 @@ import { theme } from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
 import AppIcon from '@shared/components/icons/AppIcon';
 import { AgendaItemCard } from '../AgendaItemCard';
+import { formatHourLabel } from '../../utils/agendaFormatters';
 
 interface TimeSlotOverflowModalProps {
   visible: boolean;
@@ -14,13 +15,6 @@ interface TimeSlotOverflowModalProps {
   onItemPress: (item: AgendaItemEnrichedDto) => void;
   onToggleComplete: (item: AgendaItemEnrichedDto) => void;
 }
-
-const formatHourLabel = (hour: number): string => {
-  if (hour === 0) return '12 AM';
-  if (hour === 12) return '12 PM';
-  if (hour < 12) return `${hour} AM`;
-  return `${hour - 12} PM`;
-};
 
 export const TimeSlotOverflowModal: React.FC<TimeSlotOverflowModalProps> = ({
   visible,

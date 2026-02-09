@@ -1,26 +1,28 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
-import { AgendaItemEnrichedDto, AgendaWeekViewDto } from 'shared-types';
+import { AgendaItemEnrichedDto } from 'shared-types';
 import { spacing } from '@shared/theme/spacing';
-import theme from '@shared/theme/colors';
+import { theme } from '@shared/theme/colors';
 import { AgendaItemCardMinimal } from '../timeline/AgendaItemCardMinimal';
 import { AgendaWeekEventCard } from './AgendaWeekEventCard';
+import { CurrentTimeIndicator } from '../timeline/CurrentTimeIndicator';
+import { HOUR_SLOT_HEIGHT, TIME_COLUMN_WIDTH, MIN_EVENT_HEIGHT } from '../../constants/agendaConstants';
+import { WeekDayData } from '../../hooks/useProcessedAgendaData';
+import { calculateTimelineHours } from '../../utils/timelineHelpers';
 
 interface AgendaWeekViewProps {
-  view: AgendaWeekViewDto;
+  days: WeekDayData[];
   onItemPress: (item: AgendaItemEnrichedDto) => void;
   onItemLongPress: (item: AgendaItemEnrichedDto) => void;
+  onToggleComplete: (item: AgendaItemEnrichedDto) => void;
   onDayPress: (dateKey: string) => void;
 }
 
-const HOUR_SLOT_HEIGHT = 60;
-const TIME_COLUMN_WIDTH = 52;
-const MIN_EVENT_HEIGHT = 18;
-
 export const AgendaWeekView: React.FC<AgendaWeekViewProps> = ({
-  view,
+  days,
   onItemPress,
   onItemLongPress,
+  onToggleComplete,
   onDayPress,
 }) => {
   const { width } = useWindowDimensions();
@@ -29,15 +31,32 @@ export const AgendaWeekView: React.FC<AgendaWeekViewProps> = ({
     return Math.max(44, available / 7);
   }, [width]);
 
-  const gridHeight = view.hours.length * HOUR_SLOT_HEIGHT;
+  const hours = useMemo(() => calculateTimelineHours('00:00', '23:00', false), []);
+  const gridHeight = hours.length * HOUR_SLOT_HEIGHT;
   const pxPerMinute = HOUR_SLOT_HEIGHT / 60;
+
+  const currentTimeOffset = useMemo(() => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const firstHour = hours.length > 0 ? hours[0].hour : 0;
+    const totalMinutes = (currentHour - firstHour) * 60 + currentMinute;
+    const offset = totalMinutes * pxPerMinute;
+    if (offset < 0 || offset > gridHeight) return undefined;
+    return offset;
+  }, [hours, pxPerMinute, gridHeight]);
+
+  const hasTodayColumn = useMemo(
+    () => days.some((d) => d.isToday),
+    [days],
+  );
 
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <View style={[styles.timeColumnHeader, { width: TIME_COLUMN_WIDTH }]} />
         <View style={styles.dayHeaderRow}>
-          {view.days.map((day) => (
+          {days.map((day) => (
             <TouchableOpacity
               key={day.dateKey}
               style={[styles.dayHeaderCell, { width: dayColumnWidth }]}
@@ -61,13 +80,14 @@ export const AgendaWeekView: React.FC<AgendaWeekViewProps> = ({
           <Text style={styles.allDayLabel}>All-day</Text>
         </View>
         <View style={styles.allDayColumns}>
-          {view.days.map((day) => (
+          {days.map((day) => (
             <View key={day.dateKey} style={[styles.allDayCell, { width: dayColumnWidth }]}>
               {day.allDayItems.map((item) => (
                 <AgendaItemCardMinimal
                   key={item.id}
                   item={item}
                   onPress={() => onItemPress(item)}
+                  onToggleComplete={() => onToggleComplete(item)}
                 />
               ))}
             </View>
@@ -78,19 +98,22 @@ export const AgendaWeekView: React.FC<AgendaWeekViewProps> = ({
       <ScrollView style={styles.gridScroll} contentContainerStyle={styles.gridScrollContent}>
         <View style={styles.gridRow}>
           <View style={[styles.timeColumn, { width: TIME_COLUMN_WIDTH }]}>
-            {view.hours.map((hour) => (
+            {hours.map((hour) => (
               <View key={`hour-${hour.hour}`} style={[styles.timeSlot, { height: HOUR_SLOT_HEIGHT }]}>
                 <Text style={styles.timeLabel}>{hour.label}</Text>
               </View>
             ))}
           </View>
           <View style={styles.dayColumns}>
-            {view.days.map((day) => (
+            {hasTodayColumn && currentTimeOffset !== undefined && (
+              <CurrentTimeIndicator offsetY={currentTimeOffset} />
+            )}
+            {days.map((day) => (
               <View
                 key={day.dateKey}
                 style={[styles.dayColumn, { width: dayColumnWidth, height: gridHeight }]}
               >
-                {view.hours.map((hour, index) => (
+                {hours.map((hour, index) => (
                   <View
                     key={`line-${day.dateKey}-${hour.hour}`}
                     style={[styles.hourDivider, { top: index * HOUR_SLOT_HEIGHT }]}
@@ -99,15 +122,15 @@ export const AgendaWeekView: React.FC<AgendaWeekViewProps> = ({
                 {day.timedItems.map((timed) => {
                   const top = timed.startMinute * pxPerMinute;
                   const height = Math.max(timed.durationMinutes * pxPerMinute, MIN_EVENT_HEIGHT);
-                  const width = dayColumnWidth / timed.overlapCount;
-                  const left = timed.overlapIndex * width;
+                  const w = dayColumnWidth / timed.overlapCount;
+                  const left = timed.overlapIndex * w;
                   return (
                     <AgendaWeekEventCard
                       key={timed.item.id}
                       item={timed.item}
                       onPress={() => onItemPress(timed.item)}
                       onLongPress={() => onItemLongPress(timed.item)}
-                      style={{ top, height, width, left }}
+                      style={{ top, height, width: w, left }}
                     />
                   );
                 })}

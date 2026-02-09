@@ -1,5 +1,12 @@
-import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import { theme } from '@shared/theme/colors';
 
 interface CurrentTimeIndicatorProps {
@@ -7,39 +14,28 @@ interface CurrentTimeIndicatorProps {
 }
 
 export const CurrentTimeIndicator: React.FC<CurrentTimeIndicatorProps> = ({ offsetY }) => {
-  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const scale = useSharedValue(1);
 
   useEffect(() => {
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.3,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ])
+    scale.value = withRepeat(
+      withSequence(
+        withTiming(1.4, { duration: 1000 }),
+        withTiming(1, { duration: 1000 }),
+      ),
+      -1
     );
+  }, [scale]);
 
-    animation.start();
-
-    return () => animation.stop();
-  }, [pulseAnim]);
+  const pulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
   return (
     <View style={[styles.container, { top: offsetY }]} pointerEvents="none">
-      <Animated.View
-        style={[
-          styles.dot,
-          {
-            transform: [{ scale: pulseAnim }],
-          },
-        ]}
-      />
+      <View style={styles.labelContainer}>
+        <Text style={styles.nowLabel}>NOW</Text>
+      </View>
+      <Animated.View style={[styles.dot, pulseStyle]} />
       <View style={styles.line} />
     </View>
   );
@@ -54,17 +50,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 10,
   },
+  labelContainer: {
+    paddingRight: 4,
+    paddingLeft: 8,
+  },
+  nowLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: theme.status.error,
+    letterSpacing: 0.5,
+  },
   dot: {
     width: 10,
     height: 10,
     borderRadius: 5,
     backgroundColor: theme.status.error,
-    marginLeft: 55,
+    shadowColor: theme.status.error,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 4,
+    elevation: 4,
   },
   line: {
     flex: 1,
     height: 2,
     backgroundColor: theme.status.error,
     marginLeft: 4,
+    shadowColor: theme.status.error,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
   },
 });

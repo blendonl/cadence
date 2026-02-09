@@ -96,13 +96,17 @@ export const agendaApi = {
   },
 
   async getAgendaItems(params: {
-    date: string;
+    date?: string;
+    startDate?: string;
+    endDate?: string;
     query?: string;
     mode?: 'all' | 'unfinished';
   }): Promise<AgendaItemsFindAllResponse> {
+    const start = params.startDate ?? params.date;
+    const end = params.endDate ?? params.date;
     const queryParts = [
-      `startDate=${params.date}`,
-      `endDate=${params.date}`,
+      `startDate=${start}`,
+      `endDate=${end}`,
     ];
 
     if (params.query) {

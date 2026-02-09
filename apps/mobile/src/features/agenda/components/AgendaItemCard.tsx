@@ -3,12 +3,18 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import type { AgendaItemEnrichedDto } from 'shared-types';
 import { OrphanedItemBadge } from '@shared/components/OrphanedItemBadge';
 import { theme } from '@shared/theme/colors';
-import AppIcon, { AppIconName } from '@shared/components/icons/AppIcon';
+import AppIcon from '@shared/components/icons/AppIcon';
 import {
   getScheduledTime,
   isOrphanedItem,
   isItemCompleted,
 } from '../utils/agendaHelpers';
+import {
+  formatTime,
+  formatDuration,
+  getTaskTypeMeta,
+  getTaskTypeIcon,
+} from '../utils/agendaFormatters';
 
 interface AgendaItemCardProps {
   item: AgendaItemEnrichedDto;
@@ -21,55 +27,6 @@ interface AgendaItemCardProps {
 
 type TaskType = 'regular' | 'meeting' | 'milestone' | null;
 type CardVariant = 'task' | 'sleep' | 'steps' | 'otherRoutine';
-
-const getTaskTypeIcon = (taskType: TaskType, isRoutine: boolean): AppIconName => {
-  if (isRoutine) {
-    return 'shuffle';
-  }
-
-  switch (taskType) {
-    case 'meeting':
-      return 'users';
-    case 'milestone':
-      return 'milestone';
-    default:
-      return 'task';
-  }
-};
-
-const getTaskTypeMeta = (taskType: TaskType, isRoutine: boolean) => {
-  if (isRoutine) {
-    return { label: 'Routine', color: theme.accent.secondary };
-  }
-
-  switch (taskType) {
-    case 'meeting':
-      return { label: 'Meeting', color: theme.accent.success };
-    case 'milestone':
-      return { label: 'Milestone', color: theme.accent.secondary };
-    default:
-      return { label: 'Task', color: theme.accent.primary };
-  }
-};
-
-const formatTime = (time: string | null | undefined) => {
-  if (!time || typeof time !== 'string') return null;
-  const [hours, minutes] = time.split(':');
-  if (!hours || !minutes) return null;
-  const hour = parseInt(hours, 10);
-  if (Number.isNaN(hour)) return null;
-  const period = hour >= 12 ? 'PM' : 'AM';
-  const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
-  return `${displayHour}:${minutes} ${period}`;
-};
-
-const formatDuration = (minutes: number | null) => {
-  if (!minutes) return null;
-  if (minutes < 60) return `${minutes}m`;
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-};
 
 const resolveCardVariant = (hasTaskId: boolean, routineType: string | null): CardVariant => {
   if (hasTaskId) return 'task';
@@ -144,10 +101,6 @@ const AgendaItemCardComponent: React.FC<AgendaItemCardProps> = ({
     return `${projectName} / ${boardName}`;
   }, [isRoutineTask, item.routineTask?.routineName, projectName, boardName]);
 
-  const meetingLocation = null;
-  const meetingAttendees: unknown[] = [];
-  const hasDetailChips = false;
-
   const sleepRange = useMemo(
     () => parseSleepRange(item.routineTask?.routineTarget || null),
     [item.routineTask?.routineTarget]
@@ -174,20 +127,17 @@ const AgendaItemCardComponent: React.FC<AgendaItemCardProps> = ({
     [item.routineTask?.routineTarget]
   );
 
-  const stepProgress = 0;
-  const actualSteps = 0;
-
-  const formattedActualSteps = formatStepValue(actualSteps);
   const formattedTargetSteps = formatStepValue(stepTarget || 0);
+
+  const minimalMetadata = useMemo(() => {
+    const parts: string[] = [];
+    if (timeLabel) parts.push(timeLabel);
+    if (item.duration) parts.push(formatDuration(item.duration) || '');
+    return parts.join(' • ');
+  }, [timeLabel, item.duration]);
 
   if (mode === 'minimal') {
     const accentColor = typeMeta.color;
-    const metadata = useMemo(() => {
-      const parts: string[] = [];
-      if (timeLabel) parts.push(timeLabel);
-      if (item.duration) parts.push(formatDuration(item.duration) || '');
-      return parts.join(' • ');
-    }, [timeLabel, item.duration]);
 
     return (
       <TouchableOpacity
@@ -202,7 +152,7 @@ const AgendaItemCardComponent: React.FC<AgendaItemCardProps> = ({
           >
             {taskTitle}
           </Text>
-          {metadata && <Text style={styles.minimalMetadata}>{metadata}</Text>}
+          {minimalMetadata && <Text style={styles.minimalMetadata}>{minimalMetadata}</Text>}
         </View>
         {onToggleComplete && (
           <TouchableOpacity
@@ -302,27 +252,6 @@ const AgendaItemCardComponent: React.FC<AgendaItemCardProps> = ({
               </View>
             )}
           </View>
-
-          {hasDetailChips && (
-            <View style={styles.detailsRow}>
-              {meetingLocation && (
-                <View style={styles.detailChip}>
-                  <AppIcon name="pin" size={12} color={theme.text.secondary} />
-                  <Text style={styles.detailChipText} numberOfLines={1}>
-                    {meetingLocation}
-                  </Text>
-                </View>
-              )}
-              {meetingAttendees.length > 0 && (
-                <View style={styles.detailChip}>
-                  <AppIcon name="users" size={12} color={theme.text.secondary} />
-                  <Text style={styles.detailChipText}>
-                    {meetingAttendees.length} {meetingAttendees.length === 1 ? 'person' : 'people'}
-                  </Text>
-                </View>
-              )}
-            </View>
-          )}
         </>
       )}
 
@@ -377,12 +306,12 @@ const AgendaItemCardComponent: React.FC<AgendaItemCardProps> = ({
           </View>
           <View style={styles.stepsProgressRow}>
             <View style={styles.stepsProgressBar}>
-              <View style={[styles.stepsProgressFill, { width: `${Math.round(stepProgress * 100)}%` }]} />
+              <View style={[styles.stepsProgressFill, { width: '0%' }]} />
             </View>
             <Text style={styles.stepsProgressText}>
               {stepTarget
-                ? `${formattedActualSteps} / ${formattedTargetSteps}`
-                : `${formattedActualSteps}`}
+                ? `0 / ${formattedTargetSteps}`
+                : '0'}
             </Text>
           </View>
         </View>
@@ -593,32 +522,6 @@ const styles = StyleSheet.create({
     color: theme.text.secondary,
     fontWeight: '600',
   },
-  detailsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 6,
-  },
-  detailChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    backgroundColor: theme.background.elevated,
-    borderWidth: 1,
-    borderColor: theme.border.secondary,
-  },
-  detailChipText: {
-    fontSize: 12,
-    color: theme.text.secondary,
-  },
-  descriptionText: {
-    marginTop: 6,
-    fontSize: 12,
-    color: theme.text.tertiary,
-  },
   sleepContent: {
     gap: 8,
   },
@@ -633,15 +536,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 10,
     alignItems: 'flex-start',
-  },
-  sleepSegment: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    backgroundColor: theme.background.elevated,
-    borderWidth: 1,
-    borderColor: theme.border.secondary,
   },
   sleepTime: {
     fontSize: 16,

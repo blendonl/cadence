@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -40,6 +40,12 @@ export const CalendarPickerModal: React.FC<CalendarPickerModalProps> = ({
   onDateSelect,
 }) => {
   const [monthAnchor, setMonthAnchor] = useState(getMonthStart(selectedDate));
+
+  useEffect(() => {
+    if (visible) {
+      setMonthAnchor(getMonthStart(selectedDate));
+    }
+  }, [visible, selectedDate]);
 
   const monthGridDays = useMemo((): Date[] => {
     const start = getMonthStart(monthAnchor);

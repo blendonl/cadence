@@ -2,7 +2,10 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
 import { AgendaItemEnrichedDto } from 'shared-types';
 import theme from '@shared/theme/colors';
-import { getItemTitle } from '../../utils/agendaHelpers';
+import { getItemTitle, isItemCompleted } from '../../utils/agendaHelpers';
+import { getAccentColor, formatTime } from '../../utils/agendaFormatters';
+import { getCardTintColor } from '../../utils/cardStyles';
+import { getScheduledTime } from '../../utils/agendaHelpers';
 
 interface AgendaWeekEventCardProps {
   item: AgendaItemEnrichedDto;
@@ -10,13 +13,6 @@ interface AgendaWeekEventCardProps {
   onLongPress: () => void;
   style?: StyleProp<ViewStyle>;
 }
-
-const getAccentColor = (item: AgendaItemEnrichedDto): string => {
-  if (item.routineTaskId) return theme.accent.secondary;
-  if (item.task?.taskType === 'meeting') return theme.accent.success;
-  if (item.task?.taskType === 'milestone') return theme.accent.secondary;
-  return theme.accent.primary;
-};
 
 export const AgendaWeekEventCard: React.FC<AgendaWeekEventCardProps> = ({
   item,
@@ -26,10 +22,18 @@ export const AgendaWeekEventCard: React.FC<AgendaWeekEventCardProps> = ({
 }) => {
   const title = useMemo(() => getItemTitle(item), [item]);
   const accentColor = useMemo(() => getAccentColor(item), [item]);
+  const tintColor = useMemo(() => getCardTintColor(item), [item]);
+  const isCompleted = isItemCompleted(item);
+  const timeLabel = useMemo(() => formatTime(getScheduledTime(item)), [item]);
 
   return (
     <TouchableOpacity
-      style={[styles.container, { borderLeftColor: accentColor }, style]}
+      style={[
+        styles.container,
+        { borderLeftColor: accentColor, backgroundColor: tintColor || theme.card.background },
+        isCompleted && styles.containerCompleted,
+        style,
+      ]}
       onPress={onPress}
       onLongPress={onLongPress}
       activeOpacity={0.7}
@@ -37,9 +41,15 @@ export const AgendaWeekEventCard: React.FC<AgendaWeekEventCardProps> = ({
       accessibilityLabel={title}
     >
       <View style={styles.content}>
-        <Text numberOfLines={2} style={styles.title}>
+        <Text
+          numberOfLines={2}
+          style={[styles.title, isCompleted && styles.titleCompleted]}
+        >
           {title}
         </Text>
+        {timeLabel && (
+          <Text style={styles.time} numberOfLines={1}>{timeLabel}</Text>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -56,6 +66,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 4,
     overflow: 'hidden',
+    minHeight: 44,
+  },
+  containerCompleted: {
+    opacity: 0.6,
   },
   content: {
     flex: 1,
@@ -64,5 +78,14 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     color: theme.text.primary,
+  },
+  titleCompleted: {
+    textDecorationLine: 'line-through',
+    color: theme.text.tertiary,
+  },
+  time: {
+    fontSize: 9,
+    color: theme.text.secondary,
+    marginTop: 2,
   },
 });

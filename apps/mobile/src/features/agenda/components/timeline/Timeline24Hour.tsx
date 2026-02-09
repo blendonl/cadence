@@ -10,6 +10,7 @@ import { theme } from '@shared/theme/colors';
 import { AgendaDayHourSlotDto, AgendaItemEnrichedDto } from 'shared-types';
 import { TimeSlot } from './TimeSlot';
 import { useCurrentTimePosition } from '../../hooks/useCurrentTimePosition';
+import { HOUR_SLOT_HEIGHT } from '../../constants/agendaConstants';
 
 interface Timeline24HourProps {
   slots: AgendaDayHourSlotDto[];
@@ -23,8 +24,6 @@ interface Timeline24HourProps {
   onRefresh?: () => void;
   headerComponent?: React.ReactElement;
 }
-
-const HOUR_SLOT_HEIGHT = 60;
 
 export const Timeline24Hour: React.FC<Timeline24HourProps> = ({
   slots,

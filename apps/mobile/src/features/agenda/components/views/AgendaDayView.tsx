@@ -1,13 +1,15 @@
 import React from 'react';
 import { FlatList } from 'react-native';
-import { AgendaDayHourSlotDto, AgendaDayViewDto, AgendaItemEnrichedDto } from 'shared-types';
+import { AgendaDayHourSlotDto, AgendaItemEnrichedDto } from 'shared-types';
 import { AgendaTimelineView } from '../timeline/AgendaTimelineView';
 import { Timeline24Hour } from '../timeline/Timeline24Hour';
 import { SpecialItemsHeader } from '../sections/SpecialItemsHeader';
 import { AllDaySection } from '../sections/AllDaySection';
+import { DayViewData } from '../../hooks/useProcessedAgendaData';
 
 interface AgendaDayViewProps {
-  view: AgendaDayViewDto;
+  data: DayViewData;
+  label: string;
   refreshing: boolean;
   onRefresh: () => void;
   onScheduleTask: () => void;
@@ -18,7 +20,8 @@ interface AgendaDayViewProps {
 }
 
 export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
-  view,
+  data,
+  label,
   refreshing,
   onRefresh,
   onScheduleTask,
@@ -29,34 +32,34 @@ export const AgendaDayView: React.FC<AgendaDayViewProps> = ({
 }) => {
   return (
     <AgendaTimelineView
-      isEmpty={view.isEmpty}
-      emptyStateLabel={view.label}
-      emptyStateIsToday={view.isToday}
+      isEmpty={data.isEmpty}
+      emptyStateLabel={label}
+      emptyStateIsToday={data.isToday}
       onScheduleTask={onScheduleTask}
       refreshing={refreshing}
       onRefresh={onRefresh}
     >
       <Timeline24Hour
-        slots={view.hours}
+        slots={data.hours}
         onItemPress={onItemPress}
         onToggleComplete={onToggleComplete}
         flatListRef={flatListRef}
-        isToday={view.isToday}
-        wakeUpHour={view.wakeUpHour ?? undefined}
-        sleepHour={view.sleepHour ?? undefined}
+        isToday={data.isToday}
+        wakeUpHour={data.wakeUpHour ?? undefined}
+        sleepHour={data.sleepHour ?? undefined}
         refreshing={refreshing}
         onRefresh={onRefresh}
         headerComponent={
           <>
             <SpecialItemsHeader
-              wakeupItem={view.specialItems.wakeup}
-              stepItem={view.specialItems.step}
+              wakeupItem={data.wakeup}
+              stepItem={data.step}
               onItemPress={onItemPress}
               onItemLongPress={onItemLongPress}
               onToggleComplete={onToggleComplete}
             />
             <AllDaySection
-              items={view.allDayItems}
+              items={data.allDayItems}
               onItemPress={onItemPress}
               onToggleComplete={onToggleComplete}
             />

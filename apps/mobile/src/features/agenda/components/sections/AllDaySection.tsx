@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AgendaItemEnrichedDto } from 'shared-types';
 import { theme } from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
 import AppIcon from '@shared/components/icons/AppIcon';
 import { AgendaItemCardMinimal } from '../timeline/AgendaItemCardMinimal';
 import { useHaptics } from '../../hooks/useHaptics';
+import { useCollapsibleSection } from '../../hooks/useCollapsibleSection';
 
 interface AllDaySectionProps {
   items: AgendaItemEnrichedDto[];
@@ -21,33 +21,12 @@ export const AllDaySection: React.FC<AllDaySectionProps> = ({
   onItemPress,
   onToggleComplete,
 }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const { isCollapsed, toggle } = useCollapsibleSection(ALL_DAY_COLLAPSE_KEY);
   const haptics = useHaptics();
 
-  useEffect(() => {
-    const loadCollapseState = async () => {
-      try {
-        const saved = await AsyncStorage.getItem(ALL_DAY_COLLAPSE_KEY);
-        if (saved !== null) {
-          setIsCollapsed(saved === 'true');
-        }
-      } catch (error) {
-        console.error('Failed to load collapse state:', error);
-      }
-    };
-
-    loadCollapseState();
-  }, []);
-
-  const toggleCollapsed = async () => {
+  const handleToggle = () => {
     haptics.selection();
-    const newState = !isCollapsed;
-    setIsCollapsed(newState);
-    try {
-      await AsyncStorage.setItem(ALL_DAY_COLLAPSE_KEY, String(newState));
-    } catch (error) {
-      console.error('Failed to save collapse state:', error);
-    }
+    toggle();
   };
 
   if (items.length === 0) {
@@ -61,7 +40,7 @@ export const AllDaySection: React.FC<AllDaySectionProps> = ({
           styles.header,
           isCollapsed && styles.headerCollapsed,
         ]}
-        onPress={toggleCollapsed}
+        onPress={handleToggle}
         accessibilityLabel={`All Day tasks, ${items.length} ${items.length === 1 ? 'item' : 'items'}`}
         accessibilityRole="button"
         accessibilityState={{ expanded: !isCollapsed }}

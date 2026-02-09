@@ -1,20 +1,23 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
+import uiConstants from '@shared/theme/uiConstants';
 import AppIcon from '@shared/components/icons/AppIcon';
 
 interface UnfinishedTasksBadgeProps {
   count: number;
   onPress: () => void;
-  bottom: number;
 }
 
 export const UnfinishedTasksBadge: React.FC<UnfinishedTasksBadgeProps> = ({
   count,
   onPress,
-  bottom,
 }) => {
+  const insets = useSafeAreaInsets();
+  const badgeBottom = uiConstants.TAB_BAR_HEIGHT + uiConstants.TAB_BAR_BOTTOM_MARGIN + insets.bottom + 94;
+
   if (count === 0) {
     return null;
   }
@@ -23,7 +26,7 @@ export const UnfinishedTasksBadge: React.FC<UnfinishedTasksBadgeProps> = ({
 
   return (
     <TouchableOpacity
-      style={[styles.badge, { bottom: bottom + 70 }]}
+      style={[styles.badge, { bottom: badgeBottom }]}
       onPress={onPress}
       activeOpacity={0.7}
       hitSlop={badgeHitSlop}

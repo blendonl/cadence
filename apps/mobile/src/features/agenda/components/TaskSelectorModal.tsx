@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,8 @@ import theme from '@shared/theme';
 import AppIcon from '@shared/components/icons/AppIcon';
 import { getAgendaService } from '@core/di/hooks';
 import { TaskDto, TaskPriority } from 'shared-types';
+import QuickTaskCreateButton from './QuickTaskCreateButton';
+import QuickTaskCreateForm from './QuickTaskCreateForm';
 
 interface TaskSelectorModalProps {
   visible: boolean;
@@ -36,23 +38,11 @@ export default function TaskSelectorModal({
   const [hasMore, setHasMore] = useState(true);
   const [total, setTotal] = useState(0);
 
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<FilterType>('all');
   const [selectedPriority, setSelectedPriority] = useState<TaskPriority | null>(null);
 
-  useEffect(() => {
-    if (visible) {
-      setPage(1);
-      setTasks([]);
-      setHasMore(true);
-      loadData(1);
-    }
-  }, [visible, searchQuery]);
-
-  useEffect(() => {
-    applyFilters();
-  }, [tasks, selectedPriority]);
-
-  const loadData = async (pageToLoad: number = page, append: boolean = false) => {
+  const loadData = useCallback(async (pageToLoad: number = page, append: boolean = false) => {
     if (append) {
       setLoadingMore(true);
     } else {
@@ -78,7 +68,21 @@ export default function TaskSelectorModal({
       setLoading(false);
       setLoadingMore(false);
     }
-  };
+  }, [page, searchQuery]);
+
+  useEffect(() => {
+    if (visible) {
+      setShowCreateForm(false);
+      setPage(1);
+      setTasks([]);
+      setHasMore(true);
+      loadData(1);
+    }
+  }, [visible, searchQuery, loadData]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [tasks, selectedPriority]);
 
   const loadMore = () => {
     if (!loadingMore && !loading && hasMore) {
@@ -97,6 +101,11 @@ export default function TaskSelectorModal({
   };
 
   const handleTaskPress = (task: TaskDto) => {
+    onTaskSelected(task);
+    onClose();
+  };
+
+  const handleTaskCreated = (task: TaskDto) => {
     onTaskSelected(task);
     onClose();
   };
@@ -259,51 +268,62 @@ export default function TaskSelectorModal({
     <BaseModal
       visible={visible}
       onClose={onClose}
-      title="Select Task to Schedule"
+      title={showCreateForm ? 'Create New Task' : 'Select Task to Schedule'}
       scrollable={false}
     >
-      <View style={styles.searchContainer}>
-        <AppIcon name="search" size={18} color={theme.text.secondary} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search tasks..."
-          placeholderTextColor={theme.text.secondary}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
+      {showCreateForm ? (
+        <QuickTaskCreateForm
+          onTaskCreated={handleTaskCreated}
+          onCancel={() => setShowCreateForm(false)}
         />
-      </View>
-
-      <View style={styles.filtersCard}>
-        {renderFilterChips()}
-        {renderFilterOptions()}
-      </View>
-
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.primary} />
-        </View>
-      ) : filteredTasks.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <AppIcon name="inbox" size={48} color={theme.text.secondary} />
-          <Text style={styles.emptyText}>No tasks found</Text>
-        </View>
       ) : (
-        <FlatList
-          data={filteredTasks}
-          renderItem={renderTask}
-          keyExtractor={item => item.id}
-          style={styles.list}
-          contentContainerStyle={styles.listContent}
-          onEndReached={loadMore}
-          onEndReachedThreshold={0.5}
-          ListFooterComponent={
-            loadingMore ? (
-              <View style={styles.footerLoader}>
-                <ActivityIndicator size="small" color={theme.primary} />
-              </View>
-            ) : null
-          }
-        />
+        <>
+          <View style={styles.searchContainer}>
+            <AppIcon name="search" size={18} color={theme.text.secondary} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search tasks..."
+              placeholderTextColor={theme.text.secondary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+
+          <QuickTaskCreateButton onPress={() => setShowCreateForm(true)} />
+
+          <View style={styles.filtersCard}>
+            {renderFilterChips()}
+            {renderFilterOptions()}
+          </View>
+
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={theme.primary} />
+            </View>
+          ) : filteredTasks.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <AppIcon name="inbox" size={48} color={theme.text.secondary} />
+              <Text style={styles.emptyText}>No tasks found</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={filteredTasks}
+              renderItem={renderTask}
+              keyExtractor={item => item.id}
+              style={styles.list}
+              contentContainerStyle={styles.listContent}
+              onEndReached={loadMore}
+              onEndReachedThreshold={0.5}
+              ListFooterComponent={
+                loadingMore ? (
+                  <View style={styles.footerLoader}>
+                    <ActivityIndicator size="small" color={theme.primary} />
+                  </View>
+                ) : null
+              }
+            />
+          )}
+        </>
       )}
     </BaseModal>
   );
