@@ -16,7 +16,6 @@ import {
   GoalsIcon,
   RoutinesIcon,
   NotesIcon,
-  TimeIcon,
 } from "@shared/components/icons/TabIcons";
 
 import uiConstants from "@shared/theme/uiConstants";
@@ -53,7 +52,6 @@ function TabItem({ route, focused, onPress, onLongPress }: TabItemProps) {
     goals: GoalsIcon,
     routines: RoutinesIcon,
     notes: NotesIcon,
-    time: TimeIcon,
   };
 
   const Icon = iconMap[route];
