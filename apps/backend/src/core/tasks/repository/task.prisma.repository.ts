@@ -35,6 +35,23 @@ export class TaskPrismaRepository implements TaskRepository {
       },
     });
   }
+  async findByIdWithRelations(id: string): Promise<Task | null> {
+    return this.prisma.task.findUnique({
+      where: { id },
+      include: {
+        column: {
+          include: {
+            board: {
+              include: {
+                project: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
   update(id: string, data: TaskUpdateData): Promise<Task> {
     return this.prisma.task.update({
       where: { id },

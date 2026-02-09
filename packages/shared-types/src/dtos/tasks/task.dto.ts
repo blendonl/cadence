@@ -91,6 +91,17 @@ export interface TaskUpdateRequestDto {
 }
 
 /**
+ * Quick create task request (no columnId needed — uses General project)
+ */
+export interface QuickTaskCreateRequestDto {
+  title: string;
+  description?: string;
+  taskType?: TaskType;
+  priority?: TaskPriorityType;
+  parentId?: string;
+}
+
+/**
  * Move task request
  */
 export interface TaskMoveRequestDto {

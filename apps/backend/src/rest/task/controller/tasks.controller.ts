@@ -18,6 +18,7 @@ import {
   PaginatedResponse,
 } from 'shared-types';
 import { TaskCreateRequest } from '../dto/task.create.request';
+import { TaskQuickCreateRequest } from '../dto/task.quick-create.request';
 import { TaskUpdateRequest } from '../dto/task.update.request';
 import { TaskListQueryRequest } from '../dto/task.list.query.request';
 import { TasksCoreService } from 'src/core/tasks/service/tasks.core.service';
@@ -34,6 +35,22 @@ export class TasksController {
     private readonly tasksService: TasksCoreService,
     private readonly taskLogsService: TaskLogsCoreService,
   ) {}
+
+  @Post('quick')
+  @ApiOperation({ summary: 'Quick create a task in the General project' })
+  async quickCreate(
+    @Body() body: TaskQuickCreateRequest,
+  ): Promise<TaskDto> {
+    const task = await this.tasksService.quickCreateTask({
+      title: body.title,
+      description: body.description,
+      parentId: body.parentId ?? null,
+      type: body.taskType,
+      priority: body.priority as any,
+    });
+
+    return TaskMapper.toResponse(task);
+  }
 
   @Post()
   @ApiOperation({ summary: 'Create a new task' })

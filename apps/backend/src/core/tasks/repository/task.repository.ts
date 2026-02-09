@@ -11,6 +11,7 @@ export interface TaskRepository {
   findAll(query: TaskListQueryData): Promise<TaskListResultData>;
   create(data: TaskCreateData): Promise<Task>;
   findById(id: string): Promise<TaskFindOneData | null>;
+  findByIdWithRelations(id: string): Promise<Task | null>;
   update(id: string, data: TaskUpdateData): Promise<Task>;
   delete(id: string): Promise<void>;
   moveToColumn(taskId: string, columnId: string): Promise<Task>;

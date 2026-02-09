@@ -7,6 +7,7 @@ import { TaskGetAllUseCase } from './usecase/task.get-all.usecase';
 import { TaskGetOneUseCase } from './usecase/task.get-one.usecase';
 import { TaskUpdateUseCase } from './usecase/task.update.usecase';
 import { TaskMoveUseCase } from './usecase/task.move.usecase';
+import { TaskQuickCreateUseCase } from './usecase/task.quick-create.usecase';
 import { TaskPrismaRepository } from './repository/task.prisma.repository';
 import { TASK_REPOSITORY } from './repository/task.repository';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -15,6 +16,7 @@ import { RepositoryEventWrapper } from '../events/services/repository-event-wrap
 import { TaskLogsCoreModule } from '../task-logs/task-logs.core.module';
 import { ColumnsCoreModule } from '../columns/columns.core.module';
 import { ProjectsCoreModule } from '../projects/projects.core.module';
+import { BoardsCoreModule } from '../boards/boards.core.module';
 
 @Module({
   imports: [
@@ -22,6 +24,7 @@ import { ProjectsCoreModule } from '../projects/projects.core.module';
     TaskLogsCoreModule,
     ColumnsCoreModule,
     ProjectsCoreModule,
+    BoardsCoreModule,
   ],
   controllers: [],
   providers: [
@@ -39,6 +42,7 @@ import { ProjectsCoreModule } from '../projects/projects.core.module';
     TaskUpdateUseCase,
     TaskDeleteUseCase,
     TaskMoveUseCase,
+    TaskQuickCreateUseCase,
     TasksCoreService,
   ],
   exports: [TasksCoreService],
