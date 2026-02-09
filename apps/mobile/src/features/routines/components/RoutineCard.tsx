@@ -2,7 +2,9 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { RoutineDetailDto } from 'shared-types';
 import { formatTargetDisplay } from '../utils/routineValidation';
+import { ROUTINE_TYPE_BADGE_CONFIG } from '../constants/routineConstants';
 import GlassCard from '@shared/components/GlassCard';
+import AppIcon from '@shared/components/icons/AppIcon';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
 
@@ -11,14 +13,8 @@ interface RoutineCardProps {
   onPress: (routine: RoutineDetailDto) => void;
 }
 
-const TYPE_BADGE_CONFIG = {
-  SLEEP: { color: theme.accent.info, label: 'Sleep', icon: '🌙' },
-  STEP: { color: theme.accent.success, label: 'Steps', icon: '👟' },
-  OTHER: { color: theme.text.muted, label: 'Other', icon: '📋' },
-};
-
 export function RoutineCard({ routine, onPress }: RoutineCardProps) {
-  const badgeConfig = TYPE_BADGE_CONFIG[routine.type];
+  const badgeConfig = ROUTINE_TYPE_BADGE_CONFIG[routine.type];
   const targetDisplay = formatTargetDisplay(routine.type, routine.target);
   const taskCount = routine.tasks?.length ?? 0;
 
@@ -31,7 +27,7 @@ export function RoutineCard({ routine, onPress }: RoutineCardProps) {
       <GlassCard style={styles.cardInner}>
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.icon}>{badgeConfig.icon}</Text>
+            <AppIcon name={badgeConfig.icon} size={24} color={badgeConfig.color} />
             <View>
               <Text style={styles.name}>{routine.name}</Text>
               <Text style={styles.target}>{targetDisplay}</Text>
@@ -58,7 +54,7 @@ export function RoutineCard({ routine, onPress }: RoutineCardProps) {
             {taskCount} {taskCount === 1 ? 'task' : 'tasks'}
           </Text>
 
-          <Text style={styles.chevron}>›</Text>
+          <AppIcon name="arrow-right" size={18} color={theme.text.muted} />
         </View>
       </GlassCard>
     </TouchableOpacity>
@@ -84,9 +80,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     gap: spacing.md,
-  },
-  icon: {
-    fontSize: 24,
   },
   name: {
     fontSize: 16,
@@ -127,9 +120,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: theme.text.tertiary,
     flex: 1,
-  },
-  chevron: {
-    fontSize: 24,
-    color: theme.text.muted,
   },
 });

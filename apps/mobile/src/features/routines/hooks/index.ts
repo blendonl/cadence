@@ -4,3 +4,4 @@ export { useRoutineActions, type UseRoutineActionsReturn } from './useRoutineAct
 export { useRoutineDetail, type UseRoutineDetailReturn } from './useRoutineDetail';
 export { useRoutineListScreen, type UseRoutineListScreenReturn } from './useRoutineListScreen';
 export { useRoutineByType, type UseRoutineByTypeReturn } from './useRoutineByType';
+export { useRoutineForm, type UseRoutineFormConfig, type UseRoutineFormReturn, type RoutineFormValues } from './useRoutineForm';

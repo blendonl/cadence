@@ -1,5 +1,7 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import AppIcon from '@shared/components/icons/AppIcon';
+import { PrimaryButton } from '@shared/components/Button';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
 
@@ -10,14 +12,12 @@ interface EmptyRoutinesStateProps {
 export function EmptyRoutinesState({ onCreatePress }: EmptyRoutinesStateProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.icon}>📋</Text>
+      <AppIcon name="list" size={64} color={theme.text.muted} />
       <Text style={styles.title}>No routines yet</Text>
       <Text style={styles.description}>
         Create your first routine to build healthy habits
       </Text>
-      <TouchableOpacity style={styles.button} onPress={onCreatePress}>
-        <Text style={styles.buttonText}>Create Routine</Text>
-      </TouchableOpacity>
+      <PrimaryButton title="Create Routine" onPress={onCreatePress} />
     </View>
   );
 }
@@ -29,32 +29,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.xxxl,
-  },
-  icon: {
-    fontSize: 64,
-    marginBottom: spacing.lg,
+    gap: spacing.sm,
   },
   title: {
     fontSize: 20,
     fontWeight: '600',
     color: theme.text.primary,
-    marginBottom: spacing.sm,
   },
   description: {
     fontSize: 14,
     color: theme.text.tertiary,
     textAlign: 'center',
-    marginBottom: spacing.xl,
-  },
-  button: {
-    backgroundColor: theme.accent.primary,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
-    borderRadius: 12,
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: theme.text.primary,
+    marginBottom: spacing.md,
   },
 });

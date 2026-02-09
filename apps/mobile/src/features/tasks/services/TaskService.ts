@@ -1,7 +1,7 @@
 import { injectable, inject } from "tsyringe";
 import { TaskId, ParentId } from "@core/types";
 import { ValidationError } from "@core/exceptions";
-import { TaskDto, TaskDetailDto, TaskCreateRequestDto, TaskCreateResponseDto, TaskUpdateRequestDto, TaskPriorityType, PaginatedResponse } from "shared-types";
+import { TaskDto, TaskDetailDto, TaskCreateRequestDto, TaskCreateResponseDto, TaskUpdateRequestDto, TaskPriorityType, PaginatedResponse, QuickTaskCreateRequestDto } from "shared-types";
 import { API_CLIENT } from "@core/di/tokens";
 import { ApiClient } from "@infrastructure/api/apiClient";
 
@@ -80,6 +80,14 @@ export class TaskService {
 
   async setTaskPriority(taskId: TaskId, priority: TaskPriorityType): Promise<void> {
     await this.updateTask(taskId, { priority });
+  }
+
+  async quickCreateTask(params: QuickTaskCreateRequestDto): Promise<TaskDto> {
+    return await this.apiClient.request<TaskDto>(`/tasks/quick`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    });
   }
 
   async getTaskDetail(taskId: TaskId): Promise<TaskDetailDto | null> {

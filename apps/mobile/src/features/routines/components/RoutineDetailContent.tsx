@@ -7,7 +7,10 @@ import {
   formatRepeatInterval,
   formatActiveDays,
 } from '../utils/routineValidation';
+import { ROUTINE_TYPE_BADGE_CONFIG, FIXED_DAILY_TYPES } from '../constants/routineConstants';
 import GlassCard from '@shared/components/GlassCard';
+import AppIcon from '@shared/components/icons/AppIcon';
+import { PrimaryButton, DangerButton } from '@shared/components/Button';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
 
@@ -18,19 +21,14 @@ interface RoutineDetailContentProps {
   onToggleStatus: () => void;
 }
 
-const TYPE_BADGE_CONFIG = {
-  SLEEP: { color: theme.accent.info, label: 'Sleep', icon: '🌙' },
-  STEP: { color: theme.accent.success, label: 'Steps', icon: '👟' },
-  OTHER: { color: theme.text.muted, label: 'Other', icon: '📋' },
-};
-
 export function RoutineDetailContent({
   routine,
   onEdit,
   onDelete,
   onToggleStatus,
 }: RoutineDetailContentProps) {
-  const badgeConfig = TYPE_BADGE_CONFIG[routine.type];
+  const badgeConfig = ROUTINE_TYPE_BADGE_CONFIG[routine.type];
+  const isFixedDaily = FIXED_DAILY_TYPES.includes(routine.type);
 
   const handleDelete = () => {
     Alert.alert(
@@ -47,7 +45,7 @@ export function RoutineDetailContent({
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <GlassCard style={styles.header}>
         <View style={styles.headerTop}>
-          <Text style={styles.icon}>{badgeConfig.icon}</Text>
+          <AppIcon name={badgeConfig.icon} size={32} color={badgeConfig.color} />
           <Text style={styles.name}>{routine.name}</Text>
         </View>
         <View style={[styles.typeBadge, { backgroundColor: badgeConfig.color }]}>
@@ -85,29 +83,28 @@ export function RoutineDetailContent({
           </View>
         )}
 
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Repeat Interval</Text>
-          <Text style={styles.detailValue}>
-            {formatRepeatInterval(routine.repeatIntervalMinutes)}
-          </Text>
-        </View>
+        {!isFixedDaily && (
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Repeat Interval</Text>
+            <Text style={styles.detailValue}>
+              {formatRepeatInterval(routine.repeatIntervalMinutes)}
+            </Text>
+          </View>
+        )}
 
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Active Days</Text>
-          <Text style={styles.detailValue}>{formatActiveDays(routine.activeDays)}</Text>
-        </View>
+        {!isFixedDaily && (
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Active Days</Text>
+            <Text style={styles.detailValue}>{formatActiveDays(routine.activeDays)}</Text>
+          </View>
+        )}
       </GlassCard>
 
       <RoutineTaskList tasks={routine.tasks} />
 
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.editButton} onPress={onEdit}>
-          <Text style={styles.editButtonText}>Edit Routine</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-          <Text style={styles.deleteButtonText}>Delete Routine</Text>
-        </TouchableOpacity>
+        <PrimaryButton title="Edit Routine" onPress={onEdit} fullWidth />
+        <DangerButton title="Delete Routine" onPress={handleDelete} fullWidth />
       </View>
     </ScrollView>
   );
@@ -131,9 +128,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
     marginBottom: spacing.md,
-  },
-  icon: {
-    fontSize: 32,
   },
   name: {
     fontSize: 24,
@@ -187,29 +181,5 @@ const styles = StyleSheet.create({
   actions: {
     gap: spacing.md,
     marginTop: spacing.xl,
-  },
-  editButton: {
-    backgroundColor: theme.accent.primary,
-    paddingVertical: spacing.md,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  editButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: theme.text.primary,
-  },
-  deleteButton: {
-    backgroundColor: theme.background.elevated,
-    paddingVertical: spacing.md,
-    borderRadius: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: theme.status.error,
-  },
-  deleteButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: theme.status.error,
   },
 });

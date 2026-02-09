@@ -5,7 +5,6 @@ export interface ValidationResult {
   error?: string;
 }
 
-const MAX_SLEEP_HOURS = 24;
 const MIN_TARGET = 1;
 
 const parseTargetNumber = (target: string): number | null => {
@@ -16,13 +15,22 @@ const parseTargetNumber = (target: string): number | null => {
   return parsed;
 };
 
+const SLEEP_WINDOW_REGEX = /^(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})$/;
+
 export const validateSleepTarget = (target: string): ValidationResult => {
-  const value = parseTargetNumber(target);
-  if (value === null || value < MIN_TARGET) {
-    return { valid: false, error: 'Sleep target must be a positive number' };
+  const match = target.match(SLEEP_WINDOW_REGEX);
+  if (!match) {
+    return { valid: false, error: 'Sleep target must be in format HH:MM-HH:MM (e.g. 23:00-07:00)' };
   }
-  if (value > MAX_SLEEP_HOURS) {
-    return { valid: false, error: `Sleep target cannot exceed ${MAX_SLEEP_HOURS} hours` };
+  const bedH = parseInt(match[1], 10);
+  const bedM = parseInt(match[2], 10);
+  const wakeH = parseInt(match[3], 10);
+  const wakeM = parseInt(match[4], 10);
+  if (bedH > 23 || bedM > 59 || wakeH > 23 || wakeM > 59) {
+    return { valid: false, error: 'Invalid time values' };
+  }
+  if (bedH === wakeH && bedM === wakeM) {
+    return { valid: false, error: 'Bedtime and wake time cannot be the same' };
   }
   return { valid: true };
 };
@@ -59,7 +67,7 @@ export const validateRoutineTarget = (type: RoutineType, target: string): Valida
 export const getTargetPlaceholder = (type: RoutineType): string => {
   switch (type) {
     case 'SLEEP':
-      return 'e.g., 8';
+      return 'e.g., 23:00-07:00';
     case 'STEP':
       return 'e.g., 8000';
     case 'OTHER':
@@ -72,7 +80,7 @@ export const getTargetPlaceholder = (type: RoutineType): string => {
 export const getTargetHelperText = (type: RoutineType): string => {
   switch (type) {
     case 'SLEEP':
-      return 'Hours of sleep per day';
+      return 'Sleep window (bedtime - wake time)';
     case 'STEP':
       return 'Steps per day';
     case 'OTHER':
@@ -82,6 +90,12 @@ export const getTargetHelperText = (type: RoutineType): string => {
   }
 };
 
+const formatTime12h = (hour: number, min: number): string => {
+  const period = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return `${displayHour}:${min.toString().padStart(2, '0')} ${period}`;
+};
+
 export const formatTargetDisplay = (type: RoutineType, target: string): string => {
   const trimmedTarget = target.trim();
   if (!trimmedTarget) {
@@ -89,8 +103,17 @@ export const formatTargetDisplay = (type: RoutineType, target: string): string =
   }
 
   switch (type) {
-    case 'SLEEP':
-      return `${trimmedTarget} hrs`;
+    case 'SLEEP': {
+      const match = trimmedTarget.match(SLEEP_WINDOW_REGEX);
+      if (match) {
+        const bedH = parseInt(match[1], 10);
+        const bedM = parseInt(match[2], 10);
+        const wakeH = parseInt(match[3], 10);
+        const wakeM = parseInt(match[4], 10);
+        return `${formatTime12h(bedH, bedM)} - ${formatTime12h(wakeH, wakeM)}`;
+      }
+      return trimmedTarget;
+    }
     case 'STEP':
       return `${trimmedTarget} steps`;
     case 'OTHER':

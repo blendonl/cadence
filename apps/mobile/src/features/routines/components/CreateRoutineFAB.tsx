@@ -1,5 +1,6 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, StyleSheet } from 'react-native';
+import AppIcon from '@shared/components/icons/AppIcon';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
 import uiConstants from '@shared/theme/uiConstants';
@@ -11,7 +12,7 @@ interface CreateRoutineFABProps {
 export function CreateRoutineFAB({ onPress }: CreateRoutineFABProps) {
   return (
     <TouchableOpacity style={styles.fab} onPress={onPress}>
-      <Text style={styles.icon}>+</Text>
+      <AppIcon name="add" size={28} color={theme.text.primary} />
     </TouchableOpacity>
   );
 }
@@ -32,10 +33,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 10,
     elevation: 6,
-  },
-  icon: {
-    fontSize: 32,
-    color: theme.text.primary,
-    fontWeight: '300',
   },
 });

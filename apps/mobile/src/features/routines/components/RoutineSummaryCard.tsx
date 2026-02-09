@@ -6,7 +6,10 @@ import {
   formatRepeatInterval,
   formatActiveDays,
 } from '../utils/routineValidation';
+import { ROUTINE_TYPE_BADGE_CONFIG, FIXED_DAILY_TYPES } from '../constants/routineConstants';
 import GlassCard from '@shared/components/GlassCard';
+import AppIcon from '@shared/components/icons/AppIcon';
+import { PrimaryButton } from '@shared/components/Button';
 import theme from '@shared/theme/colors';
 import { spacing } from '@shared/theme/spacing';
 
@@ -16,20 +19,15 @@ interface RoutineSummaryCardProps {
   onToggleStatus?: () => void;
 }
 
-const TYPE_BADGE_CONFIG = {
-  SLEEP: { color: theme.accent.info, label: 'Sleep', icon: '🌙' },
-  STEP: { color: theme.accent.success, label: 'Steps', icon: '👟' },
-  OTHER: { color: theme.text.muted, label: 'Other', icon: '📋' },
-};
-
 export function RoutineSummaryCard({ routine, onEdit, onToggleStatus }: RoutineSummaryCardProps) {
-  const badgeConfig = TYPE_BADGE_CONFIG[routine.type];
+  const badgeConfig = ROUTINE_TYPE_BADGE_CONFIG[routine.type];
+  const isFixedDaily = FIXED_DAILY_TYPES.includes(routine.type);
 
   return (
     <GlassCard style={styles.card}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.icon}>{badgeConfig.icon}</Text>
+          <AppIcon name={badgeConfig.icon} size={28} color={badgeConfig.color} />
           <View style={styles.headerText}>
             <Text style={styles.name}>{routine.name}</Text>
             <Text style={styles.target}>{formatTargetDisplay(routine.type, routine.target)}</Text>
@@ -67,23 +65,25 @@ export function RoutineSummaryCard({ routine, onEdit, onToggleStatus }: RoutineS
           </View>
         )}
 
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Repeat Interval</Text>
-          <Text style={styles.detailValue}>
-            {formatRepeatInterval(routine.repeatIntervalMinutes)}
-          </Text>
-        </View>
+        {!isFixedDaily && (
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Repeat Interval</Text>
+            <Text style={styles.detailValue}>
+              {formatRepeatInterval(routine.repeatIntervalMinutes)}
+            </Text>
+          </View>
+        )}
 
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Active Days</Text>
-          <Text style={styles.detailValue}>{formatActiveDays(routine.activeDays)}</Text>
-        </View>
+        {!isFixedDaily && (
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Active Days</Text>
+            <Text style={styles.detailValue}>{formatActiveDays(routine.activeDays)}</Text>
+          </View>
+        )}
       </View>
 
       {onEdit && (
-        <TouchableOpacity style={styles.editButton} onPress={onEdit}>
-          <Text style={styles.editButtonText}>Edit Routine</Text>
-        </TouchableOpacity>
+        <PrimaryButton title="Edit Routine" onPress={onEdit} fullWidth style={styles.editButton} />
       )}
     </GlassCard>
   );
@@ -109,9 +109,6 @@ const styles = StyleSheet.create({
   },
   headerText: {
     flex: 1,
-  },
-  icon: {
-    fontSize: 28,
   },
   name: {
     fontSize: 20,
@@ -169,14 +166,5 @@ const styles = StyleSheet.create({
   },
   editButton: {
     marginTop: spacing.lg,
-    backgroundColor: theme.accent.primary,
-    paddingVertical: spacing.md,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  editButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: theme.text.primary,
   },
 });
