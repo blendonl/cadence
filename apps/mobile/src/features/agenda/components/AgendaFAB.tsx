@@ -1,8 +1,18 @@
-import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useCallback } from 'react';
+import { StyleSheet, Pressable } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import theme from '@shared/theme/colors';
+import { theme } from '@shared/theme/colors';
 import uiConstants from '@shared/theme/uiConstants';
+import AppIcon from '@shared/components/icons/AppIcon';
+import { TIMING_CONFIG } from '@shared/utils/animations';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface AgendaFABProps {
   onPress: () => void;
@@ -12,13 +22,39 @@ export function AgendaFAB({ onPress }: AgendaFABProps) {
   const insets = useSafeAreaInsets();
   const fabBottom = uiConstants.TAB_BAR_HEIGHT + uiConstants.TAB_BAR_BOTTOM_MARGIN + insets.bottom + 24;
 
+  const entranceScale = useSharedValue(0);
+  const pressScale = useSharedValue(1);
+
+  useEffect(() => {
+    entranceScale.value = withSpring(1, { damping: 12, stiffness: 150 });
+  }, [entranceScale]);
+
+  const handlePressIn = useCallback(() => {
+    pressScale.value = withTiming(0.88, TIMING_CONFIG.fast);
+  }, [pressScale]);
+
+  const handlePressOut = useCallback(() => {
+    pressScale.value = withTiming(1, TIMING_CONFIG.fast);
+  }, [pressScale]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: entranceScale.value * pressScale.value },
+    ],
+  }));
+
   return (
-    <TouchableOpacity
-      style={[styles.fab, { bottom: fabBottom }]}
+    <AnimatedPressable
+      style={[styles.fab, { bottom: fabBottom }, animatedStyle]}
       onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      accessibilityLabel="Schedule new task"
+      accessibilityRole="button"
+      accessibilityHint="Opens task selector modal"
     >
-      <Text style={styles.fabText}>+</Text>
-    </TouchableOpacity>
+      <AppIcon name="add" size={24} color={theme.background.primary} />
+    </AnimatedPressable>
   );
 }
 
@@ -32,16 +68,10 @@ const styles = StyleSheet.create({
     backgroundColor: theme.accent.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-  },
-  fabText: {
-    color: theme.background.primary,
-    fontSize: 32,
-    fontWeight: '300',
-    lineHeight: 32,
+    elevation: 6,
+    shadowColor: theme.accent.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
   },
 });

@@ -1,3 +1,2 @@
-export { AgendaHeaderCompact } from './AgendaHeaderCompact';
-export { DateNavigator } from './DateNavigator';
+export { AgendaUnifiedHeader } from './AgendaUnifiedHeader';
 export { CalendarPickerModal } from './CalendarPickerModal';
