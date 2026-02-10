@@ -1,7 +1,6 @@
 package entity
 
 import (
-	"mkanban/internal/domain/valueobject"
 	"time"
 )
 
@@ -29,7 +28,7 @@ func (s TimeLogSource) String() string {
 type TimeLog struct {
 	id          string
 	projectID   string
-	taskID      *valueobject.TaskID
+	taskID      string
 	source      TimeLogSource
 	startTime   time.Time
 	endTime     *time.Time
@@ -68,25 +67,14 @@ func NewTimeLog(
 	}, nil
 }
 
-func (t *TimeLog) ID() string {
-	return t.id
-}
-
-func (t *TimeLog) ProjectID() string {
-	return t.projectID
-}
-
-func (t *TimeLog) TaskID() *valueobject.TaskID {
-	return t.taskID
-}
-
-func (t *TimeLog) Source() TimeLogSource {
-	return t.source
-}
-
-func (t *TimeLog) StartTime() time.Time {
-	return t.startTime
-}
+func (t *TimeLog) ID() string            { return t.id }
+func (t *TimeLog) ProjectID() string      { return t.projectID }
+func (t *TimeLog) TaskID() string         { return t.taskID }
+func (t *TimeLog) Source() TimeLogSource  { return t.source }
+func (t *TimeLog) StartTime() time.Time   { return t.startTime }
+func (t *TimeLog) Description() string    { return t.description }
+func (t *TimeLog) CreatedAt() time.Time   { return t.createdAt }
+func (t *TimeLog) ModifiedAt() time.Time  { return t.modifiedAt }
 
 func (t *TimeLog) EndTime() *time.Time {
 	if t.endTime == nil {
@@ -106,34 +94,11 @@ func (t *TimeLog) Duration() time.Duration {
 	return time.Since(t.startTime)
 }
 
-func (t *TimeLog) Description() string {
-	return t.description
-}
-
-func (t *TimeLog) Metadata() map[string]string {
-	if t.metadata == nil {
-		return make(map[string]string)
-	}
-	metadataCopy := make(map[string]string, len(t.metadata))
-	for k, v := range t.metadata {
-		metadataCopy[k] = v
-	}
-	return metadataCopy
-}
-
-func (t *TimeLog) CreatedAt() time.Time {
-	return t.createdAt
-}
-
-func (t *TimeLog) ModifiedAt() time.Time {
-	return t.modifiedAt
-}
-
 func (t *TimeLog) IsRunning() bool {
 	return t.endTime == nil && t.duration == 0
 }
 
-func (t *TimeLog) SetTaskID(taskID *valueobject.TaskID) {
+func (t *TimeLog) SetTaskID(taskID string) {
 	t.taskID = taskID
 	t.modifiedAt = time.Now()
 }
@@ -179,50 +144,13 @@ func (t *TimeLog) SetMetadata(key, value string) {
 	t.modifiedAt = time.Now()
 }
 
-func (t *TimeLog) GetMetadata(key string) (string, bool) {
+func (t *TimeLog) Metadata() map[string]string {
 	if t.metadata == nil {
-		return "", false
+		return make(map[string]string)
 	}
-	value, exists := t.metadata[key]
-	return value, exists
-}
-
-func (t *TimeLog) RemoveMetadata(key string) {
-	if t.metadata == nil {
-		return
+	metadataCopy := make(map[string]string, len(t.metadata))
+	for k, v := range t.metadata {
+		metadataCopy[k] = v
 	}
-	delete(t.metadata, key)
-	t.modifiedAt = time.Now()
-}
-
-func NewTimeLogWithDuration(
-	id string,
-	projectID string,
-	taskID *string,
-	source TimeLogSource,
-	startTime time.Time,
-	endTime time.Time,
-	description string,
-) *TimeLog {
-	now := time.Now()
-	var taskIDVal *valueobject.TaskID
-	if taskID != nil {
-		parsed, err := valueobject.ParseTaskID(*taskID)
-		if err == nil {
-			taskIDVal = parsed
-		}
-	}
-	return &TimeLog{
-		id:          id,
-		projectID:   projectID,
-		taskID:      taskIDVal,
-		source:      source,
-		startTime:   startTime,
-		endTime:     &endTime,
-		duration:    endTime.Sub(startTime),
-		description: description,
-		metadata:    make(map[string]string),
-		createdAt:   now,
-		modifiedAt:  now,
-	}
+	return metadataCopy
 }
