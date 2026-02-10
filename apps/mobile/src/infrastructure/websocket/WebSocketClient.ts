@@ -65,6 +65,9 @@ export class WebSocketClient {
         transports: ['websocket', 'polling'],
         reconnection: false,
         autoConnect: false,
+        extraHeaders: {
+          'ngrok-skip-browser-warning': 'true',
+        },
       });
 
       this.socket.on('connect', () => {
