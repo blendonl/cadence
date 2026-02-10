@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"cadence/internal/buildinfo"
+
 	"gopkg.in/yaml.v3"
 )
 
@@ -24,7 +26,7 @@ type Config struct {
 }
 
 type BackendConfig struct {
-	URL     string `yaml:"url"`
+	URL     string `yaml:"-"` // Not stored in config, set via environment variable
 	Timeout int    `yaml:"timeout"`
 }
 
@@ -170,9 +172,11 @@ func (l *Loader) Load() (*Config, error) {
 		return nil, fmt.Errorf("failed to parse config file: %w", err)
 	}
 
-	if config.Backend.URL == "" {
-		config.Backend.URL = "http://localhost:3000"
+	if buildinfo.BackendURL == "" {
+		return nil, fmt.Errorf("backend URL not set (binary must be built with -ldflags)")
 	}
+	config.Backend.URL = buildinfo.BackendURL
+
 	if config.Backend.Timeout == 0 {
 		config.Backend.Timeout = 10
 	}
@@ -206,9 +210,13 @@ func (l *Loader) createDefaultConfig() (*Config, error) {
 
 	dataDir := filepath.Join(homeDir, defaultDataDirName)
 
+	if buildinfo.BackendURL == "" {
+		return nil, fmt.Errorf("backend URL not set (binary must be built with -ldflags)")
+	}
+
 	config := &Config{
 		Backend: BackendConfig{
-			URL:     "http://localhost:3000",
+			URL:     buildinfo.BackendURL,
 			Timeout: 10,
 		},
 		Daemon: DaemonConfig{

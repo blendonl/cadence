@@ -80,6 +80,7 @@ func (s *Server) Start() error {
 			s.backendClient,
 			s.sessionTracker,
 			s.changeWatcher,
+			s.vcsProvider,
 		)
 
 		if err := s.sessionManager.Start(ctx); err != nil {

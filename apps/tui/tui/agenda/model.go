@@ -3,6 +3,9 @@ package agenda
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -59,10 +62,42 @@ func (m Model) StatusInfo() (string, string) {
 	return left, right
 }
 
+func resolveTimezone() string {
+	tz := time.Now().Location().String()
+	if tz != "Local" {
+		return tz
+	}
+
+	if env := os.Getenv("TZ"); env != "" {
+		return env
+	}
+
+	if target, err := os.Readlink("/etc/localtime"); err == nil {
+		if idx := strings.Index(target, "/zoneinfo/"); idx != -1 {
+			return target[idx+len("/zoneinfo/"):]
+		}
+	}
+
+	if data, err := os.ReadFile("/etc/timezone"); err == nil {
+		if tz := strings.TrimSpace(string(data)); tz != "" {
+			return tz
+		}
+	}
+
+	// Check Windows symlink path for WSL
+	if target, err := filepath.EvalSymlinks("/etc/localtime"); err == nil {
+		if idx := strings.Index(target, "/zoneinfo/"); idx != -1 {
+			return target[idx+len("/zoneinfo/"):]
+		}
+	}
+
+	return "UTC"
+}
+
 func (m Model) loadAgenda() tea.Cmd {
 	return func() tea.Msg {
 		dateStr := m.anchorDate.Format("2006-01-02")
-		tz := time.Now().Location().String()
+		tz := resolveTimezone()
 
 		resp, err := m.daemonClient.SendRequest("get_agenda_view", map[string]interface{}{
 			"mode":        m.mode,

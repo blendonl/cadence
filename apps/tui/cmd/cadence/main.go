@@ -7,6 +7,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 
+	"cadence/cmd/cadence/commands"
 	"cadence/internal/daemon"
 	"cadence/internal/infrastructure/auth"
 	"cadence/internal/infrastructure/config"
@@ -80,6 +81,8 @@ func init() {
 	rootCmd.AddCommand(statusCmd)
 	rootCmd.AddCommand(loginCmd)
 	rootCmd.AddCommand(logoutCmd)
+
+	commands.RegisterCommands(rootCmd)
 }
 
 func ensureAuth(cfg *config.Config) error {

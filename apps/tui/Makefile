@@ -15,14 +15,20 @@ PKGDEST ?= $(CURDIR)/.artifacts/pkg
 SRCDEST ?= $(CURDIR)/.artifacts/src
 BUILDDIR ?= $(CURDIR)/.artifacts/build
 
+# Backend URL configuration (required)
+# For development, defaults to localhost:3002
+# For production, must be set explicitly
+CADENCE_BACKEND_URL ?= http://localhost:3002
+
 # Go build flags
 GOFLAGS := -trimpath
-LDFLAGS := -s -w
+LDFLAGS := -s -w -X cadence/internal/buildinfo.BackendURL=$(CADENCE_BACKEND_URL)
 
 all: build ## Build both TUI client and daemon
 
 build: ## Build all binaries
 	@echo "Building TUI client..."
+	@echo "Backend URL: $(CADENCE_BACKEND_URL)"
 	go build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o $(BINARY_TUI) ./cmd/cadence
 	@echo "Building daemon..."
 	go build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o $(BINARY_DAEMON) ./cmd/cadenced

@@ -597,3 +597,34 @@ func (c *Client) decodeResponseData(data interface{}, target interface{}) error 
 
 	return nil
 }
+
+func (c *Client) ListProjectsTyped(ctx context.Context) (*dto.PaginatedResponse[dto.ProjectDto], error) {
+	resp, err := c.sendRequest(&Request{Type: RequestListProjects})
+	if err != nil {
+		return nil, err
+	}
+
+	var projects dto.PaginatedResponse[dto.ProjectDto]
+	if err := c.decodeResponseData(resp.Data, &projects); err != nil {
+		return nil, err
+	}
+
+	return &projects, nil
+}
+
+func (c *Client) GetProject(ctx context.Context, projectID string) (*dto.ProjectDto, error) {
+	resp, err := c.sendRequest(&Request{
+		Type:    RequestGetProject,
+		Payload: GetProjectPayload{ProjectID: projectID},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var project dto.ProjectDto
+	if err := c.decodeResponseData(resp.Data, &project); err != nil {
+		return nil, err
+	}
+
+	return &project, nil
+}

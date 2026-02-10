@@ -85,7 +85,7 @@ func (m Model) View() string {
 		content = m.renderItems(contentHeight)
 	}
 
-	help := helpStyle.Render("j/k: navigate  n/p: next/prev  t: today  r: refresh  c: complete  d: day  w: week")
+	help := helpStyle.Render("j/k: navigate  n/p: next/prev  t: today  r: refresh  c: complete  a: add task  d: day  w: week")
 
 	return agendaStyle.Width(m.width - 4).Render(
 		lipgloss.JoinVertical(lipgloss.Left, header, "", content, "", help),

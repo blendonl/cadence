@@ -173,3 +173,7 @@ type CompleteAgendaItemPayload struct {
 	AgendaID string `json:"agenda_id"`
 	ItemID   string `json:"item_id"`
 }
+
+type GetProjectPayload struct {
+	ProjectID string `json:"project_id"`
+}
