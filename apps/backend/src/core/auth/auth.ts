@@ -1,4 +1,5 @@
 import { betterAuth } from 'better-auth';
+import { bearer } from 'better-auth/plugins';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { expo } from '@better-auth/expo';
 import { PrismaClient } from '@prisma/client';
@@ -16,7 +17,8 @@ export const auth = betterAuth({
   },
   trustedOrigins: [
     'cadence://',
+    'http://localhost',
     ...(process.env.NODE_ENV !== 'production' ? ['exp://'] : []),
   ],
-  plugins: [expo()],
+  plugins: [expo(), bearer()],
 });
