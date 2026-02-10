@@ -2,7 +2,7 @@ package style
 
 import (
 	"github.com/charmbracelet/lipgloss"
-	"mkanban/internal/infrastructure/config"
+	"cadence/internal/infrastructure/config"
 )
 
 var (

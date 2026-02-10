@@ -12,24 +12,19 @@ import (
 	"sync"
 	"time"
 
-	"mkanban/internal/application/dto"
-	"mkanban/internal/infrastructure/config"
+	"cadence/internal/application/dto"
+	"cadence/internal/infrastructure/config"
 )
 
-// Client represents a daemon client
 type Client struct {
-	config         *config.Config
-	mu             sync.Mutex
-	conn           net.Conn
-	subConn        net.Conn
-	subMu          sync.Mutex
-	notifChan      chan *Notification
-	stopChan       chan struct{}
-	isSubscribed   bool
-	socketPath string
+	config       *config.Config
+	subConn      net.Conn
+	subMu        sync.Mutex
+	notifChan    chan *Notification
+	stopChan     chan struct{}
+	isSubscribed bool
 }
 
-// NewClient creates a new daemon client
 func NewClient(cfg *config.Config) *Client {
 	return &Client{
 		config:    cfg,
@@ -38,36 +33,24 @@ func NewClient(cfg *config.Config) *Client {
 	}
 }
 
-// Connect establishes a connection to the daemon
 func (c *Client) Connect() error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	if c.conn != nil {
-		return nil // Already connected
-	}
-
 	socketPath := GetSocketPath(c.config)
 
-	// Try to connect to existing daemon
-	conn, err := net.Dial("unix", socketPath)
+	conn, err := net.DialTimeout("unix", socketPath, 2*time.Second)
 	if err == nil {
-		c.conn = conn
+		conn.Close()
 		return nil
 	}
 
-	// Daemon not running, try to start it
 	if err := c.startDaemon(); err != nil {
 		return fmt.Errorf("failed to start daemon: %w", err)
 	}
 
-	// Wait for daemon to be ready and retry connection
-	maxRetries := 10
-	for i := 0; i < maxRetries; i++ {
+	for i := 0; i < 10; i++ {
 		time.Sleep(200 * time.Millisecond)
-		conn, err = net.Dial("unix", socketPath)
+		conn, err = net.DialTimeout("unix", socketPath, 2*time.Second)
 		if err == nil {
-			c.conn = conn
+			conn.Close()
 			return nil
 		}
 	}
@@ -75,26 +58,22 @@ func (c *Client) Connect() error {
 	return fmt.Errorf("failed to connect to daemon after starting it: %w", err)
 }
 
-// startDaemon starts the daemon process
 func (c *Client) startDaemon() error {
-	// Find mkanbad binary
-	mkanbadPath, err := exec.LookPath("mkanbad")
+	daemonPath, err := exec.LookPath("cadenced")
 	if err != nil {
-		// Try in the same directory as the current executable
 		exePath, err := os.Executable()
 		if err != nil {
-			return fmt.Errorf("failed to find mkanbad binary: %w", err)
+			return fmt.Errorf("failed to find cadenced binary: %w", err)
 		}
 		exeDir := filepath.Dir(exePath)
-		mkanbadPath = filepath.Join(exeDir, "mkanbad")
+		daemonPath = filepath.Join(exeDir, "cadenced")
 
-		if _, err := os.Stat(mkanbadPath); err != nil {
-			return fmt.Errorf("mkanbad binary not found in PATH or %s", exeDir)
+		if _, err := os.Stat(daemonPath); err != nil {
+			return fmt.Errorf("cadenced binary not found in PATH or %s", exeDir)
 		}
 	}
 
-	// Start daemon as background process
-	cmd := exec.Command(mkanbadPath)
+	cmd := exec.Command(daemonPath)
 	cmd.Stdout = nil
 	cmd.Stderr = nil
 	cmd.Stdin = nil
@@ -103,7 +82,6 @@ func (c *Client) startDaemon() error {
 		return fmt.Errorf("failed to start daemon process: %w", err)
 	}
 
-	// Detach from parent process
 	if err := cmd.Process.Release(); err != nil {
 		return fmt.Errorf("failed to release daemon process: %w", err)
 	}
@@ -111,47 +89,47 @@ func (c *Client) startDaemon() error {
 	return nil
 }
 
-// Close closes the connection to the daemon
 func (c *Client) Close() error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	if c.conn != nil {
-		err := c.conn.Close()
-		c.conn = nil
-		return err
-	}
-	return nil
+	return c.Unsubscribe()
 }
 
-// sendRequest sends a request to the daemon and returns the response
 func (c *Client) sendRequest(req *Request) (*Response, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	socketPath := GetSocketPath(c.config)
 
-	if c.conn == nil {
-		return nil, fmt.Errorf("not connected to daemon")
+	conn, err := net.DialTimeout("unix", socketPath, 2*time.Second)
+	if err != nil {
+		if startErr := c.startDaemon(); startErr != nil {
+			return nil, fmt.Errorf("failed to start daemon: %w", startErr)
+		}
+
+		for i := 0; i < 10; i++ {
+			time.Sleep(200 * time.Millisecond)
+			conn, err = net.DialTimeout("unix", socketPath, 2*time.Second)
+			if err == nil {
+				break
+			}
+		}
+		if err != nil {
+			return nil, fmt.Errorf("failed to connect to daemon: %w", err)
+		}
 	}
+	defer conn.Close()
 
-	// Set write deadline
-	if err := c.conn.SetWriteDeadline(time.Now().Add(5 * time.Second)); err != nil {
+	if err := conn.SetWriteDeadline(time.Now().Add(5 * time.Second)); err != nil {
 		return nil, fmt.Errorf("failed to set write deadline: %w", err)
 	}
 
-	// Send request
-	encoder := json.NewEncoder(c.conn)
+	encoder := json.NewEncoder(conn)
 	if err := encoder.Encode(req); err != nil {
 		return nil, fmt.Errorf("failed to encode request: %w", err)
 	}
 
-	// Set read deadline
-	if err := c.conn.SetReadDeadline(time.Now().Add(5 * time.Second)); err != nil {
+	if err := conn.SetReadDeadline(time.Now().Add(5 * time.Second)); err != nil {
 		return nil, fmt.Errorf("failed to set read deadline: %w", err)
 	}
 
-	// Read response
 	var resp Response
-	decoder := json.NewDecoder(c.conn)
+	decoder := json.NewDecoder(conn)
 	if err := decoder.Decode(&resp); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
@@ -163,93 +141,59 @@ func (c *Client) sendRequest(req *Request) (*Response, error) {
 	return &resp, nil
 }
 
-// GetBoard retrieves a board from the daemon
-func (c *Client) GetBoard(ctx context.Context, boardID string) (*dto.BoardDTO, error) {
-	req := &Request{
-		Type: RequestGetBoard,
-		Payload: GetBoardPayload{
-			BoardID: boardID,
-		},
-	}
-
-	resp, err := c.sendRequest(req)
+func (c *Client) GetBoard(ctx context.Context, boardID string) (*dto.BoardDetailDto, error) {
+	resp, err := c.sendRequest(&Request{
+		Type:    RequestGetBoard,
+		Payload: GetBoardPayload{BoardID: boardID},
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	// Decode board from response data
-	data, err := json.Marshal(resp.Data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal board data: %w", err)
-	}
-
-	var board dto.BoardDTO
-	if err := json.Unmarshal(data, &board); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal board: %w", err)
+	var board dto.BoardDetailDto
+	if err := c.decodeResponseData(resp.Data, &board); err != nil {
+		return nil, err
 	}
 
 	return &board, nil
 }
 
-// ListBoards retrieves all boards from the daemon
-func (c *Client) ListBoards(ctx context.Context) ([]dto.BoardDTO, error) {
-	req := &Request{
-		Type: RequestListBoards,
-	}
-
-	resp, err := c.sendRequest(req)
+func (c *Client) ListBoards(ctx context.Context) (*dto.PaginatedResponse[dto.BoardDto], error) {
+	resp, err := c.sendRequest(&Request{Type: RequestListBoards})
 	if err != nil {
 		return nil, err
 	}
 
-	// Decode boards from response data
-	data, err := json.Marshal(resp.Data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal boards data: %w", err)
+	var boards dto.PaginatedResponse[dto.BoardDto]
+	if err := c.decodeResponseData(resp.Data, &boards); err != nil {
+		return nil, err
 	}
 
-	var boards []dto.BoardDTO
-	if err := json.Unmarshal(data, &boards); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal boards: %w", err)
-	}
-
-	return boards, nil
+	return &boards, nil
 }
 
-// GetActiveBoard retrieves the active board ID from the daemon
 func (c *Client) GetActiveBoard(ctx context.Context) (string, error) {
 	payload := GetActiveBoardPayload{}
-
-	// Detect current tmux session name
 	if sessionName := getCurrentTmuxSession(); sessionName != "" {
 		payload.SessionName = sessionName
 	}
 
-	req := &Request{
+	resp, err := c.sendRequest(&Request{
 		Type:    RequestGetActiveBoard,
 		Payload: payload,
-	}
-
-	resp, err := c.sendRequest(req)
+	})
 	if err != nil {
 		return "", err
 	}
 
-	// Decode board ID from response data
-	data, err := json.Marshal(resp.Data)
-	if err != nil {
-		return "", fmt.Errorf("failed to marshal response data: %w", err)
-	}
-
 	var result map[string]string
-	if err := json.Unmarshal(data, &result); err != nil {
-		return "", fmt.Errorf("failed to unmarshal response: %w", err)
+	if err := c.decodeResponseData(resp.Data, &result); err != nil {
+		return "", err
 	}
 
 	return result["board_id"], nil
 }
 
-// getCurrentTmuxSession gets the current tmux session name
 func getCurrentTmuxSession() string {
 	if os.Getenv("TMUX") == "" {
 		return ""
@@ -264,192 +208,263 @@ func getCurrentTmuxSession() string {
 	return strings.TrimSpace(string(output))
 }
 
-// CreateBoard creates a new board
-func (c *Client) CreateBoard(ctx context.Context, projectID, name, description string) (*dto.BoardDTO, error) {
-	req := &Request{
+func (c *Client) CreateBoard(ctx context.Context, projectID, name, description string) (*dto.BoardDto, error) {
+	resp, err := c.sendRequest(&Request{
 		Type: RequestCreateBoard,
 		Payload: CreateBoardPayload{
 			ProjectID:   projectID,
 			Name:        name,
 			Description: description,
 		},
-	}
-
-	resp, err := c.sendRequest(req)
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	// Decode board from response data
-	data, err := json.Marshal(resp.Data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal board data: %w", err)
-	}
-
-	var board dto.BoardDTO
-	if err := json.Unmarshal(data, &board); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal board: %w", err)
+	var board dto.BoardDto
+	if err := c.decodeResponseData(resp.Data, &board); err != nil {
+		return nil, err
 	}
 
 	return &board, nil
 }
 
-// CreateTask creates a new task
-func (c *Client) CreateTask(ctx context.Context, boardID string, taskReq dto.CreateTaskRequest) (*dto.TaskDTO, error) {
-	req := &Request{
+func (c *Client) CreateTask(ctx context.Context, title, columnID string) (*dto.TaskDto, error) {
+	resp, err := c.sendRequest(&Request{
 		Type: RequestAddTask,
 		Payload: AddTaskPayload{
-			BoardID:     boardID,
-			TaskRequest: taskReq,
+			Title:    title,
+			ColumnID: columnID,
 		},
-	}
-
-	resp, err := c.sendRequest(req)
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	// Decode task from response data
-	data, err := json.Marshal(resp.Data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal task data: %w", err)
-	}
-
-	var task dto.TaskDTO
-	if err := json.Unmarshal(data, &task); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal task: %w", err)
+	var task dto.TaskDto
+	if err := c.decodeResponseData(resp.Data, &task); err != nil {
+		return nil, err
 	}
 
 	return &task, nil
 }
 
-// MoveTask moves a task to a different column
-func (c *Client) MoveTask(ctx context.Context, boardID, taskID, targetColumn string) (*dto.BoardDTO, error) {
-	req := &Request{
+func (c *Client) MoveTask(ctx context.Context, taskID, targetColumnID string) (*dto.TaskDto, error) {
+	resp, err := c.sendRequest(&Request{
 		Type: RequestMoveTask,
 		Payload: MoveTaskPayload{
-			BoardID:          boardID,
-			TaskID:           taskID,
-			TargetColumnName: targetColumn,
+			TaskID:         taskID,
+			TargetColumnID: targetColumnID,
 		},
-	}
-
-	resp, err := c.sendRequest(req)
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	// Decode board from response data
-	data, err := json.Marshal(resp.Data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal board data: %w", err)
-	}
-
-	var board dto.BoardDTO
-	if err := json.Unmarshal(data, &board); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal board: %w", err)
-	}
-
-	return &board, nil
-}
-
-// UpdateTask updates an existing task
-func (c *Client) UpdateTask(ctx context.Context, boardID, taskID string, taskReq dto.UpdateTaskRequest) (*dto.TaskDTO, error) {
-	req := &Request{
-		Type: RequestUpdateTask,
-		Payload: UpdateTaskPayload{
-			BoardID:     boardID,
-			TaskID:      taskID,
-			TaskRequest: taskReq,
-		},
-	}
-
-	resp, err := c.sendRequest(req)
-	if err != nil {
+	var task dto.TaskDto
+	if err := c.decodeResponseData(resp.Data, &task); err != nil {
 		return nil, err
-	}
-
-	// Decode task from response data
-	data, err := json.Marshal(resp.Data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal task data: %w", err)
-	}
-
-	var task dto.TaskDTO
-	if err := json.Unmarshal(data, &task); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal task: %w", err)
 	}
 
 	return &task, nil
 }
 
-// DeleteTask deletes a task
-func (c *Client) DeleteTask(ctx context.Context, boardID, taskID string) error {
-	req := &Request{
-		Type: RequestDeleteTask,
-		Payload: DeleteTaskPayload{
-			BoardID: boardID,
-			TaskID:  taskID,
+func (c *Client) UpdateTask(ctx context.Context, taskID string, fields map[string]interface{}) (*dto.TaskDto, error) {
+	resp, err := c.sendRequest(&Request{
+		Type: RequestUpdateTask,
+		Payload: UpdateTaskPayload{
+			TaskID: taskID,
+			Fields: fields,
 		},
-	}
-
-	_, err := c.sendRequest(req)
-	return err
-}
-
-// CreateColumn creates a new column
-func (c *Client) CreateColumn(ctx context.Context, boardID string, columnReq dto.CreateColumnRequest) (*dto.BoardDTO, error) {
-	req := &Request{
-		Type: RequestAddColumn,
-		Payload: AddColumnPayload{
-			BoardID:       boardID,
-			ColumnRequest: columnReq,
-		},
-	}
-
-	resp, err := c.sendRequest(req)
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	// Decode board from response data
-	data, err := json.Marshal(resp.Data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal board data: %w", err)
+	var task dto.TaskDto
+	if err := c.decodeResponseData(resp.Data, &task); err != nil {
+		return nil, err
 	}
 
-	var board dto.BoardDTO
-	if err := json.Unmarshal(data, &board); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal board: %w", err)
-	}
-
-	return &board, nil
+	return &task, nil
 }
 
-// DeleteColumn deletes a column
-func (c *Client) DeleteColumn(ctx context.Context, boardID, columnName string) error {
-	req := &Request{
-		Type: RequestDeleteColumn,
-		Payload: DeleteColumnPayload{
-			BoardID:    boardID,
-			ColumnName: columnName,
-		},
-	}
-
-	_, err := c.sendRequest(req)
+func (c *Client) DeleteTask(ctx context.Context, taskID string) error {
+	_, err := c.sendRequest(&Request{
+		Type:    RequestDeleteTask,
+		Payload: DeleteTaskPayload{TaskID: taskID},
+	})
 	return err
 }
 
-// IsHealthy checks if the daemon is healthy
+func (c *Client) CreateColumn(ctx context.Context, boardID, name string) error {
+	_, err := c.sendRequest(&Request{
+		Type: RequestAddColumn,
+		Payload: AddColumnPayload{
+			BoardID: boardID,
+			Name:    name,
+		},
+	})
+	return err
+}
+
+func (c *Client) DeleteColumn(ctx context.Context, boardID, columnID string) error {
+	_, err := c.sendRequest(&Request{
+		Type: RequestDeleteColumn,
+		Payload: DeleteColumnPayload{
+			BoardID:  boardID,
+			ColumnID: columnID,
+		},
+	})
+	return err
+}
+
+func (c *Client) ListNotes(ctx context.Context, projectID, noteType string) ([]dto.NoteDto, error) {
+	resp, err := c.sendRequest(&Request{
+		Type: RequestListNotes,
+		Payload: ListNotesPayload{
+			ProjectID: projectID,
+			NoteType:  noteType,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var notes []dto.NoteDto
+	if err := c.decodeResponseData(resp.Data, &notes); err != nil {
+		return nil, err
+	}
+
+	return notes, nil
+}
+
+func (c *Client) GetNote(ctx context.Context, noteID string) (*dto.NoteDto, error) {
+	resp, err := c.sendRequest(&Request{
+		Type:    RequestGetNote,
+		Payload: GetNotePayload{NoteID: noteID},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var note dto.NoteDto
+	if err := c.decodeResponseData(resp.Data, &note); err != nil {
+		return nil, err
+	}
+
+	return &note, nil
+}
+
+func (c *Client) CreateNote(ctx context.Context, noteType, title, content string, tags []string) (*dto.NoteDto, error) {
+	resp, err := c.sendRequest(&Request{
+		Type: RequestCreateNote,
+		Payload: CreateNotePayload{
+			Type:    noteType,
+			Title:   title,
+			Content: content,
+			Tags:    tags,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var note dto.NoteDto
+	if err := c.decodeResponseData(resp.Data, &note); err != nil {
+		return nil, err
+	}
+
+	return &note, nil
+}
+
+func (c *Client) UpdateNote(ctx context.Context, noteID string, title, content *string, tags []string) (*dto.NoteDto, error) {
+	resp, err := c.sendRequest(&Request{
+		Type: RequestUpdateNote,
+		Payload: UpdateNotePayload{
+			NoteID:  noteID,
+			Title:   title,
+			Content: content,
+			Tags:    tags,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var note dto.NoteDto
+	if err := c.decodeResponseData(resp.Data, &note); err != nil {
+		return nil, err
+	}
+
+	return &note, nil
+}
+
+func (c *Client) DeleteNote(ctx context.Context, noteID string) error {
+	_, err := c.sendRequest(&Request{
+		Type:    RequestDeleteNote,
+		Payload: DeleteNotePayload{NoteID: noteID},
+	})
+	return err
+}
+
+func (c *Client) GetAgendaView(ctx context.Context, mode, anchorDate, timezone string) (json.RawMessage, error) {
+	resp, err := c.sendRequest(&Request{
+		Type: RequestGetAgendaView,
+		Payload: GetAgendaViewPayload{
+			Mode:       mode,
+			AnchorDate: anchorDate,
+			Timezone:   timezone,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := json.Marshal(resp.Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal response data: %w", err)
+	}
+
+	return data, nil
+}
+
+func (c *Client) StartTimer(ctx context.Context, projectID, taskID, description string) (*Response, error) {
+	return c.sendRequest(&Request{
+		Type: RequestStartTimer,
+		Payload: StartTimerPayload{
+			ProjectID:   projectID,
+			TaskID:      taskID,
+			Description: description,
+		},
+	})
+}
+
+func (c *Client) StopTimer(ctx context.Context, projectID, taskID string) (*Response, error) {
+	return c.sendRequest(&Request{
+		Type: RequestStopTimer,
+		Payload: StopTimerPayload{
+			ProjectID: projectID,
+			TaskID:    taskID,
+		},
+	})
+}
+
+func (c *Client) GetActiveTimers(ctx context.Context) (*Response, error) {
+	return c.sendRequest(&Request{Type: RequestGetActiveTimers})
+}
+
+func (c *Client) ListProjects(ctx context.Context) (*Response, error) {
+	return c.sendRequest(&Request{Type: RequestListProjects})
+}
+
 func (c *Client) IsHealthy() bool {
 	socketPath := GetSocketPath(c.config)
 
-	// Check if socket exists
 	if _, err := os.Stat(socketPath); os.IsNotExist(err) {
 		return false
 	}
 
-	// Try to connect
 	conn, err := net.DialTimeout("unix", socketPath, 1*time.Second)
 	if err != nil {
 		return false
@@ -459,7 +474,6 @@ func (c *Client) IsHealthy() bool {
 	return true
 }
 
-// Subscribe subscribes to real-time updates for a board
 func (c *Client) Subscribe(boardID string) error {
 	c.subMu.Lock()
 	defer c.subMu.Unlock()
@@ -470,15 +484,12 @@ func (c *Client) Subscribe(boardID string) error {
 
 	socketPath := GetSocketPath(c.config)
 
-	// Create a separate connection for subscription
 	conn, err := net.Dial("unix", socketPath)
 	if err != nil {
-		// Try to start daemon if not running
 		if err := c.startDaemon(); err != nil {
 			return fmt.Errorf("failed to start daemon: %w", err)
 		}
 
-		// Retry connection
 		time.Sleep(500 * time.Millisecond)
 		conn, err = net.Dial("unix", socketPath)
 		if err != nil {
@@ -488,15 +499,12 @@ func (c *Client) Subscribe(boardID string) error {
 
 	c.subConn = conn
 
-	// Send subscribe request
 	encoder := json.NewEncoder(conn)
 	decoder := json.NewDecoder(conn)
 
 	req := &Request{
-		Type: RequestSubscribe,
-		Payload: SubscribePayload{
-			BoardID: boardID,
-		},
+		Type:    RequestSubscribe,
+		Payload: SubscribePayload{BoardID: boardID},
 	}
 
 	if err := encoder.Encode(req); err != nil {
@@ -505,7 +513,6 @@ func (c *Client) Subscribe(boardID string) error {
 		return fmt.Errorf("failed to send subscribe request: %w", err)
 	}
 
-	// Read subscription response
 	var resp Response
 	if err := decoder.Decode(&resp); err != nil {
 		conn.Close()
@@ -520,14 +527,11 @@ func (c *Client) Subscribe(boardID string) error {
 	}
 
 	c.isSubscribed = true
-
-	// Start listening for notifications
 	go c.listenForNotifications(decoder)
 
 	return nil
 }
 
-// listenForNotifications listens for notifications from the daemon
 func (c *Client) listenForNotifications(decoder *json.Decoder) {
 	for {
 		select {
@@ -536,24 +540,20 @@ func (c *Client) listenForNotifications(decoder *json.Decoder) {
 		default:
 			var notif Notification
 			if err := decoder.Decode(&notif); err != nil {
-				// Connection error, stop listening
 				c.subMu.Lock()
 				c.isSubscribed = false
 				c.subMu.Unlock()
 				return
 			}
 
-			// Send notification to channel
 			select {
 			case c.notifChan <- &notif:
 			default:
-				// Channel full, skip
 			}
 		}
 	}
 }
 
-// Unsubscribe unsubscribes from real-time updates
 func (c *Client) Unsubscribe() error {
 	c.subMu.Lock()
 	defer c.subMu.Unlock()
@@ -562,11 +562,9 @@ func (c *Client) Unsubscribe() error {
 		return nil
 	}
 
-	// Signal to stop listening
 	close(c.stopChan)
 	c.stopChan = make(chan struct{})
 
-	// Close subscription connection
 	if c.subConn != nil {
 		c.subConn.Close()
 		c.subConn = nil
@@ -576,21 +574,26 @@ func (c *Client) Unsubscribe() error {
 	return nil
 }
 
-// Notifications returns the notification channel
 func (c *Client) Notifications() <-chan *Notification {
 	return c.notifChan
 }
 
-// SendRequest sends a generic request to the daemon and returns the response
 func (c *Client) SendRequest(reqType string, payload interface{}) (*Response, error) {
-	if err := c.Connect(); err != nil {
-		return nil, err
-	}
-
-	req := &Request{
+	return c.sendRequest(&Request{
 		Type:    reqType,
 		Payload: payload,
+	})
+}
+
+func (c *Client) decodeResponseData(data interface{}, target interface{}) error {
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("failed to marshal response data: %w", err)
 	}
 
-	return c.sendRequest(req)
+	if err := json.Unmarshal(jsonData, target); err != nil {
+		return fmt.Errorf("failed to unmarshal response data: %w", err)
+	}
+
+	return nil
 }

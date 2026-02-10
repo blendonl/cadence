@@ -1,39 +1,42 @@
 package dto
 
-import "time"
-
-// BoardDTO represents a board data transfer object
-type BoardDTO struct {
-	ID          string      `json:"id"`
-	ProjectID   string      `json:"project_id,omitempty"`
-	Name        string      `json:"name"`
-	Prefix      string      `json:"prefix"`
-	Description string      `json:"description"`
-	Columns     []ColumnDTO `json:"columns"`
-	CreatedAt   time.Time   `json:"created_at"`
-	ModifiedAt  time.Time   `json:"modified_at"`
+type BoardDto struct {
+	ID          string  `json:"id"`
+	Name        string  `json:"name"`
+	Slug        string  `json:"slug"`
+	Description *string `json:"description"`
+	Color       string  `json:"color"`
+	ProjectID   string  `json:"projectId"`
+	FilePath    *string `json:"filePath"`
+	CreatedAt   string  `json:"createdAt"`
+	UpdatedAt   string  `json:"updatedAt"`
 }
 
-// CreateBoardRequest represents a request to create a board
-type CreateBoardRequest struct {
-	ProjectID   string `json:"project_id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
+type BoardDetailDto struct {
+	BoardDto
+	Columns     []BoardColumnDto `json:"columns"`
+	ProjectName string           `json:"projectName"`
 }
 
-// UpdateBoardRequest represents a request to update a board
-type UpdateBoardRequest struct {
+type BoardColumnDto struct {
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	Position  int       `json:"position"`
+	Color     string    `json:"color"`
+	WipLimit  *int      `json:"wipLimit"`
+	Tasks     []TaskDto `json:"tasks"`
+	TaskCount int       `json:"taskCount"`
+}
+
+type BoardCreateRequest struct {
+	Name        string  `json:"name"`
+	Description *string `json:"description,omitempty"`
+	Color       *string `json:"color,omitempty"`
+	ProjectID   string  `json:"projectId"`
+}
+
+type BoardUpdateRequest struct {
 	Name        *string `json:"name,omitempty"`
 	Description *string `json:"description,omitempty"`
-}
-
-// BoardListDTO represents a simplified board for listing
-type BoardListDTO struct {
-	ID          string    `json:"id"`
-	ProjectID   string    `json:"project_id,omitempty"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	TaskCount   int       `json:"task_count"`
-	ColumnCount int       `json:"column_count"`
-	ModifiedAt  time.Time `json:"modified_at"`
+	Color       *string `json:"color,omitempty"`
 }

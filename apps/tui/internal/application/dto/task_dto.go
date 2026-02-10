@@ -1,66 +1,53 @@
 package dto
 
-import "time"
-
-// TaskDTO represents a task data transfer object
-type TaskDTO struct {
-	ID            string     `json:"id"`
-	ShortID       string     `json:"short_id"`
-	ProjectID     string     `json:"project_id,omitempty"`
-	Title         string     `json:"title"`
-	Description   string     `json:"description"`
-	Priority      string     `json:"priority"`
-	Status        string     `json:"status"`
-	Tags          []string   `json:"tags"`
-	CreatedAt     time.Time  `json:"created_at"`
-	ModifiedAt    time.Time  `json:"modified_at"`
-	DueDate       *time.Time `json:"due_date,omitempty"`
-	CompletedDate *time.Time `json:"completed_date,omitempty"`
-	IsOverdue     bool       `json:"is_overdue"`
-	FilePath      string     `json:"file_path,omitempty"`
-	ColumnName    string     `json:"column_name,omitempty"`
-
-	EstimatedTime *time.Duration `json:"estimated_time,omitempty"`
-	TrackedTime   time.Duration  `json:"tracked_time,omitempty"`
-	LinkedNotes   []string       `json:"linked_notes,omitempty"`
-
-	ScheduledDate *time.Time     `json:"scheduled_date,omitempty"`
-	ScheduledTime *time.Time     `json:"scheduled_time,omitempty"`
-	TimeBlock     *time.Duration `json:"time_block,omitempty"`
-
-	TaskType    string       `json:"task_type,omitempty"`
-	MeetingData *MeetingDTO  `json:"meeting_data,omitempty"`
+type TaskDto struct {
+	ID               string     `json:"id"`
+	Slug             string     `json:"slug"`
+	Title            string     `json:"title"`
+	Description      *string    `json:"description"`
+	TaskType         string     `json:"taskType"`
+	Status           string     `json:"status"`
+	Priority         *string    `json:"priority"`
+	ColumnID         string     `json:"columnId"`
+	Column           *ColumnDto `json:"column,omitempty"`
+	BoardID          string     `json:"boardId"`
+	ProjectID        string     `json:"projectId"`
+	GoalID           *string    `json:"goalId"`
+	Position         int        `json:"position"`
+	DueDate          *string    `json:"dueDate"`
+	EstimatedMinutes *int       `json:"estimatedMinutes"`
+	ActualMinutes    *int       `json:"actualMinutes"`
+	FilePath         *string    `json:"filePath"`
+	CompletedAt      *string    `json:"completedAt"`
+	ParentID         *string    `json:"parentId"`
+	CreatedAt        string     `json:"createdAt"`
+	UpdatedAt        string     `json:"updatedAt"`
 }
 
-type MeetingDTO struct {
-	Attendees     []string `json:"attendees,omitempty"`
-	Location      string   `json:"location,omitempty"`
-	MeetingURL    string   `json:"meeting_url,omitempty"`
-	GoogleEventID string   `json:"google_event_id,omitempty"`
+type TaskCreateRequest struct {
+	Title       string  `json:"title"`
+	Description *string `json:"description,omitempty"`
+	TaskType    *string `json:"taskType,omitempty"`
+	Priority    *string `json:"priority,omitempty"`
+	ColumnID    string  `json:"columnId"`
+	DueDate     *string `json:"dueDate,omitempty"`
+	ParentID    *string `json:"parentId,omitempty"`
 }
 
-// CreateTaskRequest represents a request to create a task
-type CreateTaskRequest struct {
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	Priority    string    `json:"priority"`
-	ColumnName  string    `json:"column_name"`
-	DueDate     *time.Time `json:"due_date,omitempty"`
-	Tags        []string  `json:"tags,omitempty"`
+type TaskQuickCreateRequest struct {
+	Title    string `json:"title"`
+	ColumnID string `json:"columnId"`
 }
 
-// UpdateTaskRequest represents a request to update a task
-type UpdateTaskRequest struct {
-	Title       *string   `json:"title,omitempty"`
-	Description *string   `json:"description,omitempty"`
-	Priority    *string   `json:"priority,omitempty"`
-	Status      *string   `json:"status,omitempty"`
-	DueDate     *time.Time `json:"due_date,omitempty"`
-	Tags        []string  `json:"tags,omitempty"`
+type TaskUpdateRequest struct {
+	Title            *string `json:"title,omitempty"`
+	Description      *string `json:"description,omitempty"`
+	Priority         *string `json:"priority,omitempty"`
+	Status           *string `json:"status,omitempty"`
+	DueDate          *string `json:"dueDate,omitempty"`
+	EstimatedMinutes *int    `json:"estimatedMinutes,omitempty"`
 }
 
-// MoveTaskRequest represents a request to move a task
-type MoveTaskRequest struct {
-	TaskID           string `json:"task_id"`
-	TargetColumnName string `json:"target_column_name"`
+type TaskMoveRequest struct {
+	TargetColumnID string `json:"targetColumnId"`
 }

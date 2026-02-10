@@ -1,6 +1,6 @@
 package service
 
-import "mkanban/internal/domain/entity"
+import "cadence/internal/domain/entity"
 
 // SessionTracker defines the interface for tracking terminal multiplexer sessions
 // This abstraction allows for different implementations (tmux, zellij, screen, etc.)

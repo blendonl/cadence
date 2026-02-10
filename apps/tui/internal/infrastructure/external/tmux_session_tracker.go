@@ -3,7 +3,7 @@ package external
 import (
 	"bytes"
 	"fmt"
-	"mkanban/internal/domain/entity"
+	"cadence/internal/domain/entity"
 	"os/exec"
 	"strings"
 )
