@@ -1,4 +1,4 @@
-# mprojectmanager monorepo
+# cadence monorepo
 
 This repository is organized as a monorepo with three apps under `apps/`.
 
