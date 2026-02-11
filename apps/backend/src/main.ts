@@ -13,7 +13,7 @@ async function bootstrap() {
   });
 
   const config = new DocumentBuilder()
-    .setTitle('MProject Manager API')
+    .setTitle('Cadence API')
     .setDescription('API for managing projects, tasks, agendas, and more')
     .setVersion('2.0')
     .build();

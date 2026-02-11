@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
-      POSTGRES_DB: mprojectmanager
+      POSTGRES_DB: cadence
     volumes:
       - db_data:/var/lib/postgresql/data
     networks:

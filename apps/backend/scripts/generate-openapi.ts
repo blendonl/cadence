@@ -6,7 +6,7 @@ import * as fs from 'fs';
 async function generateOpenApi() {
   const app = await NestFactory.create(AppModule);
   const config = new DocumentBuilder()
-    .setTitle('MProject Manager API')
+    .setTitle('Cadence API')
     .setDescription('API for managing projects, tasks, agendas, and more')
     .setVersion('2.0')
     .build();
