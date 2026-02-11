@@ -16,7 +16,7 @@ export class NotifyExecutorImpl implements Executor {
       const message = replaceVariables(this.config.message, context);
       const title = this.config.title
         ? replaceVariables(this.config.title, context)
-        : 'MKanban';
+        : 'Cadence';
 
       await this.notificationService.sendNotification({
         title,

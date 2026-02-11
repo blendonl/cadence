@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const FILE_WATCHER_CONFIG_KEY = '@mkanban:file_watcher_config';
+const FILE_WATCHER_CONFIG_KEY = '@cadence:file_watcher_config';
 
 export interface FileWatcherConfigData {
   enabled: boolean;

@@ -1,6 +1,6 @@
-# MKanban Mobile
+# Cadence Mobile
 
-A mobile Kanban board application for iOS and Android, built with React Native and TypeScript. Fully compatible with MKanban Desktop (Python TUI version).
+A mobile Kanban board application for iOS and Android, built with React Native and TypeScript. Fully compatible with Cadence Desktop (Python TUI version).
 
 ## Features
 
@@ -139,7 +139,7 @@ mobile/
 ### iCloud (iOS)
 
 1. Enable iCloud Drive on your device
-2. Move MKanban boards folder to iCloud Drive
+2. Move Cadence boards folder to iCloud Drive
 3. Update path in Settings
 
 ### Dropbox
@@ -201,7 +201,7 @@ Dependency Injection is used throughout for testability.
 
 ### Python Desktop Version
 
-This mobile app uses the same markdown file format as the Python desktop version (MKanban TUI). You can:
+This mobile app uses the same markdown file format as the Python desktop version (Cadence TUI). You can:
 
 - ✅ Create boards on mobile, edit on desktop
 - ✅ Create tasks on desktop, view on mobile
@@ -227,10 +227,10 @@ created_at: 2025-01-15T10:00:00.000Z
 # My Project
 ```
 
-**Item File (MKA-1-task-name.md):**
+**Item File (CAD-1-task-name.md):**
 ```yaml
 ---
-id: MKA-1
+id: CAD-1
 title: Fix bug
 parent_id: feature-x
 metadata:

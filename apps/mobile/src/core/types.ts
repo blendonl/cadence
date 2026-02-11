@@ -1,5 +1,5 @@
 /**
- * Core type definitions for MKanban mobile app
+ * Core type definitions for Cadence mobile app
  * Ported from Python: src/core/types/__init__.py
  */
 

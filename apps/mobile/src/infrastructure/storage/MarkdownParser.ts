@@ -1,5 +1,5 @@
 /**
- * Markdown Parser for MKanban mobile app
+ * Markdown Parser for Cadence mobile app
  * Handles parsing and saving markdown files with YAML frontmatter
  * Ported from Python: src/infrastructure/storage/markdown_parser.py
  */

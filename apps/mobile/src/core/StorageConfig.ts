@@ -27,7 +27,7 @@ export class StorageConfig {
   constructor() {
     const defaultDir = FileSystem.documentDirectory || '';
     const docDir = defaultDir.endsWith('/') ? defaultDir.slice(0, -1) : defaultDir;
-    this.configDir = `${docDir}/.mkanban/`;
+    this.configDir = `${docDir}/.cadence/`;
     this.configFile = `${this.configDir}config.json`;
   }
 

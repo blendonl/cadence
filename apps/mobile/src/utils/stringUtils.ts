@@ -1,6 +1,5 @@
 /**
- * String utility functions for MKanban mobile app
- * Ported from Python: src/utils/string_utils.py
+ * String utility functions for Cadence mobile app
  */
 
 /**
@@ -103,7 +102,7 @@ export function ensureTitleHeader(content: string, title: string): string {
  * Generate a 3-character prefix from board name
  *
  * Examples:
- *   "mkanban" -> "MKA"
+ *   "cadence" -> "CAD"
  *   "my-project" -> "MPR" (first letter of first word + first 2 of second)
  *   "RecipeApp" -> "RAP" (camelCase treated as 2 words)
  *   "git-branches" -> "GBR"
@@ -168,7 +167,7 @@ export function getBoardPrefix(boardName: string): string {
  * Generate an ID for a manually created item
  *
  * Examples:
- *   ("mkanban", 1) -> "MKA-1"
+ *   ("cadence", 1) -> "CAD-1"
  *   ("my-project", 42) -> "MPR-42"
  */
 export function generateManualItemId(boardName: string, index: number): string {

@@ -56,7 +56,7 @@ const DEFAULT_CONFIG: ActionsConfiguration = {
   },
 };
 
-const CONFIG_KEY = '@mkanban:actions_config';
+const CONFIG_KEY = '@cadence:actions_config';
 
 @injectable()
 export class ActionsConfig {

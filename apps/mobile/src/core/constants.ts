@@ -1,5 +1,5 @@
 /**
- * Application constants for MKanban mobile app
+ * Application constants for Cadence mobile app
  * Ported from Python: src/core/constants.py
  */
 

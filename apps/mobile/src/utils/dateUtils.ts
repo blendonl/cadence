@@ -1,5 +1,5 @@
 /**
- * Date utility functions for MKanban mobile app
+ * Date utility functions for Cadence mobile app
  * Ported from Python: src/utils/date_utils.py
  */
 

@@ -1,4 +1,4 @@
-package com.mkanban.mprojectmanager
+package com.cadence
 
 import android.app.Application
 import android.content.res.Configuration

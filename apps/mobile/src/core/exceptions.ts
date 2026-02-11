@@ -1,10 +1,10 @@
 /**
- * Base exception class for all MKanban errors
+ * Base exception class for all Cadence errors
  */
-export class MKanbanError extends Error {
+export class CadenceError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'MKanbanError';
+    this.name = 'CadenceError';
     // Maintains proper stack trace for where error was thrown (only available on V8)
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, this.constructor);
@@ -15,7 +15,7 @@ export class MKanbanError extends Error {
 /**
  * Exception raised when validation fails
  */
-export class ValidationError extends MKanbanError {
+export class ValidationError extends CadenceError {
   constructor(message: string) {
     super(message);
     this.name = 'ValidationError';
@@ -25,7 +25,7 @@ export class ValidationError extends MKanbanError {
 /**
  * Exception raised when an item is not found
  */
-export class ItemNotFoundError extends MKanbanError {
+export class ItemNotFoundError extends CadenceError {
   constructor(message: string) {
     super(message);
     this.name = 'ItemNotFoundError';
@@ -35,7 +35,7 @@ export class ItemNotFoundError extends MKanbanError {
 /**
  * Exception raised when a column is not found
  */
-export class ColumnNotFoundError extends MKanbanError {
+export class ColumnNotFoundError extends CadenceError {
   constructor(message: string) {
     super(message);
     this.name = 'ColumnNotFoundError';
@@ -45,7 +45,7 @@ export class ColumnNotFoundError extends MKanbanError {
 /**
  * Exception raised when a board is not found
  */
-export class BoardNotFoundError extends MKanbanError {
+export class BoardNotFoundError extends CadenceError {
   constructor(message: string) {
     super(message);
     this.name = 'BoardNotFoundError';
@@ -55,7 +55,7 @@ export class BoardNotFoundError extends MKanbanError {
 /**
  * Exception raised when a storage operation fails
  */
-export class StorageError extends MKanbanError {
+export class StorageError extends CadenceError {
   constructor(message: string) {
     super(message);
     this.name = 'StorageError';
@@ -85,7 +85,7 @@ export class ParseError extends StorageError {
 /**
  * Exception raised when configuration is invalid
  */
-export class ConfigurationError extends MKanbanError {
+export class ConfigurationError extends CadenceError {
   constructor(message: string) {
     super(message);
     this.name = 'ConfigurationError';

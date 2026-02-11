@@ -30,7 +30,7 @@ export class GoogleCalendarRepository implements CalendarRepository {
   constructor(clientId?: string) {
     this.clientId = clientId || GOOGLE_CLIENT_ID;
     this.redirectUri = AuthSession.makeRedirectUri({
-      scheme: 'mkanban',
+      scheme: 'cadence',
     });
   }
 

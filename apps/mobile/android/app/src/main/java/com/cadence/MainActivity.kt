@@ -1,4 +1,4 @@
-package com.mkanban.mprojectmanager
+package com.cadence
 
 import android.os.Build
 import android.os.Bundle
