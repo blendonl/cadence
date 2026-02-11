@@ -1,98 +1,485 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Cadence Backend API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+> NestJS-based REST API with WebSocket support for real-time project management
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+The Cadence backend is a comprehensive project and task management API built with NestJS. It provides endpoints for managing projects, boards, tasks, agendas, routines, time tracking, goals, and notes with real-time synchronization capabilities.
 
-## Description
+## Features
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **Project Management** - Create and organize projects with boards and tasks
+- **Kanban Boards** - Board and column management with drag-and-drop support
+- **Task Management** - Full CRUD operations with priorities, subtasks, and metadata
+- **Agenda System** - Schedule tasks with calendar integration and date-based organization
+- **Routine Management** - Recurring routines with alarm plans and execution logs
+- **Time Tracking** - Log time spent on tasks and projects
+- **Notes System** - Create notes with entity linking and tag support
+- **Goals Tracking** - Set and track personal and project goals
+- **Real-time Updates** - WebSocket-based live synchronization
+- **Authentication** - Better-auth with Google OAuth support
+- **Scheduled Jobs** - Automated cron tasks for agenda expiry, routine scheduling, and alarms
+- **API Documentation** - Auto-generated OpenAPI/Swagger docs
 
-## Project setup
+## Technology Stack
+
+- **Framework:** NestJS 11.0.1
+- **Language:** TypeScript 5.7.2
+- **Database:** PostgreSQL 13
+- **ORM:** Prisma 6.19.2
+- **WebSockets:** Socket.io 4.8.3
+- **Authentication:** Better-auth 1.4.18
+- **Scheduling:** @nestjs/schedule
+- **Validation:** class-validator & class-transformer
+- **Documentation:** @nestjs/swagger
+- **Testing:** Jest with ts-jest
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- PostgreSQL 13+
+- Yarn package manager
+
+### Installation
+
+1. Install dependencies:
+   ```bash
+   yarn install
+   ```
+
+2. Set up environment variables:
+   ```bash
+   cp .env.example .env
+   ```
+
+   Configure the following variables in `.env`:
+   ```env
+   # Database
+   DATABASE_URL=postgresql://user:password@localhost:5432/cadence
+
+   # Authentication
+   GOOGLE_CLIENT_ID=your-google-client-id
+   GOOGLE_CLIENT_SECRET=your-google-client-secret
+   JWT_SECRET=your-secret-key
+   JWT_EXPIRATION=1h
+   JWT_REFRESH_EXPIRATION=7d
+
+   # CORS & OAuth
+   TRUSTED_ORIGINS=http://localhost:3000,http://localhost:8081
+
+   # Environment
+   NODE_ENV=development
+   PORT=3000
+   ```
+
+3. Start PostgreSQL (using Docker):
+   ```bash
+   docker compose up -d
+   ```
+
+4. Run database migrations:
+   ```bash
+   npx prisma migrate dev
+   ```
+
+5. (Optional) Seed the database:
+   ```bash
+   npx prisma db seed
+   ```
+
+### Running the Application
 
 ```bash
-$ yarn install
+# Development with hot-reload
+yarn start:dev
+
+# Production mode
+yarn build
+yarn start:prod
+
+# Debug mode
+yarn start:debug
 ```
 
-## Compile and run the project
+The API will be available at `http://localhost:3000`.
 
+## API Documentation
+
+Interactive API documentation is available at:
+- **Swagger UI:** `http://localhost:3000/api/docs`
+
+To regenerate the OpenAPI specification:
 ```bash
-# development
-$ yarn run start
-
-# watch mode
-$ yarn run start:dev
-
-# production mode
-$ yarn run start:prod
+yarn openapi:generate
 ```
 
-## Run tests
+## API Endpoints
+
+### Authentication
+- `POST /api/auth/sign-in` - Sign in with credentials
+- `POST /api/auth/sign-up` - Create new account
+- `POST /api/auth/google` - Google OAuth sign-in
+- `GET /api/auth/session` - Get current session
+- `POST /api/auth/sign-out` - Sign out
+
+### Projects
+- `GET /api/projects` - List all projects
+- `POST /api/projects` - Create new project
+- `GET /api/projects/:id` - Get project details
+- `PUT /api/projects/:id` - Update project
+- `DELETE /api/projects/:id` - Delete project
+
+### Boards
+- `GET /api/boards` - List boards for a project
+- `POST /api/boards` - Create new board
+- `GET /api/boards/:id` - Get board details
+- `PUT /api/boards/:id` - Update board
+- `DELETE /api/boards/:id` - Delete board
+
+### Columns
+- `GET /api/columns` - List columns for a board
+- `POST /api/columns` - Create new column
+- `GET /api/columns/:id` - Get column details
+- `PUT /api/columns/:id` - Update column
+- `DELETE /api/columns/:id` - Delete column
+
+### Tasks
+- `GET /api/tasks` - List tasks
+- `POST /api/tasks` - Create new task
+- `POST /api/tasks/quick` - Quick task creation
+- `GET /api/tasks/:id` - Get task details
+- `PATCH /api/tasks/:id` - Update task
+- `DELETE /api/tasks/:id` - Delete task
+- `PATCH /api/tasks/:id/move` - Move task between columns
+- `GET /api/tasks/:id/logs` - Get task history
+
+### Agenda
+- `GET /api/agendas` - List agendas by date range
+- `POST /api/agendas` - Create agenda for a date
+- `GET /api/agendas/:id` - Get agenda details
+- `PUT /api/agendas/:id` - Update agenda
+- `DELETE /api/agendas/:id` - Delete agenda
+
+### Agenda Items
+- `GET /api/agenda-items` - List agenda items
+- `POST /api/agenda-items` - Create agenda item
+- `GET /api/agenda-items/:id` - Get item details
+- `PATCH /api/agenda-items/:id` - Update item
+- `DELETE /api/agenda-items/:id` - Delete item
+
+### Routines
+- `GET /api/routines` - List all routines
+- `POST /api/routines` - Create new routine
+- `GET /api/routines/:id` - Get routine details
+- `PATCH /api/routines/:id` - Update routine
+- `DELETE /api/routines/:id` - Delete routine
+
+### Alarms
+- `GET /api/alarms` - List alarm plans
+- `POST /api/alarms` - Create alarm plan
+- `GET /api/alarms/:id` - Get alarm details
+- `PATCH /api/alarms/:id` - Update alarm
+- `DELETE /api/alarms/:id` - Delete alarm
+
+### Notes
+- `GET /api/notes` - List all notes
+- `POST /api/notes` - Create new note
+- `GET /api/notes/:id` - Get note details
+- `PUT /api/notes/:id` - Update note
+- `DELETE /api/notes/:id` - Delete note
+
+### Time Logs
+- `GET /api/time-logs` - List time logs
+- `POST /api/time-logs` - Create time log entry
+- `GET /api/time-logs/:id` - Get log details
+
+### Goals
+- `GET /api/goals` - List all goals
+- `POST /api/goals` - Create new goal
+- `GET /api/goals/:id` - Get goal details
+- `PUT /api/goals/:id` - Update goal
+- `DELETE /api/goals/:id` - Delete goal
+
+## WebSocket API
+
+Connect to WebSocket endpoint for real-time updates:
+
+```typescript
+import { io } from 'socket.io-client';
+
+const socket = io('http://localhost:3000', {
+  path: '/ws/changes',
+  transports: ['websocket', 'polling'],
+});
+
+// Subscribe to entity changes
+socket.emit('subscribe', {
+  entityType: 'task',
+  entityId: 'task-123',
+});
+
+// Listen for changes
+socket.on('entity:changed', (data) => {
+  console.log('Entity changed:', data);
+});
+
+// Unsubscribe
+socket.emit('unsubscribe', {
+  entityType: 'task',
+  entityId: 'task-123',
+});
+```
+
+Supported entity types:
+- `project` - Project changes
+- `board` - Board changes
+- `column` - Column changes
+- `task` - Task changes
+- `agenda` - Agenda changes
+- `agenda-item` - Agenda item changes
+- `routine` - Routine changes
+- `note` - Note changes
+- `goal` - Goal changes
+
+## Architecture
+
+### Directory Structure
+
+```
+apps/backend/
+├── src/
+│   ├── core/              # Core business logic
+│   │   ├── projects/      # Project management
+│   │   ├── boards/        # Board management
+│   │   ├── tasks/         # Task management
+│   │   ├── agenda/        # Agenda system
+│   │   ├── routines/      # Routine management
+│   │   ├── notes/         # Notes system
+│   │   ├── goals/         # Goals tracking
+│   │   └── time-logs/     # Time tracking
+│   ├── rest/              # REST API controllers & DTOs
+│   │   ├── controllers/   # HTTP endpoints
+│   │   ├── dto/          # Data transfer objects
+│   │   └── mappers/      # Domain to DTO mapping
+│   ├── websocket/         # WebSocket gateway
+│   ├── scheduler/         # Scheduled tasks (cron jobs)
+│   ├── auth/             # Authentication module
+│   ├── prisma/           # Database client & migrations
+│   └── main.ts           # Application entry point
+├── prisma/
+│   ├── schema.prisma     # Database schema
+│   └── migrations/       # Database migrations
+├── test/                 # E2E tests
+└── package.json
+```
+
+### Layered Architecture
+
+1. **REST Layer** (`src/rest/`)
+   - Controllers handle HTTP requests
+   - DTOs define request/response shapes
+   - Mappers convert between domain models and DTOs
+
+2. **Core Layer** (`src/core/`)
+   - Business logic and use cases
+   - Domain services
+   - Repository interfaces
+
+3. **WebSocket Layer** (`src/websocket/`)
+   - Real-time event broadcasting
+   - Client subscription management
+
+4. **Scheduler Layer** (`src/scheduler/`)
+   - Cron jobs for automated tasks
+   - Agenda expiry management
+   - Routine scheduling
+
+5. **Data Layer** (`src/prisma/`)
+   - Database access via Prisma ORM
+   - Schema definitions and migrations
+
+## Database Schema
+
+Key entities in the database:
+
+- **User** - User accounts with OAuth support
+- **Project** - Top-level project container
+- **Board** - Kanban boards within projects
+- **Column** - Board columns (to-do, in-progress, done)
+- **Task** - Individual tasks with metadata
+- **TaskLog** - Task history and actions
+- **Agenda** - Daily agendas
+- **AgendaItem** - Scheduled items in agendas
+- **Routine** - Recurring routines
+- **RoutineTask** - Tasks within routines
+- **AlarmPlan** - Scheduled alarms
+- **Note** - User notes with entity linking
+- **TimeLog** - Time tracking entries
+- **Goal** - User goals
+
+To view the full schema:
+```bash
+npx prisma studio
+```
+
+## Scheduled Jobs
+
+The backend runs several scheduled tasks:
+
+1. **Agenda Expiry Scheduler** - Cleans up old agendas
+2. **Routine Alarm Scheduler** - Creates alarms for routines
+3. **Routine Agenda Scheduler** - Schedules routine tasks on agendas
+
+Configure job schedules in `src/scheduler/`.
+
+## Testing
 
 ```bash
-# unit tests
-$ yarn run test
+# Unit tests
+yarn test
 
-# e2e tests
-$ yarn run test:e2e
+# Watch mode
+yarn test:watch
 
-# test coverage
-$ yarn run test:cov
+# Test coverage
+yarn test:cov
+
+# E2E tests
+yarn test:e2e
+```
+
+## Development
+
+### Database Management
+
+```bash
+# Create a new migration
+npx prisma migrate dev --name migration-name
+
+# Apply migrations
+npx prisma migrate deploy
+
+# Reset database (WARNING: deletes all data)
+npx prisma migrate reset
+
+# Open Prisma Studio
+npx prisma studio
+
+# Generate Prisma Client
+npx prisma generate
+```
+
+### Code Generation
+
+```bash
+# Generate OpenAPI spec
+yarn openapi:generate
+
+# Format code
+yarn format
+
+# Lint code
+yarn lint
 ```
 
 ## Deployment
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+### Docker
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Build and run with Docker:
 
 ```bash
-$ yarn install -g @nestjs/mau
-$ mau deploy
+# Build image
+docker build -t cadence-backend .
+
+# Run container
+docker run -p 3000:3000 --env-file .env cadence-backend
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### Docker Compose
 
-## Resources
+The included `compose.yml` provides PostgreSQL and the backend service:
 
-Check out a few resources that may come in handy when working with NestJS:
+```bash
+docker compose up -d
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### Production Build
 
-## Support
+```bash
+# Build for production
+yarn build
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+# Run production build
+yarn start:prod
+```
 
-## Stay in touch
+### Environment Variables for Production
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Ensure these are set:
+- `NODE_ENV=production`
+- `DATABASE_URL` - Production database URL
+- `GOOGLE_CLIENT_ID` & `GOOGLE_CLIENT_SECRET` - OAuth credentials
+- `JWT_SECRET` - Strong secret for JWT signing
+- `TRUSTED_ORIGINS` - Allowed origins for CORS
+
+## Authentication Flow
+
+### Google OAuth
+
+1. Client initiates OAuth flow via `/api/auth/google`
+2. User authenticates with Google
+3. Backend receives OAuth callback and creates/updates user
+4. Session cookie is set for authenticated requests
+
+### CLI/TUI Authentication
+
+1. TUI starts local callback server on localhost
+2. User opens browser auth URL
+3. After authentication, backend redirects to localhost callback
+4. TUI receives token and stores it securely
+
+## Security
+
+- **CORS:** Configured via `TRUSTED_ORIGINS` environment variable
+- **Authentication:** Session-based with better-auth
+- **Authorization:** Project-level access control
+- **Validation:** All inputs validated with class-validator
+- **SQL Injection:** Protected by Prisma parameterized queries
+
+## Contributing
+
+1. Create a feature branch
+2. Make changes with proper types and validation
+3. Add tests for new features
+4. Run linter and tests
+5. Submit a pull request
+
+## Troubleshooting
+
+### Database Connection Issues
+
+Ensure PostgreSQL is running and `DATABASE_URL` is correct:
+```bash
+docker compose ps
+npx prisma db push
+```
+
+### Port Already in Use
+
+Change the port in `.env`:
+```env
+PORT=3001
+```
+
+### Migration Failures
+
+Reset and reapply migrations:
+```bash
+npx prisma migrate reset
+npx prisma migrate dev
+```
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+[Your License Here]
