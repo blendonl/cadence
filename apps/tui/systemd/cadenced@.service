@@ -1,11 +1,11 @@
 [Unit]
-Description=mkanban daemon - Kanban board management daemon
-Documentation=https://github.com/blendonl/mkanban-tui
+Description=cadence daemon for user %i
 After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/mkanbad
+User=%i
+ExecStart=/usr/bin/cadenced
 Restart=on-failure
 RestartSec=5s
 
@@ -14,7 +14,7 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=%h/.config/mkanban %h/.local/share/mkanban
+ReadWritePaths=/home/%i/.config/cadence /home/%i/.local/share/cadence
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true
@@ -29,4 +29,4 @@ LimitNOFILE=4096
 TasksMax=256
 
 [Install]
-WantedBy=default.target
+WantedBy=multi-user.target

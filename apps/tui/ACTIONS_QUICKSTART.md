@@ -2,7 +2,7 @@
 
 ## What's Implemented
 
-The **mkanban actions/reminders system** is now fully integrated and ready to use! Here's what's working:
+The **cadence actions/reminders system** is now fully integrated and ready to use! Here's what's working:
 
 ✅ **Domain Layer** - All entities, value objects, and interfaces
 ✅ **Infrastructure** - Desktop notifications, script execution, event bus, storage
@@ -61,18 +61,18 @@ The **mkanban actions/reminders system** is now fully integrated and ready to us
 
 ### 1. The Daemon Starts ActionManager Automatically
 
-When you start the daemon with `mkanbad`, you'll see:
+When you start the daemon with `cadenced`, you'll see:
 
 ```bash
-$ mkanbad
+$ cadenced
 Session tracking started
 Action manager started              # ← ActionManager is running!
-Daemon listening on ~/.local/share/mkanban/mkanbad.sock
+Daemon listening on ~/.local/share/cadence/cadenced.sock
 ```
 
 ### 2. Configuration Location
 
-Your config file is at: `~/.config/mkanban/config.yml`
+Your config file is at: `~/.config/cadence/config.yml`
 
 ### 3. Actions Configuration
 
@@ -82,7 +82,7 @@ actions:
   check_interval: 60                # Check time-based actions every 60s
   notifications_enabled: true       # Enable desktop notifications
   scripts_enabled: true             # Enable script execution
-  scripts_dir: ~/.config/mkanban/scripts
+  scripts_dir: ~/.config/cadence/scripts
   templates:                        # Reusable action templates
     - id: "due-tomorrow-reminder"
       name: "Due Tomorrow Reminder"
@@ -122,8 +122,8 @@ templates:
 
 **Then restart the daemon:**
 ```bash
-pkill mkanbad
-mkanbad &
+pkill cadenced
+cadenced &
 ```
 
 ### Example 2: Auto-Move Completed Tasks
@@ -186,7 +186,7 @@ templates:
 First, create a script:
 ```bash
 #!/bin/bash
-# ~/.config/mkanban/scripts/notify_slack.sh
+# ~/.config/cadence/scripts/notify_slack.sh
 
 curl -X POST https://hooks.slack.com/your/webhook \
   -H 'Content-Type: application/json' \
@@ -195,7 +195,7 @@ curl -X POST https://hooks.slack.com/your/webhook \
 
 Make it executable:
 ```bash
-chmod +x ~/.config/mkanban/scripts/notify_slack.sh
+chmod +x ~/.config/cadence/scripts/notify_slack.sh
 ```
 
 Add action:
@@ -301,7 +301,7 @@ conditions:
 ### Check if ActionManager is Running
 
 ```bash
-ps aux | grep mkanbad
+ps aux | grep cadenced
 # Should show the daemon process
 ```
 
@@ -370,7 +370,7 @@ The following are planned but not yet implemented:
 
 2. **Restart daemon:**
    ```bash
-   pkill mkanbad && mkanbad &
+   pkill cadenced && cadenced &
    ```
 
 3. **Check for errors in daemon output**

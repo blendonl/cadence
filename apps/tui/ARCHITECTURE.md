@@ -1,4 +1,4 @@
-# mkanban Architecture
+# cadence Architecture
 
 ## Overview
 
@@ -73,7 +73,7 @@ Handles external concerns:
 
 #### Design Patterns Used
 - **Repository Implementation**: Concrete implementation of repository interface
-- **Mapper Pattern**: Entity ↔ Storage conversion
+- **Mapper Pattern**: Entity <-> Storage conversion
 - **Factory Pattern**: Path construction
 
 ### 4. Presentation Layer
@@ -93,7 +93,7 @@ Uses **Google Wire** for compile-time dependency injection:
 ## File Storage Structure
 
 ```
-~/.local/share/mkanban/
+~/.local/share/cadence/
 ├── config.json              # Application configuration
 └── boards/
     └── project-alpha/       # Board folder (name = board ID)
@@ -181,11 +181,11 @@ Additional notes and description go here...
 
 ## SOLID Principles
 
-✅ **Single Responsibility**: Each class/module has one reason to change
-✅ **Open/Closed**: Extensible without modification (interfaces, value objects)
-✅ **Liskov Substitution**: Repository implementations are interchangeable
-✅ **Interface Segregation**: Small, focused interfaces
-✅ **Dependency Inversion**: High-level modules depend on abstractions
+- **Single Responsibility**: Each class/module has one reason to change
+- **Open/Closed**: Extensible without modification (interfaces, value objects)
+- **Liskov Substitution**: Repository implementations are interchangeable
+- **Interface Segregation**: Small, focused interfaces
+- **Dependency Inversion**: High-level modules depend on abstractions
 
 ## Testing Strategy
 
@@ -243,28 +243,28 @@ go run github.com/google/wire/cmd/wire gen ./internal/di
 go build ./...
 
 # Build TUI
-go build -o mkanban ./cmd/mkanban
+go build -o cadence ./cmd/cadence
 
 # Build daemon
-go build -o mkanbad ./cmd/mkanbad
+go build -o cadenced ./cmd/cadenced
 ```
 
 ### Usage
 ```bash
 # Run TUI
-./mkanban
+./cadence
 
 # Run daemon
-./mkanbad
+./cadenced
 ```
 
 ### Configuration
-Config file: `~/.local/share/mkanban/config.json`
+Config file: `~/.local/share/cadence/config.json`
 
 ```json
 {
-  "boards_path": "/home/user/.local/share/mkanban/boards",
-  "data_path": "/home/user/.local/share/mkanban"
+  "boards_path": "/home/user/.local/share/cadence/boards",
+  "data_path": "/home/user/.local/share/cadence"
 }
 ```
 
@@ -292,22 +292,22 @@ Config file: `~/.local/share/mkanban/config.json`
 ## Code Organization
 
 ```
-mkanban/
+cadence/
 ├── cmd/                     # Entry points
 ├── internal/
-│   ├── domain/             # ← Pure business logic (no dependencies)
-│   ├── application/        # ← Use cases (depends on domain)
-│   ├── infrastructure/     # ← External concerns (depends on domain)
-│   ├── daemon/             # ← Daemon-specific code
-│   └── di/                 # ← Dependency injection
+│   ├── domain/             # Pure business logic (no dependencies)
+│   ├── application/        # Use cases (depends on domain)
+│   ├── infrastructure/     # External concerns (depends on domain)
+│   ├── daemon/             # Daemon-specific code
+│   └── di/                 # Dependency injection
 ├── tui/                    # TUI presentation
 └── pkg/                    # Shared utilities
 ```
 
 ### Dependency Flow
 ```
-Presentation → Application → Domain
-                ↓
+Presentation -> Application -> Domain
+                |
           Infrastructure
 ```
 

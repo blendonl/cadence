@@ -1,5 +1,5 @@
 #!/bin/bash
-# Installation script for mkanban-tui
+# Installation script for cadence
 
 set -e
 
@@ -50,23 +50,23 @@ GO_VERSION=$(go version | awk '{print $3}' | sed 's/go//')
 print_info "Found Go version: $GO_VERSION"
 
 # Build binaries
-print_info "Building mkanban TUI client..."
-go build -trimpath -ldflags "-s -w" -o mkanban ./cmd/mkanban
+print_info "Building cadence TUI client..."
+go build -trimpath -ldflags "-s -w" -o cadence ./cmd/cadence
 
-print_info "Building mkanbad daemon..."
-go build -trimpath -ldflags "-s -w" -o mkanbad ./cmd/mkanbad
+print_info "Building cadenced daemon..."
+go build -trimpath -ldflags "-s -w" -o cadenced ./cmd/cadenced
 
 # Install binaries
 print_info "Installing binaries to $BINDIR..."
 mkdir -p "$BINDIR"
-install -m755 mkanban "$BINDIR/mkanban"
-install -m755 mkanbad "$BINDIR/mkanbad"
+install -m755 cadence "$BINDIR/cadence"
+install -m755 cadenced "$BINDIR/cadenced"
 
 # Generate and install shell completions
 print_info "Generating shell completions..."
-./mkanban completion bash > mkanban.bash
-./mkanban completion zsh > mkanban.zsh
-./mkanban completion fish > mkanban.fish
+./cadence completion bash > cadence.bash
+./cadence completion zsh > cadence.zsh
+./cadence completion fish > cadence.fish
 
 if [ "$EUID" -eq 0 ]; then
     # System-wide completions
@@ -75,9 +75,9 @@ if [ "$EUID" -eq 0 ]; then
     mkdir -p "${PREFIX}/share/zsh/site-functions"
     mkdir -p "${PREFIX}/share/fish/vendor_completions.d"
 
-    install -m644 mkanban.bash "${PREFIX}/share/bash-completion/completions/mkanban"
-    install -m644 mkanban.zsh "${PREFIX}/share/zsh/site-functions/_mkanban"
-    install -m644 mkanban.fish "${PREFIX}/share/fish/vendor_completions.d/mkanban.fish"
+    install -m644 cadence.bash "${PREFIX}/share/bash-completion/completions/cadence"
+    install -m644 cadence.zsh "${PREFIX}/share/zsh/site-functions/_cadence"
+    install -m644 cadence.fish "${PREFIX}/share/fish/vendor_completions.d/cadence.fish"
 else
     # User completions
     print_info "Installing shell completions (user)..."
@@ -85,36 +85,36 @@ else
     mkdir -p "${HOME}/.local/share/zsh/site-functions"
     mkdir -p "${HOME}/.config/fish/completions"
 
-    install -m644 mkanban.bash "${HOME}/.local/share/bash-completion/completions/mkanban"
-    install -m644 mkanban.zsh "${HOME}/.local/share/zsh/site-functions/_mkanban"
-    install -m644 mkanban.fish "${HOME}/.config/fish/completions/mkanban.fish"
+    install -m644 cadence.bash "${HOME}/.local/share/bash-completion/completions/cadence"
+    install -m644 cadence.zsh "${HOME}/.local/share/zsh/site-functions/_cadence"
+    install -m644 cadence.fish "${HOME}/.config/fish/completions/cadence.fish"
 fi
 
 # Install systemd user service
 print_info "Installing systemd user service..."
 mkdir -p "$SYSTEMD_USER_DIR"
-install -m644 systemd/mkanbad.service "$SYSTEMD_USER_DIR/mkanbad.service"
+install -m644 systemd/cadenced.service "$SYSTEMD_USER_DIR/cadenced.service"
 
 # Update systemd user service to use correct binary path
-sed -i "s|/usr/bin/mkanbad|$BINDIR/mkanbad|g" "$SYSTEMD_USER_DIR/mkanbad.service"
+sed -i "s|/usr/bin/cadenced|$BINDIR/cadenced|g" "$SYSTEMD_USER_DIR/cadenced.service"
 
 # Clean up build artifacts
 print_info "Cleaning up..."
-rm -f mkanban.bash mkanban.zsh mkanban.fish
+rm -f cadence.bash cadence.zsh cadence.fish
 
 print_info "Installation complete!"
 echo ""
 echo "To enable the daemon to start automatically:"
 echo "  systemctl --user daemon-reload"
-echo "  systemctl --user enable --now mkanbad.service"
+echo "  systemctl --user enable --now cadenced.service"
 echo ""
-echo "To use mkanban:"
-echo "  mkanban                    # Launch TUI"
-echo "  mkanban board list         # List boards via CLI"
-echo "  mkanban task create ...    # Create tasks via CLI"
+echo "To use cadence:"
+echo "  cadence                    # Launch TUI"
+echo "  cadence board list         # List boards via CLI"
+echo "  cadence task create ...    # Create tasks via CLI"
 echo ""
 echo "For help:"
-echo "  mkanban --help"
+echo "  cadence --help"
 echo ""
 
 if [ "$BINDIR" != "/usr/bin" ] && [ "$BINDIR" != "/usr/local/bin" ]; then

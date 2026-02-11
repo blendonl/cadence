@@ -1,13 +1,13 @@
-# mkanban
+# cadence
 
-A powerful terminal-based Kanban board system with git workflow integration, featuring both an interactive TUI and comprehensive CLI.
+A powerful terminal-based project management system with git workflow integration, featuring both an interactive TUI and comprehensive CLI.
 
 ## Architecture
 
 This is a monorepo with a client-daemon architecture:
 
-- **cmd/mkanban** - Terminal UI client that connects to the daemon
-- **cmd/mkanbad** - Background daemon that manages board state and persistence
+- **cmd/cadence** - Terminal UI client that connects to the daemon
+- **cmd/cadenced** - Background daemon that manages board state and persistence
 - **internal/daemon** - Unix socket IPC server with real-time update support
   - **protocol.go** - Request/response and notification protocol
   - **server.go** - Daemon server with subscription management
@@ -31,8 +31,8 @@ The TUI client automatically starts the daemon if it's not already running and s
 make build
 
 # Or manually:
-go build -o mkanban ./cmd/mkanban
-go build -o mkanbad ./cmd/mkanbad
+go build -o cadence ./cmd/cadence
+go build -o cadenced ./cmd/cadenced
 ```
 
 ### Development
@@ -55,17 +55,17 @@ make coverage
 
 ## Features
 
-- ✅ **Multiple Boards** - Organize different projects or workflows
-- ✅ **Interactive TUI** - Full-featured terminal user interface with daemon integration
-- ✅ **Comprehensive CLI** - Complete command-line interface for all operations
-- ✅ **Daemon Architecture** - Background daemon for multi-client support and real-time updates
-- ✅ **Real-time Updates** - Live board updates across all connected TUI clients
-- ✅ **Git Integration** - Checkout branches for tasks automatically
-- ✅ **Task Management** - Priorities, tags, due dates, descriptions
-- ✅ **Automated Actions** - Time-based and event-based task automation
-- ✅ **Tmux Integration** - Session-aware board switching
-- ✅ **Multiple Output Formats** - Text, JSON, YAML for scripting
-- ✅ **Shell Completion** - Bash, Zsh, Fish, PowerShell support
+- **Multiple Boards** - Organize different projects or workflows
+- **Interactive TUI** - Full-featured terminal user interface with daemon integration
+- **Comprehensive CLI** - Complete command-line interface for all operations
+- **Daemon Architecture** - Background daemon for multi-client support and real-time updates
+- **Real-time Updates** - Live board updates across all connected TUI clients
+- **Git Integration** - Checkout branches for tasks automatically
+- **Task Management** - Priorities, tags, due dates, descriptions
+- **Automated Actions** - Time-based and event-based task automation
+- **Tmux Integration** - Session-aware board switching
+- **Multiple Output Formats** - Text, JSON, YAML for scripting
+- **Shell Completion** - Bash, Zsh, Fish, PowerShell support
 
 ## Quick Start
 
@@ -73,33 +73,33 @@ make coverage
 
 ```bash
 # Launch interactive TUI
-mkanban
+cadence
 
 # Launch TUI for specific board
-mkanban --board-id my-project
+cadence --board-id my-project
 ```
 
 ### CLI Commands
 
 ```bash
 # List all boards
-mkanban board list
+cadence board list
 
 # Create a new task
-mkanban task create --title "Fix login bug" --priority high
+cadence task create --title "Fix login bug" --priority high
 
 # List tasks in a column
-mkanban task list --column "In Progress"
+cadence task list --column "In Progress"
 
 # Move task to next column
-mkanban task advance TASK-123
+cadence task advance TASK-123
 
 # Checkout git branch for task
-mkanban task checkout TASK-123
+cadence task checkout TASK-123
 
 # Get help
-mkanban --help
-mkanban task --help
+cadence --help
+cadence task --help
 ```
 
 ## Installation
@@ -109,17 +109,17 @@ mkanban task --help
 #### From AUR (when published)
 ```bash
 # Using yay
-yay -S mkanban-tui
+yay -S cadence-tui
 
 # Using paru
-paru -S mkanban-tui
+paru -S cadence-tui
 ```
 
 #### Build from source (Arch Linux)
 ```bash
 # Clone the repository
-git clone https://github.com/blendonl/mkanban-tui.git
-cd mkanban-tui
+git clone https://github.com/blendonl/cadence-tui.git
+cd cadence-tui
 
 # Build and install package
 makepkg -sfi
@@ -133,8 +133,8 @@ make arch-install
 #### Automated Installation
 ```bash
 # Clone the repository
-git clone https://github.com/blendonl/mkanban-tui.git
-cd mkanban-tui
+git clone https://github.com/blendonl/cadence-tui.git
+cd cadence-tui
 
 # Install system-wide (requires sudo)
 sudo ./install.sh
@@ -158,14 +158,14 @@ PREFIX=$HOME/.local make install
 #### Manual Build
 ```bash
 # Build TUI client
-go build -o mkanban ./cmd/mkanban
+go build -o cadence ./cmd/cadence
 
 # Build daemon
-go build -o mkanbad ./cmd/mkanbad
+go build -o cadenced ./cmd/cadenced
 
 # Install to PATH
-sudo mv mkanban /usr/local/bin/
-sudo mv mkanbad /usr/local/bin/
+sudo mv cadence /usr/local/bin/
+sudo mv cadenced /usr/local/bin/
 ```
 
 ### Enable Systemd Service (Optional but Recommended)
@@ -175,36 +175,36 @@ The daemon can be automatically started on login:
 ```bash
 # Install systemd user service (if not already installed)
 mkdir -p ~/.config/systemd/user
-cp systemd/mkanbad.service ~/.config/systemd/user/
+cp systemd/cadenced.service ~/.config/systemd/user/
 
 # Enable and start the service
 systemctl --user daemon-reload
-systemctl --user enable --now mkanbad.service
+systemctl --user enable --now cadenced.service
 
 # Check status
-systemctl --user status mkanbad.service
+systemctl --user status cadenced.service
 ```
 
 For system-wide daemon (multiple users):
 ```bash
 # Install system service
-sudo cp systemd/mkanbad@.service /usr/lib/systemd/system/
+sudo cp systemd/cadenced@.service /usr/lib/systemd/system/
 
 # Enable for specific user
-sudo systemctl enable --now mkanbad@username.service
+sudo systemctl enable --now cadenced@username.service
 ```
 
 ### Shell Completion
 
 ```bash
 # Bash
-mkanban completion bash > /etc/bash_completion.d/mkanban
+cadence completion bash > /etc/bash_completion.d/cadence
 
 # Zsh
-mkanban completion zsh > "${fpath[1]}/_mkanban"
+cadence completion zsh > "${fpath[1]}/_cadence"
 
 # Fish
-mkanban completion fish > ~/.config/fish/completions/mkanban.fish
+cadence completion fish > ~/.config/fish/completions/cadence.fish
 ```
 
 ## CLI Reference
@@ -228,26 +228,26 @@ Manage multiple kanban boards:
 
 ```bash
 # List all boards
-mkanban board list
-mkanban board list --output json
+cadence board list
+cadence board list --output json
 
 # Get board details
-mkanban board get my-project
+cadence board get my-project
 
 # Create a new board
-mkanban board create my-project \
+cadence board create my-project \
   --name "My Project" \
   --description "Project tasks" \
   --columns "Todo,In Progress,Review,Done"
 
 # Show current active board
-mkanban board current
+cadence board current
 
 # Switch active board
-mkanban board switch my-project
+cadence board switch my-project
 
 # Delete a board
-mkanban board delete my-project
+cadence board delete my-project
 ```
 
 ### Column Commands
@@ -256,23 +256,23 @@ Manage columns within boards:
 
 ```bash
 # List columns
-mkanban column list
-mkanban column list --board-id my-project
+cadence column list
+cadence column list --board-id my-project
 
 # Get column details
-mkanban column get "In Progress"
+cadence column get "In Progress"
 
 # Create a column
-mkanban column create "Code Review" --position 3 --wip-limit 5
+cadence column create "Code Review" --position 3 --wip-limit 5
 
 # Update column
-mkanban column update "In Progress" --wip-limit 5
+cadence column update "In Progress" --wip-limit 5
 
 # Reorder columns
-mkanban column reorder "Backlog,Todo,In Progress,Review,Done"
+cadence column reorder "Backlog,Todo,In Progress,Review,Done"
 
 # Delete column
-mkanban column delete "Archived" --move-tasks-to "Done"
+cadence column delete "Archived" --move-tasks-to "Done"
 ```
 
 ### Task Commands
@@ -281,22 +281,22 @@ Complete task management with all TUI features:
 
 ```bash
 # List tasks
-mkanban task list
-mkanban task list --column "Todo"
-mkanban task list --priority high
-mkanban task list --overdue
-mkanban task list --tag urgent
-mkanban task list --output json
-mkanban task list --all-boards
-mkanban task list --output fzf --column "Todo" --all-boards | fzf | mkanban task checkout
-mkanban task list --output fzf | fzf | mkanban task checkout
+cadence task list
+cadence task list --column "Todo"
+cadence task list --priority high
+cadence task list --overdue
+cadence task list --tag urgent
+cadence task list --output json
+cadence task list --all-boards
+cadence task list --output fzf --column "Todo" --all-boards | fzf | cadence task checkout
+cadence task list --output fzf | fzf | cadence task checkout
 
 # Get task details
-mkanban task get TASK-123
-mkanban task get TASK-123 --output markdown
+cadence task get TASK-123
+cadence task get TASK-123 --output markdown
 
 # Create task
-mkanban task create \
+cadence task create \
   --title "Implement feature X" \
   --description "Add new feature" \
   --priority high \
@@ -305,35 +305,35 @@ mkanban task create \
   --due "2025-12-31"
 
 # Create task with editor
-mkanban task create --title "Write docs" --edit
+cadence task create --title "Write docs" --edit
 
 # Update task
-mkanban task update TASK-123 \
+cadence task update TASK-123 \
   --priority critical \
   --add-tag urgent \
   --due "2025-11-30"
 
 # Edit task description
-mkanban task update TASK-123 --edit
+cadence task update TASK-123 --edit
 
 # Move task to specific column
-mkanban task move TASK-123 "In Progress"
+cadence task move TASK-123 "In Progress"
 
 # Move task to next column (like TUI 'm' key)
-mkanban task advance TASK-123
+cadence task advance TASK-123
 
 # Move task to previous column
-mkanban task retreat TASK-123
+cadence task retreat TASK-123
 
 # Delete task
-mkanban task delete TASK-123
+cadence task delete TASK-123
 
 # Checkout git branch for task
-mkanban task checkout TASK-123
-mkanban task checkout TASK-123 --branch-format "feature/{short-id}-{slug}"
+cadence task checkout TASK-123
+cadence task checkout TASK-123 --branch-format "feature/{short-id}-{slug}"
 
 # Show task with context
-mkanban task show TASK-123 --context 5
+cadence task show TASK-123 --context 5
 ```
 
 ### Config Commands
@@ -342,29 +342,29 @@ Manage configuration:
 
 ```bash
 # Show configuration
-mkanban config show
-mkanban config show --output yaml
+cadence config show
+cadence config show --output yaml
 
 # Edit config in editor
-mkanban config edit
+cadence config edit
 
 # Show config file path
-mkanban config path
+cadence config path
 
 # Reset to defaults
-mkanban config reset
+cadence config reset
 ```
 
 ### Other Commands
 
 ```bash
 # Migrate data formats
-mkanban migrate
+cadence migrate
 
 # Generate shell completions
-mkanban completion bash
-mkanban completion zsh
-mkanban completion fish
+cadence completion bash
+cadence completion zsh
+cadence completion fish
 ```
 
 ## Output Formats
@@ -375,11 +375,11 @@ Human-readable table output:
 
 ```
 TODO
-  ⚫ TASK-001 Fix login bug           📅 due tomorrow
-  ⚪ TASK-002 Update documentation
+  TASK-001 Fix login bug           due tomorrow
+  TASK-002 Update documentation
 
 IN PROGRESS
-  ⚫ TASK-003 Implement API           📅 overdue 2 days
+  TASK-003 Implement API           overdue 2 days
 ```
 
 ### JSON
@@ -387,7 +387,7 @@ IN PROGRESS
 For scripting and automation:
 
 ```bash
-mkanban task list --output json | jq '.[] | select(.priority == "high")'
+cadence task list --output json | jq '.[] | select(.priority == "high")'
 ```
 
 ### YAML
@@ -395,7 +395,7 @@ mkanban task list --output json | jq '.[] | select(.priority == "high")'
 For configuration and readability:
 
 ```bash
-mkanban board get my-project --output yaml > board-backup.yml
+cadence board get my-project --output yaml > board-backup.yml
 ```
 
 ### Path Format
@@ -403,7 +403,7 @@ mkanban board get my-project --output yaml > board-backup.yml
 For integration with other tools:
 
 ```bash
-mkanban task list --output path
+cadence task list --output path
 # Output: boards/my-project/todo/TASK-001-fix-bug :: Fix login bug
 ```
 
@@ -415,11 +415,11 @@ Automatically checkout git branches for tasks:
 
 ```bash
 # Create task and checkout branch
-TASK_ID=$(mkanban task create --title "Add dark mode" --output json | jq -r '.short_id')
-mkanban task checkout $TASK_ID
+TASK_ID=$(cadence task create --title "Add dark mode" --output json | jq -r '.short_id')
+cadence task checkout $TASK_ID
 
 # Custom branch format
-mkanban task checkout TASK-123 --branch-format "feature/{short-id}-{slug}"
+cadence task checkout TASK-123 --branch-format "feature/{short-id}-{slug}"
 ```
 
 Available placeholders:
@@ -446,11 +446,11 @@ Available placeholders:
 ## Project Structure
 
 ```
-mkanban/
+cadence/
 ├── cmd/
-│   ├── mkanban/         # TUI client
+│   ├── cadence/         # TUI client
 │   │   └── main.go
-│   └── mkanbad/         # Daemon
+│   └── cadenced/        # Daemon
 │       └── main.go
 ├── internal/
 │   ├── model/          # Data models

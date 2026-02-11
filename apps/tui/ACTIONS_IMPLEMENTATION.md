@@ -2,7 +2,7 @@
 
 ## Overview
 
-A comprehensive action/reminder system for the mkanban-tui application that supports time-based scheduling, event triggers, automated task actions, and external integrations across global, board, column, and task scopes.
+A comprehensive action/reminder system for the cadence-tui application that supports time-based scheduling, event triggers, automated task actions, and external integrations across global, board, column, and task scopes.
 
 ## Implementation Status
 
@@ -129,7 +129,7 @@ actions:
   check_interval: 60  # Check time-based actions every 60 seconds
   notifications_enabled: true
   scripts_enabled: true
-  scripts_dir: ~/.config/mkanban/scripts
+  scripts_dir: ~/.config/cadence/scripts
   templates:
     - id: "overdue-reminder"
       name: "Overdue Task Reminder"

@@ -1,20 +1,20 @@
 #!/bin/bash
 
 echo "========================================="
-echo "  mkanban System Test"
+echo "  cadence System Test"
 echo "========================================="
 echo ""
 
 # Clean up old data for fresh test
 echo "Cleaning up old data..."
-rm -rf ~/.local/share/mkanban/boards/*
+rm -rf ~/.local/share/cadence/boards/*
 echo "Done!"
 echo ""
 
 # Test 1: Build binaries
 echo "Test 1: Building binaries..."
-go build -o mkanban ./cmd/mkanban
-go build -o mkanbad ./cmd/mkanbad
+go build -o cadence ./cmd/cadence
+go build -o cadenced ./cmd/cadenced
 if [ $? -eq 0 ]; then
     echo "✅ Build successful"
 else
@@ -32,8 +32,8 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"mkanban/internal/application/dto"
-	"mkanban/internal/di"
+	"cadence/internal/application/dto"
+	"cadence/internal/di"
 )
 
 func main() {
@@ -100,7 +100,7 @@ func main() {
 
 	// Verify file structure
 	fmt.Println("\n✅ Board created successfully!")
-	fmt.Printf("   Location: ~/.local/share/mkanban/boards/%s/\n", board.ID)
+	fmt.Printf("   Location: ~/.local/share/cadence/boards/%s/\n", board.ID)
 }
 EOF
 
@@ -117,7 +117,7 @@ echo ""
 
 # Test 3: Verify file structure
 echo "Test 3: Verifying file structure..."
-BOARDS_DIR=~/.local/share/mkanban/boards
+BOARDS_DIR=~/.local/share/cadence/boards
 if [ -d "$BOARDS_DIR" ]; then
     echo "✅ Boards directory exists"
     BOARD_COUNT=$(ls -1 "$BOARDS_DIR" | wc -l)
@@ -142,7 +142,7 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"mkanban/internal/di"
+	"cadence/internal/di"
 )
 
 func main() {
@@ -206,7 +206,7 @@ echo "  • Use cases for operations"
 echo "  • Dependency injection with Wire"
 echo ""
 echo "Next steps:"
-echo "  1. Run ./mkanban to start the TUI"
-echo "  2. Run ./mkanbad to start the daemon"
-echo "  3. Boards are stored in ~/.local/share/mkanban/boards/"
+echo "  1. Run ./cadence to start the TUI"
+echo "  2. Run ./cadenced to start the daemon"
+echo "  3. Boards are stored in ~/.local/share/cadence/boards/"
 echo ""
