@@ -26,27 +26,11 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-var kanbanCmd = &cobra.Command{
-	Use:   "kanban",
-	Short: "Open the kanban board view",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return runTUI(app.TabKanban)
-	},
-}
-
 var notesCmd = &cobra.Command{
 	Use:   "notes",
 	Short: "Open the notes view",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runTUI(app.TabNotes)
-	},
-}
-
-var agendaCmd = &cobra.Command{
-	Use:   "agenda",
-	Short: "Open the agenda view",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return runTUI(app.TabAgenda)
 	},
 }
 
@@ -75,14 +59,20 @@ var logoutCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(kanbanCmd)
 	rootCmd.AddCommand(notesCmd)
-	rootCmd.AddCommand(agendaCmd)
 	rootCmd.AddCommand(statusCmd)
 	rootCmd.AddCommand(loginCmd)
 	rootCmd.AddCommand(logoutCmd)
 
 	commands.RegisterCommands(rootCmd)
+
+	commands.KanbanGroupCmd.RunE = func(cmd *cobra.Command, args []string) error {
+		return runTUI(app.TabKanban)
+	}
+
+	commands.AgendaGroupCmd.RunE = func(cmd *cobra.Command, args []string) error {
+		return runTUI(app.TabAgenda)
+	}
 }
 
 func ensureAuth(cfg *config.Config) error {
