@@ -1,45 +1,645 @@
-# cadence
+# Cadence TUI
 
-A powerful terminal-based project management system with git workflow integration, featuring both an interactive TUI and comprehensive CLI.
+> A modern terminal-based project management system with interactive UI, comprehensive CLI, and backend integration
+
+Cadence TUI is a powerful terminal application for managing kanban boards, notes, agendas, and time tracking. It features both an interactive TUI with three tab-based views and a comprehensive CLI for automation and scripting. Built with a daemon architecture for multi-client support and real-time synchronization with the backend API.
+
+## Features
+
+### Interactive TUI
+- **Multi-Tab Interface** - Three specialized views:
+  - **Kanban** - Visual board with columns and task cards
+  - **Notes** - Markdown-based note management
+  - **Agenda** - Calendar and schedule view with time tracking
+- **Real-time Updates** - Live synchronization across all connected clients
+- **Keyboard-Driven** - Vim-inspired navigation and customizable keybindings
+- **Daemon Architecture** - Background service for multi-client coordination
+
+### Comprehensive CLI
+- **Full CRUD Operations** - Manage tasks, boards, columns, notes, agendas, projects, routines
+- **Multiple Output Formats** - Text, JSON, YAML, Path, FZF for scripting
+- **Batch Operations** - Automate workflows with scriptable commands
+- **Shell Completion** - Bash, Zsh, Fish, PowerShell support
+
+### Advanced Features
+- **Backend Integration** - REST API communication with authentication
+- **OAuth Authentication** - Secure sign-in with Google OAuth
+- **Session Tracking** - Tmux-aware session management with project context
+- **Time Tracking** - Automatic and manual time logging
+- **Action Automation** - Time-based and event-based task automation
+  - Time triggers (absolute, relative, cron)
+  - Event triggers (task created, moved, completed, etc.)
+  - Executors (notifications, scripts, task mutations)
+- **Project Management** - Multi-project support with context switching
+- **Routine Management** - Create and schedule recurring routines
+
+## Technology Stack
+
+- **Language:** Go 1.24
+- **TUI Framework:** Bubble Tea (charmbracelet)
+- **CLI Framework:** Cobra
+- **IPC:** Unix sockets with JSON protocol
+- **UI Components:** Bubbles, Lipgloss (charmbracelet)
+- **Backend API:** HTTP client with OAuth support
+- **Session Management:** Tmux integration
+- **File Watching:** fsnotify
+- **Configuration:** YAML
 
 ## Architecture
 
-This is a monorepo with a client-daemon architecture:
+Cadence TUI uses a clean, layered architecture:
 
-- **cmd/cadence** - Terminal UI client that connects to the daemon
-- **cmd/cadenced** - Background daemon that manages board state and persistence
-- **internal/daemon** - Unix socket IPC server with real-time update support
-  - **protocol.go** - Request/response and notification protocol
-  - **server.go** - Daemon server with subscription management
-  - **client.go** - Client library for connecting to daemon
-- **internal/model** - Shared data models (Board, Column, Task)
-- **internal/storage** - File-based persistence layer
-- **tui/** - TUI-specific components (view, update, styles)
+```
+apps/tui/
+├── cmd/
+│   ├── cadence/            # TUI client entry point
+│   │   └── commands/       # CLI command implementations
+│   │       ├── task/       # Task commands
+│   │       ├── board/      # Board commands
+│   │       ├── column/     # Column commands
+│   │       ├── note/       # Note commands
+│   │       ├── agenda/     # Agenda commands
+│   │       ├── project/    # Project commands
+│   │       ├── time/       # Time tracking commands
+│   │       └── config/     # Config commands
+│   └── cadenced/           # Background daemon
+│
+├── internal/
+│   ├── domain/             # Business entities
+│   │   ├── session/        # Session management
+│   │   └── timetracking/   # Time tracking
+│   ├── application/        # DTOs and use cases
+│   │   ├── dto/           # Data transfer objects
+│   │   └── services/      # Application services
+│   ├── infrastructure/     # External integrations
+│   │   ├── api/           # Backend API client
+│   │   ├── auth/          # OAuth authentication
+│   │   ├── config/        # Configuration management
+│   │   └── external/      # External services (git, tmux)
+│   ├── daemon/            # IPC daemon
+│   │   ├── protocol/      # Communication protocol
+│   │   ├── server/        # Unix socket server
+│   │   ├── session/       # Session manager
+│   │   └── timetracking/  # Time tracking manager
+│   └── di/                # Dependency injection
+│
+├── tui/                    # TUI views
+│   ├── app/               # Main app with tab management
+│   ├── kanban/            # Kanban board view
+│   ├── notes/             # Notes view
+│   ├── agenda/            # Agenda/calendar view
+│   ├── common/            # Shared components
+│   └── style/             # Styling
+│
+└── pkg/                   # Utilities
+    ├── output/            # Output formatting
+    └── editor/            # External editor integration
+```
 
-The TUI client automatically starts the daemon if it's not already running and subscribes to real-time board updates.
+### Key Components
 
-## Building
+1. **AppModel** - Main coordinator managing three tab views (Kanban, Notes, Agenda)
+2. **Daemon Server** - Unix socket IPC server with subscription support
+3. **Session Manager** - Tmux-aware session tracking for project context
+4. **Time Tracking Manager** - Automatic activity and time logging
+5. **Backend Client** - REST API communication with authentication
+6. **Action System** - Event-driven automation with triggers and executors
+
+## Getting Started
 
 ### Prerequisites
+
 - Go 1.24 or later
-- Git (for git workflow features)
+- Cadence Backend API running (see [Backend README](../backend/README.md))
+- Git (optional, for git workflow features)
+- Tmux (optional, for session tracking)
 - Make (optional, for using Makefile)
 
-### Quick Build
+### Installation
+
+#### Quick Build
+
 ```bash
-# Build both binaries
+# Build both TUI and daemon
 make build
 
-# Or manually:
+# Or manually
 go build -o cadence ./cmd/cadence
 go build -o cadenced ./cmd/cadenced
 ```
 
-### Development
+#### Install System-Wide
+
 ```bash
-# Run tests
+# Install to /usr/local/bin (requires sudo)
+sudo make install
+
+# Or install to custom prefix
+PREFIX=$HOME/.local make install
+```
+
+#### Arch Linux
+
+```bash
+# Using the PKGBUILD
+makepkg -sfi
+
+# Or via AUR (when published)
+yay -S cadence-tui
+```
+
+#### Using Install Script
+
+```bash
+# System-wide installation
+sudo ./install.sh
+
+# User installation
+PREFIX=$HOME/.local ./install.sh
+```
+
+### Configuration
+
+Initialize configuration file:
+
+```bash
+# Create config file
+mkdir -p ~/.config/cadence
+cadence config init
+```
+
+Edit `~/.config/cadence/config.yml`:
+
+```yaml
+# Backend API
+api:
+  base_url: http://localhost:3000
+  timeout: 30s
+
+# Daemon settings
+daemon:
+  socket_path: /tmp/cadenced-${USER}.sock
+  auto_start: true
+
+# Session tracking
+session:
+  enabled: true
+  track_tmux: true
+  auto_switch_project: true
+
+# Time tracking
+time_tracking:
+  enabled: true
+  auto_track: true
+  idle_threshold: 5m
+
+# Keybindings
+keybindings:
+  quit: q
+  up: k
+  down: j
+  left: h
+  right: l
+  new_task: n
+  delete: d
+  edit: e
+  move: m
+
+# Styles
+styles:
+  primary_color: "#7c3aed"
+  secondary_color: "#06b6d4"
+  accent_color: "#f59e0b"
+```
+
+### Authentication
+
+Sign in to the backend:
+
+```bash
+# Launch authentication flow
+cadence auth login
+
+# This will:
+# 1. Open your browser for OAuth
+# 2. Redirect back to local callback
+# 3. Store auth token securely
+```
+
+### Running
+
+#### Interactive TUI
+
+```bash
+# Launch TUI (starts daemon automatically)
+cadence
+
+# Launch with specific project
+cadence --project-id my-project
+
+# Launch with specific board
+cadence --board-id board-123
+```
+
+#### Start Daemon Manually
+
+```bash
+# Start daemon in foreground
+cadenced
+
+# Start daemon in background
+cadenced --daemon
+
+# Check daemon status
+cadenced status
+
+# Stop daemon
+cadenced stop
+```
+
+#### Enable Systemd Service
+
+```bash
+# Install user service
+mkdir -p ~/.config/systemd/user
+cp systemd/cadenced.service ~/.config/systemd/user/
+
+# Enable and start
+systemctl --user daemon-reload
+systemctl --user enable --now cadenced.service
+
+# Check status
+systemctl --user status cadenced.service
+```
+
+## Interactive TUI
+
+### Three-Tab Interface
+
+The TUI provides three specialized views accessible via tab navigation:
+
+#### 1. Kanban Tab
+
+Visual board with columns and tasks:
+- Navigate between columns and tasks
+- Create, edit, move, and delete tasks
+- View task priorities, due dates, and tags
+- Real-time updates from other clients
+
+#### 2. Notes Tab
+
+Markdown note management:
+- Create and edit notes
+- Filter by tags and types
+- Link notes to tasks and projects
+- Full markdown support
+
+#### 3. Agenda Tab
+
+Calendar and schedule view:
+- Day, week, and month views
+- Timeline visualization
+- Schedule tasks with dates and times
+- View upcoming deadlines
+
+### Keybindings
+
+#### Global
+- `Tab` / `Shift+Tab` - Switch between tabs
+- `q` / `Ctrl+C` - Quit
+- `?` - Show help
+
+#### Kanban View
+- `h/←` - Move left (previous column)
+- `l/→` - Move right (next column)
+- `k/↑` - Move up (previous task)
+- `j/↓` - Move down (next task)
+- `n` - Create new task
+- `e` - Edit selected task
+- `d` - Delete selected task
+- `m` - Move task to next column
+- `Enter` - View task details
+- `/` - Search tasks
+- `f` - Filter tasks
+
+#### Notes View
+- `k/↑` - Previous note
+- `j/↓` - Next note
+- `n` - Create new note
+- `e` - Edit selected note
+- `d` - Delete selected note
+- `Enter` - View note details
+- `/` - Search notes
+- `f` - Filter notes
+
+#### Agenda View
+- `h/←` - Previous day/week/month
+- `l/→` - Next day/week/month
+- `k/↑` - Previous item
+- `j/↓` - Next item
+- `n` - Create agenda item
+- `e` - Edit selected item
+- `d` - Delete selected item
+- `v` - Switch view mode (day/week/month)
+- `t` - Go to today
+
+Keybindings are customizable in the config file.
+
+## CLI Reference
+
+### Project Commands
+
+```bash
+# List all projects
+cadence project list
+
+# Get project details
+cadence project get <project-id>
+
+# Create project
+cadence project create --name "My Project" --description "Project description"
+
+# Switch active project
+cadence project switch <project-id>
+```
+
+### Board Commands
+
+```bash
+# List boards
+cadence board list
+
+# Get board details
+cadence board get <board-id>
+
+# Create board
+cadence board create --name "Development" --project-id my-project
+
+# Switch active board
+cadence board switch <board-id>
+```
+
+### Column Commands
+
+```bash
+# List columns
+cadence column list
+
+# Create column
+cadence column create --name "In Progress" --position 2
+
+# Update column
+cadence column update <column-id> --name "Done" --wip-limit 5
+
+# Delete column
+cadence column delete <column-id>
+```
+
+### Task Commands
+
+```bash
+# List tasks
+cadence task list
+cadence task list --column "In Progress"
+cadence task list --priority high
+cadence task list --output json
+
+# Get task details
+cadence task get <task-id>
+
+# Create task
+cadence task create \
+  --title "Implement feature" \
+  --description "Add new feature" \
+  --priority high \
+  --column "Todo"
+
+# Update task
+cadence task update <task-id> \
+  --title "New title" \
+  --priority critical
+
+# Move task
+cadence task move <task-id> <column-id>
+
+# Delete task
+cadence task delete <task-id>
+```
+
+### Note Commands
+
+```bash
+# List notes
+cadence note list
+
+# Get note
+cadence note get <note-id>
+
+# Create note
+cadence note create --title "Meeting notes" --content "..."
+
+# Update note
+cadence note update <note-id> --content "Updated content"
+
+# Delete note
+cadence note delete <note-id>
+```
+
+### Agenda Commands
+
+```bash
+# List agenda items
+cadence agenda list --date 2026-02-15
+
+# Get agenda
+cadence agenda get <agenda-id>
+
+# Create agenda item
+cadence agenda create \
+  --title "Team meeting" \
+  --date 2026-02-15 \
+  --time 10:00 \
+  --duration 60
+
+# Update agenda item
+cadence agenda update <item-id> --status completed
+
+# Delete agenda item
+cadence agenda delete <item-id>
+```
+
+### Time Tracking Commands
+
+```bash
+# Show time overview
+cadence time overview
+
+# List time logs
+cadence time list --date 2026-02-15
+
+# Start timer
+cadence time start --task-id <task-id>
+
+# Stop timer
+cadence time stop
+
+# Log time manually
+cadence time log --task-id <task-id> --duration 2h
+```
+
+### Config Commands
+
+```bash
+# Show configuration
+cadence config show
+
+# Edit configuration
+cadence config edit
+
+# Show config path
+cadence config path
+
+# Initialize config
+cadence config init
+```
+
+### Global Flags
+
+Available for all commands:
+
+```bash
+--project-id, -p <id>   Project to operate on
+--board-id, -b <id>     Board to operate on
+--output, -o <format>   Output format: text, json, yaml, path, fzf
+--config, -c <path>     Config file path
+--quiet, -q             Suppress output
+--help, -h              Show help
+```
+
+## Output Formats
+
+### Text (Default)
+
+Human-readable table output:
+```
+TODO
+  TASK-001 Fix login bug        due tomorrow
+  TASK-002 Update documentation
+
+IN PROGRESS
+  TASK-003 Implement API        overdue 2 days
+```
+
+### JSON
+
+For scripting and automation:
+```bash
+cadence task list --output json | jq '.[] | select(.priority == "high")'
+```
+
+### YAML
+
+For configuration and readability:
+```bash
+cadence board get my-board --output yaml > board-backup.yml
+```
+
+### Path
+
+For integration with other tools:
+```bash
+cadence task list --output path
+# Output: projects/my-project/boards/board-123/tasks/TASK-001
+```
+
+### FZF
+
+For interactive selection:
+```bash
+cadence task list --output fzf | fzf | xargs -I {} cadence task get {}
+```
+
+## Action Automation
+
+Cadence supports powerful automation via actions in the config file:
+
+```yaml
+actions:
+  - name: "Notify on high priority tasks"
+    trigger:
+      type: event
+      event: task_created
+      conditions:
+        - field: priority
+          operator: equals
+          value: high
+    executors:
+      - type: notify
+        title: "High priority task created"
+        body: "Task: {{.title}}"
+
+  - name: "Daily standup reminder"
+    trigger:
+      type: time
+      schedule: "0 9 * * 1-5"  # 9 AM weekdays
+    executors:
+      - type: script
+        command: "notify-send 'Standup in 15 minutes'"
+
+  - name: "Auto-tag overdue tasks"
+    trigger:
+      type: time
+      schedule: "0 0 * * *"  # Daily at midnight
+    executors:
+      - type: task_mutation
+        action: add_tag
+        tag: overdue
+        filter:
+          due_date_before: now
+```
+
+See [ACTIONS_QUICKSTART.md](./ACTIONS_QUICKSTART.md) for more details.
+
+## Session Tracking
+
+Cadence automatically tracks your work sessions:
+
+- **Tmux Integration** - Detects tmux sessions and associates them with projects
+- **Auto Project Switching** - Switches active project when changing tmux sessions
+- **Time Tracking** - Logs time spent on projects automatically
+- **Idle Detection** - Stops tracking after configurable idle time
+
+## Development
+
+### Build
+
+```bash
+# Build both binaries
+make build
+
+# Build TUI only
+go build -o cadence ./cmd/cadence
+
+# Build daemon only
+go build -o cadenced ./cmd/cadenced
+```
+
+### Test
+
+```bash
+# Run all tests
 make test
 
+# Run tests with coverage
+make coverage
+
+# Run specific test
+go test ./internal/daemon/...
+```
+
+### Code Quality
+
+```bash
 # Format code
 make fmt
 
@@ -48,477 +648,116 @@ make lint
 
 # Generate wire DI
 make wire
-
-# Generate coverage report
-make coverage
 ```
 
-## Features
-
-- **Multiple Boards** - Organize different projects or workflows
-- **Interactive TUI** - Full-featured terminal user interface with daemon integration
-- **Comprehensive CLI** - Complete command-line interface for all operations
-- **Daemon Architecture** - Background daemon for multi-client support and real-time updates
-- **Real-time Updates** - Live board updates across all connected TUI clients
-- **Git Integration** - Checkout branches for tasks automatically
-- **Task Management** - Priorities, tags, due dates, descriptions
-- **Automated Actions** - Time-based and event-based task automation
-- **Tmux Integration** - Session-aware board switching
-- **Multiple Output Formats** - Text, JSON, YAML for scripting
-- **Shell Completion** - Bash, Zsh, Fish, PowerShell support
-
-## Quick Start
-
-### Interactive TUI (Default)
+### Dependencies
 
 ```bash
-# Launch interactive TUI
-cadence
+# Download dependencies
+go mod download
 
-# Launch TUI for specific board
-cadence --board-id my-project
+# Update dependencies
+go get -u ./...
+
+# Tidy dependencies
+go mod tidy
 ```
 
-### CLI Commands
+## Daemon Protocol
 
-```bash
-# List all boards
-cadence board list
+The daemon uses Unix sockets (`/tmp/cadenced-${USER}.sock`) with JSON-based request/response protocol.
 
-# Create a new task
-cadence task create --title "Fix login bug" --priority high
+### Request Types
 
-# List tasks in a column
-cadence task list --column "In Progress"
+- `get_board` - Retrieve board state
+- `list_boards` - List all boards
+- `create_task` - Create new task
+- `update_task` - Update task
+- `move_task` - Move task between columns
+- `delete_task` - Delete task
+- `subscribe` - Subscribe to updates
+- `get_active_project` - Get current project
+- `start_timer` - Start time tracking
+- `stop_timer` - Stop time tracking
 
-# Move task to next column
-cadence task advance TASK-123
+### Real-time Updates
 
-# Checkout git branch for task
-cadence task checkout TASK-123
+Clients can subscribe to changes via persistent connections:
 
-# Get help
-cadence --help
-cadence task --help
+```go
+// Subscribe to board updates
+socket.Send(Request{
+    Type: "subscribe",
+    Data: map[string]string{
+        "entity_type": "board",
+        "entity_id": "board-123",
+    },
+})
+
+// Receive notifications
+notification := <-socket.Notifications()
+fmt.Printf("Board updated: %v\n", notification.Data)
 ```
 
-## Installation
+## Troubleshooting
 
-### Arch Linux
+### Daemon Not Starting
 
-#### From AUR (when published)
+Check if socket is in use:
 ```bash
-# Using yay
-yay -S cadence-tui
-
-# Using paru
-paru -S cadence-tui
+lsof /tmp/cadenced-${USER}.sock
+rm /tmp/cadenced-${USER}.sock
+cadenced start
 ```
 
-#### Build from source (Arch Linux)
+### Authentication Issues
+
+Re-authenticate:
 ```bash
-# Clone the repository
-git clone https://github.com/blendonl/cadence-tui.git
-cd cadence-tui
-
-# Build and install package
-makepkg -sfi
-
-# Or use the Makefile
-make arch-install
+cadence auth logout
+cadence auth login
 ```
 
-### From Source (Other Linux Distributions)
+### Backend Connection Failed
 
-#### Automated Installation
+Verify backend is running:
 ```bash
-# Clone the repository
-git clone https://github.com/blendonl/cadence-tui.git
-cd cadence-tui
-
-# Install system-wide (requires sudo)
-sudo ./install.sh
-
-# Or install to user directory
-PREFIX=$HOME/.local ./install.sh
+curl http://localhost:3000/api/health
 ```
 
-#### Using Make
+Check API URL in config:
 ```bash
-# Build binaries
-make build
-
-# Install system-wide (requires sudo)
-sudo make install
-
-# Or install to custom prefix
-PREFIX=$HOME/.local make install
+cadence config show | grep base_url
 ```
 
-#### Manual Build
+### TUI Not Updating
+
+Check daemon status:
 ```bash
-# Build TUI client
-go build -o cadence ./cmd/cadence
-
-# Build daemon
-go build -o cadenced ./cmd/cadenced
-
-# Install to PATH
-sudo mv cadence /usr/local/bin/
-sudo mv cadenced /usr/local/bin/
-```
-
-### Enable Systemd Service (Optional but Recommended)
-
-The daemon can be automatically started on login:
-
-```bash
-# Install systemd user service (if not already installed)
-mkdir -p ~/.config/systemd/user
-cp systemd/cadenced.service ~/.config/systemd/user/
-
-# Enable and start the service
-systemctl --user daemon-reload
-systemctl --user enable --now cadenced.service
-
-# Check status
 systemctl --user status cadenced.service
 ```
 
-For system-wide daemon (multiple users):
+Restart daemon:
 ```bash
-# Install system service
-sudo cp systemd/cadenced@.service /usr/lib/systemd/system/
-
-# Enable for specific user
-sudo systemctl enable --now cadenced@username.service
+systemctl --user restart cadenced.service
 ```
-
-### Shell Completion
-
-```bash
-# Bash
-cadence completion bash > /etc/bash_completion.d/cadence
-
-# Zsh
-cadence completion zsh > "${fpath[1]}/_cadence"
-
-# Fish
-cadence completion fish > ~/.config/fish/completions/cadence.fish
-```
-
-## CLI Reference
-
-### Global Flags
-
-Available for all commands:
-
-```bash
---board-id, -b <id>     Board to operate on (default: active board)
---output, -o <format>   Output format: text, json, yaml, fzf, path (default: text)
---config, -c <path>     Config file path
---quiet, -q             Suppress non-essential output
---help, -h              Show help
---version, -v           Show version
-```
-
-### Board Commands
-
-Manage multiple kanban boards:
-
-```bash
-# List all boards
-cadence board list
-cadence board list --output json
-
-# Get board details
-cadence board get my-project
-
-# Create a new board
-cadence board create my-project \
-  --name "My Project" \
-  --description "Project tasks" \
-  --columns "Todo,In Progress,Review,Done"
-
-# Show current active board
-cadence board current
-
-# Switch active board
-cadence board switch my-project
-
-# Delete a board
-cadence board delete my-project
-```
-
-### Column Commands
-
-Manage columns within boards:
-
-```bash
-# List columns
-cadence column list
-cadence column list --board-id my-project
-
-# Get column details
-cadence column get "In Progress"
-
-# Create a column
-cadence column create "Code Review" --position 3 --wip-limit 5
-
-# Update column
-cadence column update "In Progress" --wip-limit 5
-
-# Reorder columns
-cadence column reorder "Backlog,Todo,In Progress,Review,Done"
-
-# Delete column
-cadence column delete "Archived" --move-tasks-to "Done"
-```
-
-### Task Commands
-
-Complete task management with all TUI features:
-
-```bash
-# List tasks
-cadence task list
-cadence task list --column "Todo"
-cadence task list --priority high
-cadence task list --overdue
-cadence task list --tag urgent
-cadence task list --output json
-cadence task list --all-boards
-cadence task list --output fzf --column "Todo" --all-boards | fzf | cadence task checkout
-cadence task list --output fzf | fzf | cadence task checkout
-
-# Get task details
-cadence task get TASK-123
-cadence task get TASK-123 --output markdown
-
-# Create task
-cadence task create \
-  --title "Implement feature X" \
-  --description "Add new feature" \
-  --priority high \
-  --column "Todo" \
-  --tags "backend,api" \
-  --due "2025-12-31"
-
-# Create task with editor
-cadence task create --title "Write docs" --edit
-
-# Update task
-cadence task update TASK-123 \
-  --priority critical \
-  --add-tag urgent \
-  --due "2025-11-30"
-
-# Edit task description
-cadence task update TASK-123 --edit
-
-# Move task to specific column
-cadence task move TASK-123 "In Progress"
-
-# Move task to next column (like TUI 'm' key)
-cadence task advance TASK-123
-
-# Move task to previous column
-cadence task retreat TASK-123
-
-# Delete task
-cadence task delete TASK-123
-
-# Checkout git branch for task
-cadence task checkout TASK-123
-cadence task checkout TASK-123 --branch-format "feature/{short-id}-{slug}"
-
-# Show task with context
-cadence task show TASK-123 --context 5
-```
-
-### Config Commands
-
-Manage configuration:
-
-```bash
-# Show configuration
-cadence config show
-cadence config show --output yaml
-
-# Edit config in editor
-cadence config edit
-
-# Show config file path
-cadence config path
-
-# Reset to defaults
-cadence config reset
-```
-
-### Other Commands
-
-```bash
-# Migrate data formats
-cadence migrate
-
-# Generate shell completions
-cadence completion bash
-cadence completion zsh
-cadence completion fish
-```
-
-## Output Formats
-
-### Text (Default)
-
-Human-readable table output:
-
-```
-TODO
-  TASK-001 Fix login bug           due tomorrow
-  TASK-002 Update documentation
-
-IN PROGRESS
-  TASK-003 Implement API           overdue 2 days
-```
-
-### JSON
-
-For scripting and automation:
-
-```bash
-cadence task list --output json | jq '.[] | select(.priority == "high")'
-```
-
-### YAML
-
-For configuration and readability:
-
-```bash
-cadence board get my-project --output yaml > board-backup.yml
-```
-
-### Path Format
-
-For integration with other tools:
-
-```bash
-cadence task list --output path
-# Output: boards/my-project/todo/TASK-001-fix-bug :: Fix login bug
-```
-
-## Git Workflow Integration
-
-### Branch Checkout
-
-Automatically checkout git branches for tasks:
-
-```bash
-# Create task and checkout branch
-TASK_ID=$(cadence task create --title "Add dark mode" --output json | jq -r '.short_id')
-cadence task checkout $TASK_ID
-
-# Custom branch format
-cadence task checkout TASK-123 --branch-format "feature/{short-id}-{slug}"
-```
-
-Available placeholders:
-- `{id}` - Full task ID (e.g., TASK-123-add-dark-mode)
-- `{short-id}` - Short ID (e.g., TASK-123)
-- `{slug}` - Title slug (e.g., add-dark-mode)
-
-## TUI (Interactive Mode)
-
-### Keybindings
-
-- **Navigation**
-  - `←/h` - Move to left column
-  - `→/l` - Move to right column
-  - `↑/k` - Move to task above
-  - `↓/j` - Move to task below
-
-- **Actions**
-  - `a` - Add new task
-  - `d` - Delete selected task
-  - `m/Enter` - Move task to next column
-  - `q/Ctrl+C` - Quit
-
-## Project Structure
-
-```
-cadence/
-├── cmd/
-│   ├── cadence/         # TUI client
-│   │   └── main.go
-│   └── cadenced/        # Daemon
-│       └── main.go
-├── internal/
-│   ├── model/          # Data models
-│   │   ├── board.go
-│   │   ├── column.go
-│   │   └── task.go
-│   ├── storage/        # Persistence layer
-│   │   └── storage.go
-│   └── daemon/         # IPC server
-│       ├── protocol.go
-│       └── server.go
-├── tui/                # TUI components
-│   ├── model.go
-│   ├── view.go
-│   ├── update.go
-│   ├── keymap.go
-│   └── style/
-│       └── tui-style.go
-├── go.mod
-└── README.md
-```
-
-## Communication Protocol
-
-The daemon uses Unix sockets with JSON-based request/response protocol:
-
-**Request Types:**
-- `get_board` - Retrieve current board state
-- `list_boards` - List all boards
-- `create_board` - Create a new board
-- `add_task` - Add a new task
-- `move_task` - Move task between columns
-- `update_task` - Update task details
-- `delete_task` - Delete a task
-- `add_column` - Add a new column
-- `delete_column` - Remove a column
-- `get_active_board` - Get the active board for current session
-- `subscribe` - Subscribe to real-time board updates
-- `ping` - Health check
-
-**Real-time Updates:**
-- Clients can subscribe to board changes via persistent connections
-- The daemon broadcasts notifications when tasks are created, moved, updated, or deleted
-- All connected TUI clients receive updates automatically
-
-## Next Steps
-
-- [x] Integrate TUI client with daemon
-- [x] Implement real-time updates when daemon notifies changes
-- [x] Add systemd service file for daemon auto-start
-- [ ] Add task editing dialog in TUI
-- [ ] Add column management in TUI
-- [ ] Publish to AUR (Arch User Repository)
-- [ ] Add configuration UI for daemon settings
-- [ ] Add support for multiple simultaneous TUI instances
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions welcome! Please:
 
-### Development Setup
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes with tests
+4. Run `make test` and `make lint`
+5. Submit a pull request
 
-1. Clone the repository
-2. Install Go 1.24 or later
-3. Run `make deps` to download dependencies
-4. Run `make build` to build binaries
-5. Run `make test` to run tests
+## License
 
-### Project Structure
+[Your License Here]
 
-See the [Architecture](#architecture) section for an overview of the codebase structure.
+## Acknowledgments
+
+- Built with [Bubble Tea](https://github.com/charmbracelet/bubbletea)
+- CLI powered by [Cobra](https://github.com/spf13/cobra)
+- Styled with [Lipgloss](https://github.com/charmbracelet/lipgloss)
