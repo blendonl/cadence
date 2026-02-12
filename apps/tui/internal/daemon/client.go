@@ -250,12 +250,14 @@ func (c *Client) ListTasks(ctx context.Context, boardID string, page, limit int)
 	return &tasks, nil
 }
 
-func (c *Client) CreateTask(ctx context.Context, title, columnID string) (*dto.TaskDto, error) {
+func (c *Client) CreateTask(ctx context.Context, title, description, priority, columnID string) (*dto.TaskDto, error) {
 	resp, err := c.sendRequest(&Request{
 		Type: RequestAddTask,
 		Payload: AddTaskPayload{
-			Title:    title,
-			ColumnID: columnID,
+			Title:       title,
+			Description: description,
+			Priority:    priority,
+			ColumnID:    columnID,
 		},
 	})
 	if err != nil {

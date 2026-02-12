@@ -72,8 +72,10 @@ type CreateBoardPayload struct {
 }
 
 type AddTaskPayload struct {
-	Title    string `json:"title"`
-	ColumnID string `json:"columnId"`
+	Title       string `json:"title"`
+	Description string `json:"description,omitempty"`
+	Priority    string `json:"priority,omitempty"`
+	ColumnID    string `json:"columnId"`
 }
 
 type MoveTaskPayload struct {

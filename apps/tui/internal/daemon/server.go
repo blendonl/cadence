@@ -309,6 +309,12 @@ func (s *Server) handleAddTask(ctx context.Context, req *Request) *Response {
 		Title:    payload.Title,
 		ColumnID: payload.ColumnID,
 	}
+	if payload.Description != "" {
+		createReq.Description = &payload.Description
+	}
+	if payload.Priority != "" {
+		createReq.Priority = &payload.Priority
+	}
 
 	task, err := s.backendClient.CreateTask(ctx, createReq)
 	if err != nil {
