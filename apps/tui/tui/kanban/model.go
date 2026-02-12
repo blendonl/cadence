@@ -2,8 +2,8 @@ package kanban
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"sort"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -74,25 +74,44 @@ func (m Model) loadActiveBoard() tea.Cmd {
 			return boardLoadedMsg{err: fmt.Errorf("no active board found")}
 		}
 
-		resp, err := m.daemonClient.SendRequest("get_board", map[string]interface{}{
-			"board_id": activeBoardID,
-		})
+		board, err := fetchBoardWithTasks(ctx, m.daemonClient, activeBoardID)
 		if err != nil {
-			return boardLoadedMsg{err: fmt.Errorf("failed to get board: %w", err)}
+			return boardLoadedMsg{err: err}
 		}
 
-		data, err := json.Marshal(resp.Data)
-		if err != nil {
-			return boardLoadedMsg{err: fmt.Errorf("failed to marshal board data: %w", err)}
-		}
-
-		var board dto.BoardDetailDto
-		if err := json.Unmarshal(data, &board); err != nil {
-			return boardLoadedMsg{err: fmt.Errorf("failed to unmarshal board: %w", err)}
-		}
-
-		return boardLoadedMsg{board: &board}
+		return boardLoadedMsg{board: board}
 	}
+}
+
+func populateBoardTasks(board *dto.BoardDetailDto, tasks []dto.TaskDto) {
+	tasksByColumn := make(map[string][]dto.TaskDto)
+	for _, t := range tasks {
+		tasksByColumn[t.ColumnID] = append(tasksByColumn[t.ColumnID], t)
+	}
+
+	for i := range board.Columns {
+		colTasks := tasksByColumn[board.Columns[i].ID]
+		sort.Slice(colTasks, func(a, b int) bool {
+			return colTasks[a].Position < colTasks[b].Position
+		})
+		board.Columns[i].Tasks = colTasks
+		board.Columns[i].TaskCount = len(colTasks)
+	}
+}
+
+func fetchBoardWithTasks(ctx context.Context, client *daemon.Client, boardID string) (*dto.BoardDetailDto, error) {
+	board, err := client.GetBoard(ctx, boardID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get board: %w", err)
+	}
+
+	tasksResp, err := client.ListTasks(ctx, boardID, 1, 200)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list tasks: %w", err)
+	}
+
+	populateBoardTasks(board, tasksResp.Items)
+	return board, nil
 }
 
 func (m Model) subscribeToBoard() tea.Cmd {

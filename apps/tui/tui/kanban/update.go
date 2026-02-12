@@ -2,7 +2,6 @@ package kanban
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -19,6 +18,18 @@ type boardRefreshMsg struct {
 }
 
 type taskUpdatedMsg struct {
+	err error
+}
+
+type taskAddedMsg struct {
+	err error
+}
+
+type taskMovedMsg struct {
+	err error
+}
+
+type taskDeletedMsg struct {
 	err error
 }
 
@@ -41,24 +52,18 @@ func checkBoardChange(m Model) tea.Cmd {
 		}
 
 		if activeBoardID != m.lastBoardID {
-			resp, err := client.SendRequest("get_board", map[string]interface{}{
-				"board_id": activeBoardID,
-			})
+			board, err := client.GetBoard(ctx, activeBoardID)
 			if err != nil {
 				return nil
 			}
 
-			data, err := json.Marshal(resp.Data)
+			tasksResp, err := client.ListTasks(ctx, activeBoardID, 1, 200)
 			if err != nil {
 				return nil
 			}
 
-			var board dto.BoardDetailDto
-			if err := json.Unmarshal(data, &board); err != nil {
-				return nil
-			}
-
-			return boardRefreshMsg{board: &board}
+			populateBoardTasks(board, tasksResp.Items)
+			return boardRefreshMsg{board: board}
 		}
 
 		return nil
@@ -83,7 +88,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		)
 
 	case NotificationMsg:
-		if msg.notification.Type == "board_updated" || msg.notification.Type == "task_moved" {
+		if msg.notification.Type == "board_updated" ||
+			msg.notification.Type == "task_moved" ||
+			msg.notification.Type == "task_created" ||
+			msg.notification.Type == "task_updated" {
 			return m, m.reloadBoard()
 		}
 		return m, m.waitForNotification()
@@ -132,6 +140,27 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, m.reloadBoard()
 
+	case taskAddedMsg:
+		if msg.err != nil {
+			m.err = msg.err
+			return m, nil
+		}
+		return m, m.reloadBoard()
+
+	case taskMovedMsg:
+		if msg.err != nil {
+			m.err = msg.err
+			return m, nil
+		}
+		return m, m.reloadBoard()
+
+	case taskDeletedMsg:
+		if msg.err != nil {
+			m.err = msg.err
+			return m, nil
+		}
+		return m, m.reloadBoard()
+
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
@@ -164,16 +193,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.moveDown()
 
 		case key.Matches(msg, keys.Move):
-			m.moveTask()
+			return m, m.moveTask()
 
 		case key.Matches(msg, keys.Add):
-			m.addTask()
+			return m, m.addTask()
 
 		case key.Matches(msg, keys.Edit):
-			return m, m.editTask()
+			cmd := m.editTask()
+			return m, cmd
 
 		case key.Matches(msg, keys.Delete):
-			m.deleteTask()
+			return m, m.deleteTask()
 		}
 	}
 
@@ -251,176 +281,73 @@ func (m *Model) moveDown() {
 	}
 }
 
-func (m *Model) moveTask() {
+func (m *Model) moveTask() tea.Cmd {
 	if m.board == nil || m.currentColumnTaskCount() == 0 {
-		return
+		return nil
 	}
 
 	if m.focusedColumn >= len(m.board.Columns)-1 {
-		return
+		return nil
 	}
 
-	task := m.board.Columns[m.focusedColumn].Tasks[m.focusedTask]
+	taskID := m.board.Columns[m.focusedColumn].Tasks[m.focusedTask].ID
 	targetColumnID := m.board.Columns[m.focusedColumn+1].ID
 
-	resp, err := m.daemonClient.SendRequest("move_task", map[string]interface{}{
-		"board_id":         m.board.ID,
-		"task_id":          task.ID,
-		"target_column_id": targetColumnID,
-	})
-	if err != nil {
-		return
-	}
-
-	data, jsonErr := json.Marshal(resp.Data)
-	if jsonErr != nil {
-		return
-	}
-
-	var updatedBoard dto.BoardDetailDto
-	if jsonErr := json.Unmarshal(data, &updatedBoard); jsonErr != nil {
-		return
-	}
-
-	m.board = &updatedBoard
-
-	if len(m.scrollOffsets) != len(m.board.Columns) {
-		m.scrollOffsets = make([]int, len(m.board.Columns))
-	}
-
 	m.focusedColumn++
-	m.focusedTask = len(m.board.Columns[m.focusedColumn].Tasks) - 1
 	m.clampTaskFocus()
-
-	availableTaskHeight := m.height - 8
-	maxVisibleTasks := availableTaskHeight / 6
-	if maxVisibleTasks < 1 {
-		maxVisibleTasks = 1
-	}
-	m.updateScroll(maxVisibleTasks)
 	m.updateHorizontalScroll(m.calculateVisibleColumns())
+
+	client := m.daemonClient
+	return func() tea.Msg {
+		ctx := context.Background()
+		_, err := client.MoveTask(ctx, taskID, targetColumnID)
+		return taskMovedMsg{err: err}
+	}
 }
 
-func (m *Model) addTask() {
+func (m Model) addTask() tea.Cmd {
 	if m.board == nil {
-		return
+		return nil
 	}
 
 	columnID := m.board.Columns[m.focusedColumn].ID
-
-	resp, err := m.daemonClient.SendRequest("add_task", map[string]interface{}{
-		"board_id": m.board.ID,
-		"task": map[string]interface{}{
-			"title":       "New Task",
-			"description": nil,
-			"columnId":    columnID,
-		},
-	})
-	if err != nil {
-		return
+	client := m.daemonClient
+	return func() tea.Msg {
+		ctx := context.Background()
+		_, err := client.CreateTask(ctx, "New Task", columnID)
+		return taskAddedMsg{err: err}
 	}
-
-	// Reload the board to get updated state
-	reloadResp, err := m.daemonClient.SendRequest("get_board", map[string]interface{}{
-		"board_id": m.board.ID,
-	})
-	if err != nil {
-		return
-	}
-
-	data, err := json.Marshal(reloadResp.Data)
-	if err != nil {
-		return
-	}
-
-	var updatedBoard dto.BoardDetailDto
-	if err := json.Unmarshal(data, &updatedBoard); err != nil {
-		return
-	}
-
-	_ = resp
-
-	m.board = &updatedBoard
-
-	if len(m.scrollOffsets) != len(m.board.Columns) {
-		m.scrollOffsets = make([]int, len(m.board.Columns))
-	}
-
-	m.focusedTask = len(m.board.Columns[m.focusedColumn].Tasks) - 1
-
-	availableTaskHeight := m.height - 8
-	maxVisibleTasks := availableTaskHeight / 6
-	if maxVisibleTasks < 1 {
-		maxVisibleTasks = 1
-	}
-	m.updateScroll(maxVisibleTasks)
 }
 
 func (m Model) reloadBoard() tea.Cmd {
 	return func() tea.Msg {
-		resp, err := m.daemonClient.SendRequest("get_board", map[string]interface{}{
-			"board_id": m.boardID,
-		})
+		ctx := context.Background()
+		board, err := fetchBoardWithTasks(ctx, m.daemonClient, m.boardID)
 		if err != nil {
 			return nil
 		}
 
-		data, err := json.Marshal(resp.Data)
-		if err != nil {
-			return nil
-		}
-
-		var board dto.BoardDetailDto
-		if err := json.Unmarshal(data, &board); err != nil {
-			return nil
-		}
-
-		return BoardUpdateMsg{board: &board}
+		return BoardUpdateMsg{board: board}
 	}
 }
 
-func (m *Model) deleteTask() {
+func (m Model) deleteTask() tea.Cmd {
 	if m.currentColumnTaskCount() == 0 {
-		return
+		return nil
 	}
 
 	task := m.currentTask()
 	if task == nil {
-		return
+		return nil
 	}
 
-	_, err := m.daemonClient.SendRequest("delete_task", map[string]interface{}{
-		"board_id": m.board.ID,
-		"task_id":  task.ID,
-	})
-	if err != nil {
-		return
+	taskID := task.ID
+	client := m.daemonClient
+	return func() tea.Msg {
+		ctx := context.Background()
+		err := client.DeleteTask(ctx, taskID)
+		return taskDeletedMsg{err: err}
 	}
-
-	// Reload the board
-	resp, err := m.daemonClient.SendRequest("get_board", map[string]interface{}{
-		"board_id": m.board.ID,
-	})
-	if err != nil {
-		return
-	}
-
-	data, err := json.Marshal(resp.Data)
-	if err != nil {
-		return
-	}
-
-	var updatedBoard dto.BoardDetailDto
-	if err := json.Unmarshal(data, &updatedBoard); err != nil {
-		return
-	}
-
-	m.board = &updatedBoard
-	if len(m.scrollOffsets) != len(m.board.Columns) {
-		m.scrollOffsets = make([]int, len(m.board.Columns))
-	}
-
-	m.clampTaskFocus()
 }
 
 func (m *Model) clampTaskFocus() {
