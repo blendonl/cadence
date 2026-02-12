@@ -43,14 +43,14 @@ cadence/
 
 ### Technology Stack
 
-| Component | Technologies |
-|-----------|-------------|
-| **Backend** | NestJS, TypeScript, PostgreSQL, Prisma, Socket.io, Better-auth |
-| **TUI** | Go 1.24, Bubble Tea, Cobra CLI, Unix sockets |
-| **Mobile** | React Native, Expo, TypeScript, Socket.io, Better-auth |
-| **Database** | PostgreSQL 13 |
-| **Auth** | Better-auth with Google OAuth |
-| **Real-time** | Socket.io WebSockets |
+| Component     | Technologies                                                   |
+| ------------- | -------------------------------------------------------------- |
+| **Backend**   | NestJS, TypeScript, PostgreSQL, Prisma, Socket.io, Better-auth |
+| **TUI**       | Go 1.24, Bubble Tea, Cobra CLI, Unix sockets                   |
+| **Mobile**    | React Native, Expo, TypeScript, Socket.io, Better-auth         |
+| **Database**  | PostgreSQL 13                                                  |
+| **Auth**      | Better-auth with Google OAuth                                  |
+| **Real-time** | Socket.io WebSockets                                           |
 
 ## Getting Started
 
@@ -65,17 +65,20 @@ cadence/
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd cadence
    ```
 
 2. **Install dependencies**
+
    ```bash
    yarn install
    ```
 
 3. **Set up the backend**
+
    ```bash
    cd apps/backend
    cp .env.example .env
@@ -92,6 +95,7 @@ cadence/
    ```
 
 4. **Set up the TUI**
+
    ```bash
    cd apps/tui
    make build
@@ -109,6 +113,7 @@ cadence/
    ```
 
 5. **Set up the mobile app**
+
    ```bash
    cd apps/mobile
    npm install
@@ -178,6 +183,7 @@ npm test              # Run tests
 ### Backend (`apps/backend`)
 
 NestJS-based REST API providing:
+
 - User authentication and authorization
 - Project, board, column, and task management
 - Agenda and calendar functionality
@@ -193,6 +199,7 @@ NestJS-based REST API providing:
 ### TUI (`apps/tui`)
 
 Go-based terminal application featuring:
+
 - Interactive TUI with three tabs: Kanban, Notes, Agenda
 - Comprehensive CLI for all operations
 - Background daemon for multi-client support
@@ -205,6 +212,7 @@ Go-based terminal application featuring:
 ### Mobile (`apps/mobile`)
 
 React Native mobile application providing:
+
 - Full Kanban board interface with drag-and-drop
 - Calendar views (day/week/month) with timeline
 - Task creation, editing, and scheduling
@@ -312,10 +320,6 @@ npm run build:android
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
-
-## License
-
-[Your License Here]
 
 ## Acknowledgments
 
