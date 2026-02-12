@@ -27,6 +27,8 @@ type Model struct {
 	loading                bool
 	err                    error
 	editingTaskID          string
+	addingTask             bool
+	addingColumnID         string
 }
 
 type BoardUpdateMsg struct {
@@ -43,6 +45,29 @@ type boardLoadedMsg struct {
 }
 
 type tickMsg time.Time
+
+type boardRefreshMsg struct {
+	board *dto.BoardDetailDto
+}
+
+type taskUpdatedMsg struct {
+	err error
+}
+
+type taskAddedMsg struct {
+	err error
+}
+
+type taskMovedMsg struct {
+	err error
+}
+
+type taskDeletedMsg struct {
+	err error
+}
+
+const taskCardHeight = 6
+const verticalChrome = 8
 
 func NewModel(daemonClient *daemon.Client, cfg *config.Config) Model {
 	return Model{
@@ -151,6 +176,15 @@ func (m Model) currentScrollOffset() int {
 		return 0
 	}
 	return m.scrollOffsets[m.focusedColumn]
+}
+
+func (m Model) maxVisibleTasks() int {
+	available := m.height - verticalChrome
+	visible := available / taskCardHeight
+	if visible < 1 {
+		visible = 1
+	}
+	return visible
 }
 
 func (m *Model) updateScroll(viewportHeight int) {

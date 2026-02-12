@@ -78,7 +78,7 @@ func (m Model) View() string {
 	showLeftIndicator := startCol > 0
 	showRightIndicator := endCol < totalColumns
 
-	availableTaskHeight := m.height - 8
+	availableTaskHeight := m.height - verticalChrome
 
 	var columnsToRender []string
 
@@ -156,7 +156,7 @@ func (m Model) renderColumn(col dto.BoardColumnDto, colIndex int, width int, vie
 		scrollOffset = m.scrollOffsets[colIndex]
 	}
 
-	maxVisibleTasks := viewportHeight / 6
+	maxVisibleTasks := viewportHeight / taskCardHeight
 	if maxVisibleTasks < 1 {
 		maxVisibleTasks = 1
 	}

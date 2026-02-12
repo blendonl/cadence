@@ -1,74 +1,12 @@
 package kanban
 
 import (
-	"context"
-	"fmt"
-	"os"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
-	"cadence/internal/application/dto"
-	"cadence/internal/daemon"
 	"cadence/pkg/editor"
 )
-
-type boardRefreshMsg struct {
-	board *dto.BoardDetailDto
-}
-
-type taskUpdatedMsg struct {
-	err error
-}
-
-type taskAddedMsg struct {
-	err error
-}
-
-type taskMovedMsg struct {
-	err error
-}
-
-type taskDeletedMsg struct {
-	err error
-}
-
-func checkBoardChange(m Model) tea.Cmd {
-	return func() tea.Msg {
-		if os.Getenv("TMUX") == "" {
-			return nil
-		}
-
-		client := daemon.NewClient(m.config)
-
-		if !client.IsHealthy() {
-			return nil
-		}
-
-		ctx := context.Background()
-		activeBoardID, err := client.GetActiveBoard(ctx)
-		if err != nil || activeBoardID == "" {
-			return nil
-		}
-
-		if activeBoardID != m.lastBoardID {
-			board, err := client.GetBoard(ctx, activeBoardID)
-			if err != nil {
-				return nil
-			}
-
-			tasksResp, err := client.ListTasks(ctx, activeBoardID, 1, 200)
-			if err != nil {
-				return nil
-			}
-
-			populateBoardTasks(board, tasksResp.Items)
-			return boardRefreshMsg{board: board}
-		}
-
-		return nil
-	}
-}
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
@@ -118,20 +56,37 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.Err != nil {
 			m.err = msg.Err
 			m.editingTaskID = ""
-			return m, nil
-		}
-		if m.editingTaskID == "" {
+			m.addingTask = false
+			m.addingColumnID = ""
 			return m, nil
 		}
 		content := strings.TrimSpace(msg.Content)
 		if content == "" {
 			m.editingTaskID = ""
+			m.addingTask = false
+			m.addingColumnID = ""
 			return m, nil
 		}
-		title, description := parseTaskContent(content)
-		taskID := m.editingTaskID
-		m.editingTaskID = ""
-		return m, m.updateTask(taskID, title, description)
+		fields, err := editor.ParseTaskDoc(content)
+		if err != nil {
+			m.err = err
+			m.editingTaskID = ""
+			m.addingTask = false
+			m.addingColumnID = ""
+			return m, nil
+		}
+		if m.addingTask {
+			columnID := m.addingColumnID
+			m.addingTask = false
+			m.addingColumnID = ""
+			return m, m.createTask(fields, columnID)
+		}
+		if m.editingTaskID != "" {
+			taskID := m.editingTaskID
+			m.editingTaskID = ""
+			return m, m.updateTask(taskID, fields)
+		}
+		return m, nil
 
 	case taskUpdatedMsg:
 		if msg.err != nil {
@@ -199,8 +154,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, m.addTask()
 
 		case key.Matches(msg, keys.Edit):
-			cmd := m.editTask()
-			return m, cmd
+			return m, m.editTask()
 
 		case key.Matches(msg, keys.Delete):
 			return m, m.deleteTask()
@@ -215,12 +169,7 @@ func (m *Model) moveLeft() {
 		m.focusedColumn--
 		m.focusedTask = 0
 		m.clampTaskFocus()
-		availableTaskHeight := m.height - 8
-		maxVisibleTasks := availableTaskHeight / 6
-		if maxVisibleTasks < 1 {
-			maxVisibleTasks = 1
-		}
-		m.updateScroll(maxVisibleTasks)
+		m.updateScroll(m.maxVisibleTasks())
 		m.updateHorizontalScroll(m.calculateVisibleColumns())
 	}
 }
@@ -233,12 +182,7 @@ func (m *Model) moveRight() {
 		m.focusedColumn++
 		m.focusedTask = 0
 		m.clampTaskFocus()
-		availableTaskHeight := m.height - 8
-		maxVisibleTasks := availableTaskHeight / 6
-		if maxVisibleTasks < 1 {
-			maxVisibleTasks = 1
-		}
-		m.updateScroll(maxVisibleTasks)
+		m.updateScroll(m.maxVisibleTasks())
 		m.updateHorizontalScroll(m.calculateVisibleColumns())
 	}
 }
@@ -259,12 +203,7 @@ func (m *Model) calculateVisibleColumns() int {
 func (m *Model) moveUp() {
 	if m.focusedTask > 0 {
 		m.focusedTask--
-		availableTaskHeight := m.height - 8
-		maxVisibleTasks := availableTaskHeight / 6
-		if maxVisibleTasks < 1 {
-			maxVisibleTasks = 1
-		}
-		m.updateScroll(maxVisibleTasks)
+		m.updateScroll(m.maxVisibleTasks())
 	}
 }
 
@@ -272,81 +211,7 @@ func (m *Model) moveDown() {
 	taskCount := m.currentColumnTaskCount()
 	if m.focusedTask < taskCount-1 {
 		m.focusedTask++
-		availableTaskHeight := m.height - 8
-		maxVisibleTasks := availableTaskHeight / 6
-		if maxVisibleTasks < 1 {
-			maxVisibleTasks = 1
-		}
-		m.updateScroll(maxVisibleTasks)
-	}
-}
-
-func (m *Model) moveTask() tea.Cmd {
-	if m.board == nil || m.currentColumnTaskCount() == 0 {
-		return nil
-	}
-
-	if m.focusedColumn >= len(m.board.Columns)-1 {
-		return nil
-	}
-
-	taskID := m.board.Columns[m.focusedColumn].Tasks[m.focusedTask].ID
-	targetColumnID := m.board.Columns[m.focusedColumn+1].ID
-
-	m.focusedColumn++
-	m.clampTaskFocus()
-	m.updateHorizontalScroll(m.calculateVisibleColumns())
-
-	client := m.daemonClient
-	return func() tea.Msg {
-		ctx := context.Background()
-		_, err := client.MoveTask(ctx, taskID, targetColumnID)
-		return taskMovedMsg{err: err}
-	}
-}
-
-func (m Model) addTask() tea.Cmd {
-	if m.board == nil {
-		return nil
-	}
-
-	columnID := m.board.Columns[m.focusedColumn].ID
-	client := m.daemonClient
-	return func() tea.Msg {
-		ctx := context.Background()
-		_, err := client.CreateTask(ctx, "New Task", columnID)
-		return taskAddedMsg{err: err}
-	}
-}
-
-func (m Model) reloadBoard() tea.Cmd {
-	return func() tea.Msg {
-		ctx := context.Background()
-		board, err := fetchBoardWithTasks(ctx, m.daemonClient, m.boardID)
-		if err != nil {
-			return nil
-		}
-
-		return BoardUpdateMsg{board: board}
-	}
-}
-
-func (m Model) deleteTask() tea.Cmd {
-	if m.currentColumnTaskCount() == 0 {
-		return nil
-	}
-
-	task := m.currentTask()
-	if task == nil {
-		return nil
-	}
-
-	taskID := task.ID
-	client := m.daemonClient
-	return func() tea.Msg {
-		ctx := context.Background()
-		err := client.DeleteTask(ctx, taskID)
-		return taskDeletedMsg{err: err}
+		m.updateScroll(m.maxVisibleTasks())
 	}
 }
 
@@ -358,60 +223,3 @@ func (m *Model) clampTaskFocus() {
 		m.focusedTask = taskCount - 1
 	}
 }
-
-func (m *Model) editTask() tea.Cmd {
-	task := m.currentTask()
-	if task == nil {
-		return nil
-	}
-
-	m.editingTaskID = task.ID
-	content := "# " + task.Title
-	if task.Description != nil && *task.Description != "" {
-		content += "\n\n" + *task.Description
-	} else {
-		content += "\n\n"
-	}
-
-	return editor.OpenEditor(content, ".md")
-}
-
-func (m Model) updateTask(taskID, title, description string) tea.Cmd {
-	return func() tea.Msg {
-		fields := map[string]interface{}{
-			"title": title,
-		}
-		if description != "" {
-			fields["description"] = description
-		}
-		_, err := m.daemonClient.SendRequest("update_task", map[string]interface{}{
-			"board_id": m.board.ID,
-			"task_id":  taskID,
-			"fields":   fields,
-		})
-		if err != nil {
-			return taskUpdatedMsg{err: err}
-		}
-		return taskUpdatedMsg{}
-	}
-}
-
-func parseTaskContent(content string) (string, string) {
-	lines := strings.SplitN(content, "\n", 2)
-	title := strings.TrimSpace(lines[0])
-	title = strings.TrimPrefix(title, "# ")
-	title = strings.TrimSpace(title)
-
-	if title == "" {
-		title = "Untitled"
-	}
-
-	description := ""
-	if len(lines) > 1 {
-		description = strings.TrimSpace(lines[1])
-	}
-
-	return title, description
-}
-
-var _ = fmt.Sprintf
