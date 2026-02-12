@@ -229,6 +229,27 @@ func (c *Client) CreateBoard(ctx context.Context, projectID, name, description s
 	return &board, nil
 }
 
+func (c *Client) ListTasks(ctx context.Context, boardID string, page, limit int) (*dto.PaginatedResponse[dto.TaskDto], error) {
+	resp, err := c.sendRequest(&Request{
+		Type: RequestListTasks,
+		Payload: ListTasksPayload{
+			BoardID: boardID,
+			Page:    page,
+			Limit:   limit,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var tasks dto.PaginatedResponse[dto.TaskDto]
+	if err := c.decodeResponseData(resp.Data, &tasks); err != nil {
+		return nil, err
+	}
+
+	return &tasks, nil
+}
+
 func (c *Client) CreateTask(ctx context.Context, title, columnID string) (*dto.TaskDto, error) {
 	resp, err := c.sendRequest(&Request{
 		Type: RequestAddTask,

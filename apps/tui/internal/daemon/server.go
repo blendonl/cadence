@@ -177,6 +177,8 @@ func (s *Server) handleRequest(req *Request) *Response {
 		return s.handleListBoards(ctx)
 	case RequestCreateBoard:
 		return s.handleCreateBoard(ctx, req)
+	case RequestListTasks:
+		return s.handleListTasks(ctx, req)
 	case RequestAddTask:
 		return s.handleAddTask(ctx, req)
 	case RequestMoveTask:
@@ -283,6 +285,20 @@ func (s *Server) handleCreateBoard(ctx context.Context, req *Request) *Response 
 	return &Response{Success: true, Data: board}
 }
 
+func (s *Server) handleListTasks(ctx context.Context, req *Request) *Response {
+	var payload ListTasksPayload
+	if err := s.decodePayload(req.Payload, &payload); err != nil {
+		return &Response{Success: false, Error: err.Error()}
+	}
+
+	tasks, err := s.backendClient.ListTasks(ctx, payload.BoardID, payload.Page, payload.Limit)
+	if err != nil {
+		return &Response{Success: false, Error: err.Error()}
+	}
+
+	return &Response{Success: true, Data: tasks}
+}
+
 func (s *Server) handleAddTask(ctx context.Context, req *Request) *Response {
 	var payload AddTaskPayload
 	if err := s.decodePayload(req.Payload, &payload); err != nil {
@@ -357,6 +373,20 @@ func (s *Server) handleUpdateTask(ctx context.Context, req *Request) *Response {
 	if v, ok := payload.Fields["status"]; ok {
 		if str, ok := v.(string); ok {
 			updateReq.Status = &str
+		}
+	}
+	if v, ok := payload.Fields["dueDate"]; ok {
+		if str, ok := v.(string); ok {
+			updateReq.DueDate = &str
+		}
+	}
+	if v, ok := payload.Fields["estimatedMinutes"]; ok {
+		switch val := v.(type) {
+		case float64:
+			intVal := int(val)
+			updateReq.EstimatedMinutes = &intVal
+		case int:
+			updateReq.EstimatedMinutes = &val
 		}
 	}
 

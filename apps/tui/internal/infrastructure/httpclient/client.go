@@ -102,6 +102,18 @@ func (c *BackendClient) DeleteBoard(ctx context.Context, id string) error {
 	return c.doDelete(ctx, fmt.Sprintf("/boards/%s", id))
 }
 
+func (c *BackendClient) ListTasks(ctx context.Context, boardID string, page, limit int) (*dto.PaginatedResponse[dto.TaskDto], error) {
+	q := url.Values{}
+	q.Set("boardId", boardID)
+	q.Set("page", fmt.Sprintf("%d", page))
+	q.Set("limit", fmt.Sprintf("%d", limit))
+	var result dto.PaginatedResponse[dto.TaskDto]
+	if err := c.doGet(ctx, "/tasks", q, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 func (c *BackendClient) CreateTask(ctx context.Context, req dto.TaskCreateRequest) (*dto.TaskDto, error) {
 	var result dto.TaskDto
 	if err := c.doPost(ctx, "/tasks", req, &result); err != nil {

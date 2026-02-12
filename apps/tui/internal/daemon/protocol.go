@@ -3,6 +3,7 @@ package daemon
 const (
 	RequestGetBoard       = "get_board"
 	RequestListBoards     = "list_boards"
+	RequestListTasks      = "list_tasks"
 	RequestCreateBoard    = "create_board"
 	RequestAddTask        = "add_task"
 	RequestMoveTask       = "move_task"
@@ -176,4 +177,10 @@ type CompleteAgendaItemPayload struct {
 
 type GetProjectPayload struct {
 	ProjectID string `json:"project_id"`
+}
+
+type ListTasksPayload struct {
+	BoardID string `json:"board_id"`
+	Page    int    `json:"page"`
+	Limit   int    `json:"limit"`
 }
