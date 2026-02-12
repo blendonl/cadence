@@ -54,8 +54,8 @@ func InitKeybindings(cfg *config.Config) {
 			key.WithHelp(formatKeysHelp(kb.Delete), "delete task"),
 		),
 		Edit: key.NewBinding(
-			key.WithKeys("e"),
-			key.WithHelp("e", "edit task"),
+			key.WithKeys(kb.Edit...),
+			key.WithHelp(formatKeysHelp(kb.Edit), "edit task"),
 		),
 		Quit: key.NewBinding(
 			key.WithKeys(kb.Quit...),

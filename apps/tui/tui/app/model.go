@@ -31,6 +31,7 @@ type AppModel struct {
 }
 
 func NewAppModel(cfg *config.Config, daemonClient *daemon.Client, initialTab int) AppModel {
+	kanban.InitKeybindings(cfg)
 	return AppModel{
 		activeTab:    initialTab,
 		kanbanModel:  kanban.NewModel(daemonClient, cfg),

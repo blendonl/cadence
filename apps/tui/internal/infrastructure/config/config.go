@@ -99,6 +99,7 @@ type KeybindingsConfig struct {
 	Right  []string `yaml:"right"`
 	Move   []string `yaml:"move"`
 	Add    []string `yaml:"add"`
+	Edit   []string `yaml:"edit"`
 	Delete []string `yaml:"delete"`
 	Quit   []string `yaml:"quit"`
 }
@@ -181,7 +182,40 @@ func (l *Loader) Load() (*Config, error) {
 		config.Backend.Timeout = 10
 	}
 
+	applyKeybindingDefaults(&config)
+
 	return &config, nil
+}
+
+func applyKeybindingDefaults(cfg *Config) {
+	kb := &cfg.Keybindings
+	if len(kb.Up) == 0 {
+		kb.Up = []string{"up", "k"}
+	}
+	if len(kb.Down) == 0 {
+		kb.Down = []string{"down", "j"}
+	}
+	if len(kb.Left) == 0 {
+		kb.Left = []string{"left", "h"}
+	}
+	if len(kb.Right) == 0 {
+		kb.Right = []string{"right", "l"}
+	}
+	if len(kb.Move) == 0 {
+		kb.Move = []string{"m", "enter"}
+	}
+	if len(kb.Add) == 0 {
+		kb.Add = []string{"a"}
+	}
+	if len(kb.Edit) == 0 {
+		kb.Edit = []string{"e"}
+	}
+	if len(kb.Delete) == 0 {
+		kb.Delete = []string{"d"}
+	}
+	if len(kb.Quit) == 0 {
+		kb.Quit = []string{"q", "ctrl+c"}
+	}
 }
 
 func (l *Loader) Save(config *Config) error {
@@ -252,7 +286,8 @@ func (l *Loader) createDefaultConfig() (*Config, error) {
 			Up: []string{"up", "k"}, Down: []string{"down", "j"},
 			Left: []string{"left", "h"}, Right: []string{"right", "l"},
 			Move: []string{"m", "enter"}, Add: []string{"a"},
-			Delete: []string{"d"}, Quit: []string{"q", "ctrl+c"},
+			Edit: []string{"e"}, Delete: []string{"d"},
+			Quit: []string{"q", "ctrl+c"},
 		},
 		SessionTracking: SessionTrackingConfig{
 			Enabled: true, PollInterval: 5, TrackerType: "tmux",
