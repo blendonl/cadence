@@ -105,6 +105,7 @@ func TaskTemplate(task *dto.TaskDto) string {
 			metadata["priority"] = *task.Priority
 		}
 		metadata["type"] = task.TaskType
+		metadata["tags"] = []string{}
 		if task.DueDate != nil {
 			metadata["due"] = *task.DueDate
 		}
@@ -115,10 +116,62 @@ func TaskTemplate(task *dto.TaskDto) string {
 			body = *task.Description
 		}
 	} else {
-		body = "Description here."
+		metadata["priority"] = "LOW"
+		metadata["tags"] = []string{}
+		body = ""
 	}
 
-	return SerializeFrontmatter(metadata, title, body)
+	result := SerializeFrontmatter(metadata, title, body)
+	if task == nil {
+		result += "# \n"
+	}
+	return result
+}
+
+func HeadingLine(content string) int {
+	for i, line := range strings.Split(content, "\n") {
+		if strings.HasPrefix(line, "# ") {
+			return i + 1
+		}
+	}
+	return 0
+}
+
+type TaskFields struct {
+	Title            string
+	Description      string
+	Priority         string
+	Due              string
+	EstimatedMinutes int
+}
+
+func ParseTaskDoc(content string) (*TaskFields, error) {
+	doc, err := ParseFrontmatter(content)
+	if err != nil {
+		return nil, err
+	}
+
+	title := doc.Title
+	if title == "" {
+		title = "Untitled"
+	}
+
+	fields := &TaskFields{
+		Title:       title,
+		Description: doc.Body,
+	}
+
+	if p, ok := doc.Metadata["priority"].(string); ok {
+		fields.Priority = strings.ToUpper(p)
+	}
+	if d, ok := doc.Metadata["due"].(string); ok {
+		fields.Due = d
+	}
+	if e, ok := doc.Metadata["estimated_minutes"].(int); ok {
+		fields.EstimatedMinutes = e
+	}
+
+	return fields, nil
 }
 
 // NoteTemplate generates a markdown template for note creation/editing

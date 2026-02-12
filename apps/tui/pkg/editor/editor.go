@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -14,7 +15,7 @@ type EditorFinishedMsg struct {
 	Err     error
 }
 
-func OpenEditor(initialContent string, fileExtension string) tea.Cmd {
+func OpenEditor(initialContent string, fileExtension string, cursorLine ...int) tea.Cmd {
 	tmpFile, err := os.CreateTemp("", "cadence-*"+fileExtension)
 	if err != nil {
 		return func() tea.Msg {
@@ -43,12 +44,14 @@ func OpenEditor(initialContent string, fileExtension string) tea.Cmd {
 		}
 	}
 
-	editorArgs := []string{tmpPath}
 	parts := strings.Fields(editorName)
-	if len(parts) > 1 {
-		editorName = parts[0]
-		editorArgs = append(parts[1:], tmpPath)
+	editorName = parts[0]
+	editorArgs := append([]string{}, parts[1:]...)
+
+	if len(cursorLine) > 0 && cursorLine[0] > 0 && isVimLike(editorName) {
+		editorArgs = append(editorArgs, fmt.Sprintf("+%d", cursorLine[0]))
 	}
+	editorArgs = append(editorArgs, tmpPath)
 
 	cmd := exec.Command(editorName, editorArgs...)
 
@@ -140,6 +143,11 @@ func attachEditorIO(cmd *exec.Cmd) (func(), error) {
 	return func() {
 		_ = tty.Close()
 	}, nil
+}
+
+func isVimLike(editor string) bool {
+	base := filepath.Base(editor)
+	return base == "vim" || base == "nvim" || base == "vi"
 }
 
 func resolveEditor() string {
