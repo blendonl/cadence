@@ -3,16 +3,21 @@ import { BoardId, ColumnId } from "@core/types";
 import { API_CLIENT } from "@core/di/tokens";
 import { getEventBus } from "@core/EventBus";
 import { ApiClient } from "@infrastructure/api/apiClient";
-import { ColumnDto, ColumnCreateRequestDto, ColumnUpdateRequestDto } from "shared-types";
+import { ColumnDto, ColumnCreateRequestDto } from "shared-types";
+import { createColumnApi } from "@cadence/api";
 
 @injectable()
 export class ColumnService {
+  private columnApi;
+
   constructor(
     @inject(API_CLIENT) private apiClient: ApiClient,
-  ) {}
+  ) {
+    this.columnApi = createColumnApi(apiClient);
+  }
 
   async getColumnById(columnId: ColumnId): Promise<ColumnDto | null> {
-    return await this.apiClient.requestOrNull<ColumnDto>(`/columns/${columnId}`);
+    return this.columnApi.getColumnById(columnId);
   }
 
   async createColumn(
@@ -26,18 +31,11 @@ export class ColumnService {
       boardId,
       wipLimit: undefined,
     };
-
-    return await this.apiClient.request<ColumnDto>(`/columns`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    return this.columnApi.createColumn(payload);
   }
 
   async deleteColumn(boardId: BoardId, columnId: ColumnId): Promise<boolean> {
-    await this.apiClient.request<{ deleted: boolean }>(`/columns/${columnId}`, {
-      method: "DELETE",
-    });
+    await this.columnApi.deleteColumn(columnId);
     return true;
   }
 
@@ -46,16 +44,10 @@ export class ColumnService {
     columnId: ColumnId,
     updates: { name?: string; position?: number; limit?: number | null },
   ): Promise<ColumnDto> {
-    const payload: ColumnUpdateRequestDto = {
+    return this.columnApi.updateColumn(columnId, {
       name: updates.name,
       position: updates.position,
       wipLimit: updates.limit,
-    };
-
-    return await this.apiClient.request<ColumnDto>(`/columns/${columnId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
     });
   }
 

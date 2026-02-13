@@ -1,23 +1,22 @@
 import { injectable, inject } from "tsyringe";
 import { TaskId, ParentId } from "@core/types";
-import { ValidationError } from "@core/exceptions";
 import { TaskDto, TaskDetailDto, TaskCreateRequestDto, TaskCreateResponseDto, TaskUpdateRequestDto, TaskPriorityType, PaginatedResponse, QuickTaskCreateRequestDto } from "shared-types";
 import { API_CLIENT } from "@core/di/tokens";
 import { ApiClient } from "@infrastructure/api/apiClient";
+import { createTaskApi } from "@cadence/api";
 
 @injectable()
 export class TaskService {
+  private taskApi;
+
   constructor(
     @inject(API_CLIENT) private readonly apiClient: ApiClient,
-  ) {}
+  ) {
+    this.taskApi = createTaskApi(apiClient);
+  }
 
   async getAllTasks(query: { projectId?: string; boardId?: string } = {}): Promise<TaskDto[]> {
-    const params = new URLSearchParams();
-    if (query.projectId) params.append("projectId", query.projectId);
-    if (query.boardId) params.append("boardId", query.boardId);
-
-    const queryString = params.toString();
-    return await this.apiClient.request<TaskDto[]>(`/tasks${queryString ? `?${queryString}` : ""}`);
+    return this.taskApi.getAllTasks(query);
   }
 
   async getTasks(query: {
@@ -28,40 +27,19 @@ export class TaskService {
     page?: number;
     limit?: number;
   } = {}): Promise<PaginatedResponse<TaskDto>> {
-    const params = new URLSearchParams();
-    if (query.projectId) params.append("projectId", query.projectId);
-    if (query.boardId) params.append("boardId", query.boardId);
-    if (query.columnId) params.append("columnId", query.columnId);
-    if (query.search) params.append("search", query.search);
-    if (query.page) params.append("page", query.page.toString());
-    if (query.limit) params.append("limit", query.limit.toString());
-
-    const queryString = params.toString();
-    return await this.apiClient.request<PaginatedResponse<TaskDto>>(
-      `/tasks${queryString ? `?${queryString}` : ""}`
-    );
+    return this.taskApi.getTasks(query);
   }
 
   async createTask(params: TaskCreateRequestDto): Promise<TaskCreateResponseDto> {
-    return await this.apiClient.request<TaskCreateResponseDto>(`/tasks`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(params),
-    });
+    return this.taskApi.createTask(params);
   }
 
   async updateTask(taskId: TaskId, updates: TaskUpdateRequestDto): Promise<TaskDto> {
-    return await this.apiClient.request<TaskDto>(`/tasks/${taskId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updates),
-    });
+    return this.taskApi.updateTask(taskId, updates);
   }
 
   async deleteTask(taskId: TaskId): Promise<boolean> {
-    await this.apiClient.request<{ deleted: boolean }>(`/tasks/${taskId}`, {
-      method: "DELETE",
-    });
+    await this.taskApi.deleteTask(taskId);
     return true;
   }
 
@@ -69,28 +47,24 @@ export class TaskService {
     taskId: TaskId,
     targetColumnId: string,
   ): Promise<boolean> {
-    await this.updateTask(taskId, { columnId: targetColumnId });
+    await this.taskApi.updateTask(taskId, { columnId: targetColumnId });
     return true;
   }
 
   async setTaskParent(taskId: TaskId, parentId: ParentId): Promise<boolean> {
-    await this.updateTask(taskId, { parentId });
+    await this.taskApi.updateTask(taskId, { parentId });
     return true;
   }
 
   async setTaskPriority(taskId: TaskId, priority: TaskPriorityType): Promise<void> {
-    await this.updateTask(taskId, { priority });
+    await this.taskApi.updateTask(taskId, { priority });
   }
 
   async quickCreateTask(params: QuickTaskCreateRequestDto): Promise<TaskDto> {
-    return await this.apiClient.request<TaskDto>(`/tasks/quick`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(params),
-    });
+    return this.taskApi.quickCreateTask(params);
   }
 
   async getTaskDetail(taskId: TaskId): Promise<TaskDetailDto | null> {
-    return await this.apiClient.requestOrNull<TaskDetailDto>(`/tasks/${taskId}`);
+    return this.taskApi.getTaskDetail(taskId);
   }
 }

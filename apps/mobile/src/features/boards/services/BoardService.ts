@@ -3,16 +3,21 @@ import { BoardId, ProjectId } from "@core/types";
 import { BoardNotFoundError, ValidationError } from "@core/exceptions";
 import { getEventBus } from "@core/EventBus";
 import logger from "@utils/logger";
-import { BoardDto, BoardDetailDto, BoardListResponseDto } from "shared-types";
+import { BoardDto, BoardDetailDto } from "shared-types";
 import { ApiClient } from "@infrastructure/api/apiClient";
+import { createBoardApi } from "@cadence/api";
 
 import { API_CLIENT } from "@core/di/tokens";
 
 @injectable()
 export class BoardService {
+  private boardApi;
+
   constructor(
     @inject(API_CLIENT) private apiClient: ApiClient
-  ) {}
+  ) {
+    this.boardApi = createBoardApi(apiClient);
+  }
 
   private validateBoardName(name: string): void {
     if (!name || name.trim().length === 0) {
@@ -21,28 +26,16 @@ export class BoardService {
   }
 
   async getBoardsByProject(projectId: ProjectId): Promise<BoardDto[]> {
-    const response = await this.apiClient.request<BoardListResponseDto | null>(
-      `/boards?projectId=${projectId}`
-    );
-    if (!response || !Array.isArray(response.items)) {
-      logger.warn('[BoardService] Unexpected board list response', { projectId, response });
-      return [];
-    }
-    return response.items;
+    return this.boardApi.getBoardsByProject(projectId);
   }
 
   async getAllBoards(): Promise<BoardDto[]> {
-    const response = await this.apiClient.request<BoardListResponseDto | null>(`/boards`);
-    if (!response || !Array.isArray(response.items)) {
-      logger.warn('[BoardService] Unexpected board list response', { response });
-      return [];
-    }
-    return response.items;
+    return this.boardApi.getAllBoards();
   }
 
   async getBoardById(boardId: BoardId): Promise<BoardDetailDto> {
     logger.info('[BoardService] getBoardById called', { boardId });
-    const board = await this.apiClient.requestOrNull<BoardDetailDto>(`/boards/${boardId}`);
+    const board = await this.boardApi.getBoardById(boardId);
 
     if (!board) {
       logger.warn('[BoardService] Board not found', { boardId });
@@ -71,11 +64,7 @@ export class BoardService {
   ): Promise<BoardDto> {
     this.validateBoardName(name);
 
-    const board = await this.apiClient.request<BoardDto>(`/boards`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, description, projectId }),
-    });
+    const board = await this.boardApi.createBoard({ projectId, name, description });
 
     await getEventBus().publish("board_created", {
       boardId: board.id,
@@ -92,9 +81,7 @@ export class BoardService {
   }
 
   async deleteBoard(boardId: BoardId): Promise<boolean> {
-    await this.apiClient.request<{ deleted: boolean }>(`/boards/${boardId}`, {
-      method: "DELETE",
-    });
+    await this.boardApi.deleteBoard(boardId);
 
     await getEventBus().publish("board_deleted", {
       boardId,

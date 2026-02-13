@@ -7,42 +7,37 @@ import {
   NoteDto,
   NoteUpdateRequestDto,
 } from 'shared-types';
+import { createNoteApi } from '@cadence/api';
 
 @injectable()
 export class NoteService {
-  constructor(@inject(API_CLIENT) private apiClient: ApiClient) {}
+  private noteApi;
+
+  constructor(@inject(API_CLIENT) private apiClient: ApiClient) {
+    this.noteApi = createNoteApi(apiClient);
+  }
 
   async getAllNotes(): Promise<NoteDetailDto[]> {
-    return this.apiClient.request<NoteDetailDto[]>('/notes');
+    return this.noteApi.getAllNotes();
   }
 
   async getNotesByProject(projectId: string): Promise<NoteDetailDto[]> {
-    return this.apiClient.request<NoteDetailDto[]>(
-      `/notes?projectId=${encodeURIComponent(projectId)}`,
-    );
+    return this.noteApi.getNotesByProject(projectId);
   }
 
   async getNoteById(id: string): Promise<NoteDetailDto | null> {
-    return this.apiClient.requestOrNull<NoteDetailDto>(`/notes/${id}`);
+    return this.noteApi.getNoteById(id);
   }
 
   async createNote(request: NoteCreateRequestDto): Promise<NoteDto> {
-    return this.apiClient.request<NoteDto>('/notes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request),
-    });
+    return this.noteApi.createNote(request);
   }
 
   async updateNote(id: string, request: NoteUpdateRequestDto): Promise<NoteDto> {
-    return this.apiClient.request<NoteDto>(`/notes/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request),
-    });
+    return this.noteApi.updateNote(id, request);
   }
 
   async deleteNote(id: string): Promise<void> {
-    await this.apiClient.request(`/notes/${id}`, { method: 'DELETE' });
+    return this.noteApi.deleteNote(id);
   }
 }
