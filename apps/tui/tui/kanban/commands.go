@@ -27,7 +27,7 @@ func checkBoardChange(m Model) tea.Cmd {
 		}
 
 		if activeBoardID != m.lastBoardID {
-			board, err := fetchBoardWithTasks(ctx, client, activeBoardID)
+			board, err := fetchBoard(ctx, client, activeBoardID)
 			if err != nil {
 				return nil
 			}
@@ -38,7 +38,7 @@ func checkBoardChange(m Model) tea.Cmd {
 	}
 }
 
-func (m *Model) moveTask() tea.Cmd {
+func (m *Model) moveTaskRight() tea.Cmd {
 	if m.board == nil || m.currentColumnTaskCount() == 0 {
 		return nil
 	}
@@ -51,6 +51,30 @@ func (m *Model) moveTask() tea.Cmd {
 	targetColumnID := m.board.Columns[m.focusedColumn+1].ID
 
 	m.focusedColumn++
+	m.clampTaskFocus()
+	m.updateHorizontalScroll(m.calculateVisibleColumns())
+
+	client := m.daemonClient
+	return func() tea.Msg {
+		ctx := context.Background()
+		_, err := client.MoveTask(ctx, taskID, targetColumnID)
+		return taskMovedMsg{err: err}
+	}
+}
+
+func (m *Model) moveTaskLeft() tea.Cmd {
+	if m.board == nil || m.currentColumnTaskCount() == 0 {
+		return nil
+	}
+
+	if m.focusedColumn <= 0 {
+		return nil
+	}
+
+	taskID := m.board.Columns[m.focusedColumn].Tasks[m.focusedTask].ID
+	targetColumnID := m.board.Columns[m.focusedColumn-1].ID
+
+	m.focusedColumn--
 	m.clampTaskFocus()
 	m.updateHorizontalScroll(m.calculateVisibleColumns())
 
@@ -137,7 +161,7 @@ func (m Model) deleteTask() tea.Cmd {
 func (m Model) reloadBoard() tea.Cmd {
 	return func() tea.Msg {
 		ctx := context.Background()
-		board, err := fetchBoardWithTasks(ctx, m.daemonClient, m.boardID)
+		board, err := fetchBoard(ctx, m.daemonClient, m.boardID)
 		if err != nil {
 			return nil
 		}

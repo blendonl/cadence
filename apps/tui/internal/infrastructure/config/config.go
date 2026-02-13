@@ -93,15 +93,16 @@ type DueDateColors struct {
 }
 
 type KeybindingsConfig struct {
-	Up     []string `yaml:"up"`
-	Down   []string `yaml:"down"`
-	Left   []string `yaml:"left"`
-	Right  []string `yaml:"right"`
-	Move   []string `yaml:"move"`
-	Add    []string `yaml:"add"`
-	Edit   []string `yaml:"edit"`
-	Delete []string `yaml:"delete"`
-	Quit   []string `yaml:"quit"`
+	Up        []string `yaml:"up"`
+	Down      []string `yaml:"down"`
+	Left      []string `yaml:"left"`
+	Right     []string `yaml:"right"`
+	MoveLeft  []string `yaml:"move_left"`
+	MoveRight []string `yaml:"move_right"`
+	Add       []string `yaml:"add"`
+	Edit      []string `yaml:"edit"`
+	Delete    []string `yaml:"delete"`
+	Quit      []string `yaml:"quit"`
 }
 
 type SessionTrackingConfig struct {
@@ -201,8 +202,11 @@ func applyKeybindingDefaults(cfg *Config) {
 	if len(kb.Right) == 0 {
 		kb.Right = []string{"right", "l"}
 	}
-	if len(kb.Move) == 0 {
-		kb.Move = []string{"m", "enter"}
+	if len(kb.MoveLeft) == 0 {
+		kb.MoveLeft = []string{"H"}
+	}
+	if len(kb.MoveRight) == 0 {
+		kb.MoveRight = []string{"L"}
 	}
 	if len(kb.Add) == 0 {
 		kb.Add = []string{"a"}
@@ -285,7 +289,7 @@ func (l *Loader) createDefaultConfig() (*Config, error) {
 		Keybindings: KeybindingsConfig{
 			Up: []string{"up", "k"}, Down: []string{"down", "j"},
 			Left: []string{"left", "h"}, Right: []string{"right", "l"},
-			Move: []string{"m", "enter"}, Add: []string{"a"},
+			MoveLeft: []string{"H"}, MoveRight: []string{"L"}, Add: []string{"a"},
 			Edit: []string{"e"}, Delete: []string{"d"},
 			Quit: []string{"q", "ctrl+c"},
 		},

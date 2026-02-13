@@ -291,7 +291,7 @@ func (s *Server) handleListTasks(ctx context.Context, req *Request) *Response {
 		return &Response{Success: false, Error: err.Error()}
 	}
 
-	tasks, err := s.backendClient.ListTasks(ctx, payload.BoardID, payload.Page, payload.Limit)
+	tasks, err := s.backendClient.ListTasks(ctx, payload.BoardID, payload.ColumnID, payload.Page, payload.Limit)
 	if err != nil {
 		return &Response{Success: false, Error: err.Error()}
 	}

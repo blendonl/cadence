@@ -182,7 +182,8 @@ type GetProjectPayload struct {
 }
 
 type ListTasksPayload struct {
-	BoardID string `json:"board_id"`
-	Page    int    `json:"page"`
-	Limit   int    `json:"limit"`
+	BoardID  string `json:"board_id,omitempty"`
+	ColumnID string `json:"column_id,omitempty"`
+	Page     int    `json:"page"`
+	Limit    int    `json:"limit"`
 }

@@ -8,15 +8,16 @@ import (
 )
 
 type keyMap struct {
-	Up     key.Binding
-	Down   key.Binding
-	Left   key.Binding
-	Right  key.Binding
-	Move   key.Binding
-	Add    key.Binding
-	Delete key.Binding
-	Edit   key.Binding
-	Quit   key.Binding
+	Up        key.Binding
+	Down      key.Binding
+	Left      key.Binding
+	Right     key.Binding
+	MoveLeft  key.Binding
+	MoveRight key.Binding
+	Add       key.Binding
+	Delete    key.Binding
+	Edit      key.Binding
+	Quit      key.Binding
 }
 
 var keys keyMap
@@ -41,9 +42,13 @@ func InitKeybindings(cfg *config.Config) {
 			key.WithKeys(kb.Right...),
 			key.WithHelp(formatKeysHelp(kb.Right), "right"),
 		),
-		Move: key.NewBinding(
-			key.WithKeys(kb.Move...),
-			key.WithHelp(formatKeysHelp(kb.Move), "move task"),
+		MoveLeft: key.NewBinding(
+			key.WithKeys(kb.MoveLeft...),
+			key.WithHelp(formatKeysHelp(kb.MoveLeft), "move left"),
+		),
+		MoveRight: key.NewBinding(
+			key.WithKeys(kb.MoveRight...),
+			key.WithHelp(formatKeysHelp(kb.MoveRight), "move right"),
 		),
 		Add: key.NewBinding(
 			key.WithKeys(kb.Add...),

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"sync"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -11,6 +12,8 @@ import (
 	"cadence/internal/daemon"
 	"cadence/internal/infrastructure/config"
 )
+
+const tasksPerPage = 10
 
 type Model struct {
 	board                  *dto.BoardDetailDto
@@ -29,6 +32,9 @@ type Model struct {
 	editingTaskID          string
 	addingTask             bool
 	addingColumnID         string
+	columnPages            map[string]int
+	columnTotals           map[string]int
+	subscribed             bool
 }
 
 type BoardUpdateMsg struct {
@@ -66,6 +72,16 @@ type taskDeletedMsg struct {
 	err error
 }
 
+type columnTasksLoadedMsg struct {
+	columnID string
+	tasks    []dto.TaskDto
+	total    int
+	page     int
+	err      error
+}
+
+type batchColumnTasksMsg []columnTasksLoadedMsg
+
 const taskCardHeight = 6
 const verticalChrome = 8
 
@@ -74,6 +90,8 @@ func NewModel(daemonClient *daemon.Client, cfg *config.Config) Model {
 		daemonClient: daemonClient,
 		config:       cfg,
 		loading:      true,
+		columnPages:  make(map[string]int),
+		columnTotals: make(map[string]int),
 	}
 }
 
@@ -99,7 +117,7 @@ func (m Model) loadActiveBoard() tea.Cmd {
 			return boardLoadedMsg{err: fmt.Errorf("no active board found")}
 		}
 
-		board, err := fetchBoardWithTasks(ctx, m.daemonClient, activeBoardID)
+		board, err := fetchBoard(ctx, m.daemonClient, activeBoardID)
 		if err != nil {
 			return boardLoadedMsg{err: err}
 		}
@@ -108,35 +126,119 @@ func (m Model) loadActiveBoard() tea.Cmd {
 	}
 }
 
-func populateBoardTasks(board *dto.BoardDetailDto, tasks []dto.TaskDto) {
-	tasksByColumn := make(map[string][]dto.TaskDto)
-	for _, t := range tasks {
-		tasksByColumn[t.ColumnID] = append(tasksByColumn[t.ColumnID], t)
-	}
-
-	for i := range board.Columns {
-		colTasks := tasksByColumn[board.Columns[i].ID]
-		sort.Slice(colTasks, func(a, b int) bool {
-			return colTasks[a].Position < colTasks[b].Position
-		})
-		board.Columns[i].Tasks = colTasks
-		board.Columns[i].TaskCount = len(colTasks)
-	}
-}
-
-func fetchBoardWithTasks(ctx context.Context, client *daemon.Client, boardID string) (*dto.BoardDetailDto, error) {
+func fetchBoard(ctx context.Context, client *daemon.Client, boardID string) (*dto.BoardDetailDto, error) {
 	board, err := client.GetBoard(ctx, boardID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get board: %w", err)
 	}
+	return board, nil
+}
 
-	tasksResp, err := client.ListTasks(ctx, boardID, 1, 200)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list tasks: %w", err)
+func (m Model) fetchAllColumnTasks() tea.Cmd {
+	if m.board == nil {
+		return nil
 	}
 
-	populateBoardTasks(board, tasksResp.Items)
-	return board, nil
+	client := m.daemonClient
+	columns := m.board.Columns
+	pages := m.columnPages
+
+	return func() tea.Msg {
+		ctx := context.Background()
+		type result struct {
+			columnID string
+			tasks    []dto.TaskDto
+			total    int
+			page     int
+			err      error
+		}
+
+		results := make([]result, len(columns))
+		var wg sync.WaitGroup
+
+		for i, col := range columns {
+			wg.Add(1)
+			go func(idx int, colID string) {
+				defer wg.Done()
+				page := pages[colID]
+				if page == 0 {
+					page = 1
+				}
+				resp, err := client.ListTasks(ctx, colID, page, tasksPerPage)
+				if err != nil {
+					results[idx] = result{columnID: colID, err: err}
+					return
+				}
+				sort.Slice(resp.Items, func(a, b int) bool {
+					return resp.Items[a].Position < resp.Items[b].Position
+				})
+				results[idx] = result{
+					columnID: colID,
+					tasks:    resp.Items,
+					total:    resp.Total,
+					page:     page,
+				}
+			}(i, col.ID)
+		}
+
+		wg.Wait()
+
+		msgs := make([]columnTasksLoadedMsg, len(results))
+		for i, r := range results {
+			msgs[i] = columnTasksLoadedMsg{
+				columnID: r.columnID,
+				tasks:    r.tasks,
+				total:    r.total,
+				page:     r.page,
+				err:      r.err,
+			}
+		}
+		return batchColumnTasksMsg(msgs)
+	}
+}
+
+func fetchColumnTasks(client *daemon.Client, columnID string, page int) tea.Cmd {
+	return func() tea.Msg {
+		ctx := context.Background()
+		resp, err := client.ListTasks(ctx, columnID, page, tasksPerPage)
+		if err != nil {
+			return columnTasksLoadedMsg{columnID: columnID, err: err}
+		}
+		sort.Slice(resp.Items, func(a, b int) bool {
+			return resp.Items[a].Position < resp.Items[b].Position
+		})
+		return columnTasksLoadedMsg{
+			columnID: columnID,
+			tasks:    resp.Items,
+			total:    resp.Total,
+			page:     page,
+		}
+	}
+}
+
+func (m *Model) applyColumnTasks(msg columnTasksLoadedMsg) {
+	if msg.err != nil || m.board == nil {
+		return
+	}
+	m.columnPages[msg.columnID] = msg.page
+	m.columnTotals[msg.columnID] = msg.total
+	for i := range m.board.Columns {
+		if m.board.Columns[i].ID == msg.columnID {
+			m.board.Columns[i].Tasks = msg.tasks
+			m.board.Columns[i].TaskCount = msg.total
+			break
+		}
+	}
+}
+
+func (m Model) columnHasMore(colIndex int) bool {
+	if m.board == nil || colIndex < 0 || colIndex >= len(m.board.Columns) {
+		return false
+	}
+	col := m.board.Columns[colIndex]
+	total := m.columnTotals[col.ID]
+	page := m.columnPages[col.ID]
+	return page*tasksPerPage < total
 }
 
 func (m Model) subscribeToBoard() tea.Cmd {

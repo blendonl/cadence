@@ -1,18 +1,21 @@
 package kanban
 
 import (
+	"context"
+	"sort"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
+	"cadence/internal/application/dto"
 	"cadence/pkg/editor"
 )
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case boardLoadedMsg:
-		m.loading = false
 		if msg.err != nil {
+			m.loading = false
 			m.err = msg.err
 			return m, nil
 		}
@@ -20,10 +23,29 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.boardID = msg.board.ID
 		m.lastBoardID = msg.board.ID
 		m.scrollOffsets = make([]int, len(m.board.Columns))
-		return m, tea.Batch(
-			m.subscribeToBoard(),
-			m.waitForNotification(),
-		)
+		m.columnPages = make(map[string]int)
+		m.columnTotals = make(map[string]int)
+		return m, m.fetchAllColumnTasks()
+
+	case batchColumnTasksMsg:
+		m.loading = false
+		for _, colMsg := range msg {
+			m.applyColumnTasks(colMsg)
+		}
+		m.clampTaskFocus()
+		if !m.subscribed {
+			m.subscribed = true
+			return m, tea.Batch(
+				m.subscribeToBoard(),
+				m.waitForNotification(),
+			)
+		}
+		return m, m.waitForNotification()
+
+	case columnTasksLoadedMsg:
+		m.applyColumnTasks(msg)
+		m.clampTaskFocus()
+		return m, nil
 
 	case NotificationMsg:
 		if msg.notification.Type == "board_updated" ||
@@ -39,8 +61,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if len(m.scrollOffsets) != len(m.board.Columns) {
 			m.scrollOffsets = make([]int, len(m.board.Columns))
 		}
-		m.clampTaskFocus()
-		return m, m.waitForNotification()
+		m.columnPages = make(map[string]int)
+		m.columnTotals = make(map[string]int)
+		return m, m.fetchAllColumnTasks()
 
 	case boardRefreshMsg:
 		m.board = msg.board
@@ -49,8 +72,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if len(m.scrollOffsets) != len(m.board.Columns) {
 			m.scrollOffsets = make([]int, len(m.board.Columns))
 		}
-		m.clampTaskFocus()
-		return m, nil
+		m.columnPages = make(map[string]int)
+		m.columnTotals = make(map[string]int)
+		return m, m.fetchAllColumnTasks()
 
 	case editor.EditorFinishedMsg:
 		if msg.Err != nil {
@@ -145,10 +169,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.moveUp()
 
 		case key.Matches(msg, keys.Down):
-			m.moveDown()
+			return m, m.moveDown()
 
-		case key.Matches(msg, keys.Move):
-			return m, m.moveTask()
+		case key.Matches(msg, keys.MoveLeft):
+			return m, m.moveTaskLeft()
+
+		case key.Matches(msg, keys.MoveRight):
+			return m, m.moveTaskRight()
 
 		case key.Matches(msg, keys.Add):
 			return m, m.addTask()
@@ -207,11 +234,50 @@ func (m *Model) moveUp() {
 	}
 }
 
-func (m *Model) moveDown() {
+func (m *Model) moveDown() tea.Cmd {
 	taskCount := m.currentColumnTaskCount()
 	if m.focusedTask < taskCount-1 {
 		m.focusedTask++
 		m.updateScroll(m.maxVisibleTasks())
+
+		if m.focusedTask == taskCount-1 && m.columnHasMore(m.focusedColumn) {
+			return m.loadMoreTasks(m.focusedColumn)
+		}
+	}
+	return nil
+}
+
+func (m *Model) loadMoreTasks(colIndex int) tea.Cmd {
+	if m.board == nil || colIndex < 0 || colIndex >= len(m.board.Columns) {
+		return nil
+	}
+	col := m.board.Columns[colIndex]
+	currentPage := m.columnPages[col.ID]
+	if currentPage == 0 {
+		currentPage = 1
+	}
+	nextPage := currentPage + 1
+	client := m.daemonClient
+	columnID := col.ID
+	existingTasks := make([]dto.TaskDto, len(col.Tasks))
+	copy(existingTasks, col.Tasks)
+
+	return func() tea.Msg {
+		ctx := context.Background()
+		resp, err := client.ListTasks(ctx, columnID, nextPage, tasksPerPage)
+		if err != nil {
+			return columnTasksLoadedMsg{columnID: columnID, err: err}
+		}
+		sort.Slice(resp.Items, func(a, b int) bool {
+			return resp.Items[a].Position < resp.Items[b].Position
+		})
+		combined := append(existingTasks, resp.Items...)
+		return columnTasksLoadedMsg{
+			columnID: columnID,
+			tasks:    combined,
+			total:    resp.Total,
+			page:     nextPage,
+		}
 	}
 }
 

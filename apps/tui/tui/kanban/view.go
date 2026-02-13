@@ -149,7 +149,11 @@ func (m Model) View() string {
 func (m Model) renderColumn(col dto.BoardColumnDto, colIndex int, width int, viewportHeight int) string {
 	isFocused := colIndex == m.focusedColumn
 
-	title := style.ColumnTitleStyle.Width(width).Render(col.Name)
+	titleText := col.Name
+	if col.TaskCount > 0 {
+		titleText = fmt.Sprintf("%s (%d)", col.Name, col.TaskCount)
+	}
+	title := style.ColumnTitleStyle.Width(width).Render(titleText)
 
 	scrollOffset := 0
 	if colIndex < len(m.scrollOffsets) {
@@ -161,15 +165,15 @@ func (m Model) renderColumn(col dto.BoardColumnDto, colIndex int, width int, vie
 		maxVisibleTasks = 1
 	}
 
-	totalTasks := len(col.Tasks)
+	loadedTasks := len(col.Tasks)
 	startIdx := scrollOffset
 	endIdx := scrollOffset + maxVisibleTasks
-	if endIdx > totalTasks {
-		endIdx = totalTasks
+	if endIdx > loadedTasks {
+		endIdx = loadedTasks
 	}
 
 	showUpIndicator := scrollOffset > 0
-	showDownIndicator := endIdx < totalTasks
+	showDownIndicator := endIdx < loadedTasks
 
 	var tasks []string
 
@@ -192,6 +196,11 @@ func (m Model) renderColumn(col dto.BoardColumnDto, colIndex int, width int, vie
 			Width(width).
 			Render("\u25BC more below \u25BC")
 		tasks = append(tasks, indicator)
+	} else if m.columnHasMore(colIndex) {
+		indicator := style.ScrollIndicatorStyle.
+			Width(width).
+			Render("\u25BC load more \u25BC")
+		tasks = append(tasks, indicator)
 	}
 
 	if len(col.Tasks) == 0 {
@@ -213,7 +222,7 @@ func (m Model) renderColumn(col dto.BoardColumnDto, colIndex int, width int, vie
 func (m Model) renderHelp() string {
 	helpText := []string{
 		"Navigation: \u2190/h,\u2192/l (columns)  \u2191/k,\u2193/j (tasks)",
-		"Actions: a (add)  e (edit)  d (delete)  m/enter (move)",
+		"Actions: a (add)  e (edit)  d (delete)  H/L (move task)",
 	}
 
 	return style.HelpStyle.Render(strings.Join(helpText, "  \u2022  "))
