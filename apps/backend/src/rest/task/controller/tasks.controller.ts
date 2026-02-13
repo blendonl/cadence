@@ -29,6 +29,7 @@ import { TaskMapper } from '../task.mapper';
 import { TaskLogMapper } from '../task-log.mapper';
 import { TaskFindOneResponse } from '../dto/task.find.one.response';
 import { TaskCreateResponse } from '../dto/task.create.response';
+import { TaskMoveResponse } from '../dto/task.move.response';
 
 @ApiTags('tasks')
 @Controller('tasks')
@@ -166,10 +167,10 @@ export class TasksController {
     @Session() session: UserSession,
     @Param('taskId') taskId: string,
     @Body() body: { targetColumnId: string },
-  ): Promise<TaskDto> {
+  ): Promise<TaskMoveResponse> {
     await this.projectAccessService.assertTaskAccess(session.user.id, taskId);
     const task = await this.tasksService.moveTask(taskId, body.targetColumnId);
-    return TaskMapper.toResponse(task);
+    return TaskMoveResponse.fromDomain(task);
   }
 
   @Get(':taskId/work-duration')
