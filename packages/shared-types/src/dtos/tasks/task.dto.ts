@@ -108,3 +108,17 @@ export interface TaskMoveRequestDto {
   columnId: string;
   position: number;
 }
+
+/**
+ * Move task response
+ */
+export interface TaskMoveResponseDto {
+  id: string;
+  slug: string;
+  title: string;
+  taskType: TaskType;
+  priority: TaskPriorityType | null;
+  columnId: string;
+  position: number;
+  updatedAt: string;
+}
